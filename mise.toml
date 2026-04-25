@@ -5,7 +5,14 @@
 [tools]
 node = "20"
 pnpm = "9"
-postgres = "15"
+# Postgres is intentionally NOT a mise tool. Local devs run Postgres via
+# Docker Compose (see docker-compose.yml — port 15432). CI uses a Postgres
+# service container per workflow. mise's postgres plugin compiles from
+# source and requires libreadline-dev + zlib1g-dev which aren't on bare
+# Ubuntu CI runners — that combination broke every workflow on the first
+# /ship attempt before this comment landed. Don't put it back.
+# If you need `psql` locally for ad-hoc queries: `brew install libpq`
+# (macOS) or use `docker exec -it corridor-postgres psql ...`.
 
 [env]
 NODE_ENV = "development"

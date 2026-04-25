@@ -36,5 +36,8 @@ jobs:
         run: mise run test
       - name: Production build
         run: mise run build
-      - name: RLS pgTAP tests
-        run: mise run db:rls:test
+      # pgTAP semantic RLS tests are NOT run in CI yet. See note in
+      # api-ci.yml — needs a Postgres image with pgtap preinstalled.
+      # Local devs run them via `mise run db:rls:test`.
+      # - name: RLS pgTAP tests
+      #   run: mise run db:rls:test
