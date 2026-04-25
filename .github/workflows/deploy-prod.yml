@@ -1,0 +1,83 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Install toolchain
+        run: mise install
+      - name: Install dependencies
+        run: mise run install
+      - name: TypeScript check
+        run: mise run typecheck
+      - name: ESLint
+        run: mise run lint
+      - name: Prettier check
+        run: mise run format:check
+      - name: Tests
+        run: mise run test
+      - name: Production build
+        run: mise run build
+      - name: Deploy app portal
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.PROD_APP_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "PROD_APP_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+      - name: Deploy patient portal
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.PROD_PATIENT_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "PROD_PATIENT_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+      - name: Deploy API
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.PROD_API_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "PROD_API_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+      - name: Deploy workers
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.PROD_WORKERS_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "PROD_WORKERS_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+
+  e2e:
+    needs: deploy-prod
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/e2e-post-deploy.yml
+    with:
+      app_url: ${{ vars.PROD_APP_URL || 'https://app.corridor.health' }}
+      patient_url: ${{ vars.PROD_PATIENT_URL || 'https://patient.corridor.health' }}
+      api_origin_url: ${{ vars.PROD_API_ORIGIN_URL || 'https://api.corridor.health' }}

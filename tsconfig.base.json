@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@corridor/shared": ["packages/shared/src/index.ts"],
+      "@corridor/shared/*": ["packages/shared/src/*"],
+      "@corridor/db": ["packages/db/src/index.ts"],
+      "@corridor/db/*": ["packages/db/src/*"],
+      "@corridor/rbac": ["packages/rbac/src/index.ts"],
+      "@corridor/rbac/*": ["packages/rbac/src/*"],
+      "@corridor/notifications": ["packages/notifications/src/index.ts"],
+      "@corridor/notifications/*": ["packages/notifications/src/*"],
+      "@corridor/pdf": ["packages/pdf/src/index.ts"],
+      "@corridor/pdf/*": ["packages/pdf/src/*"],
+      "@corridor/ui": ["packages/ui/src/index.ts"],
+      "@corridor/ui/*": ["packages/ui/src/*"]
+    }
+  }
+}

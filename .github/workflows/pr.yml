@@ -1,0 +1,40 @@
+name: PR
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+  push:
+    branches:
+      - main
+      - staging
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Install toolchain
+        run: mise install
+      - name: Install dependencies
+        run: mise run install
+      - name: TypeScript check
+        run: mise run typecheck
+      - name: ESLint
+        run: mise run lint
+      - name: Prettier check
+        run: mise run format:check
+      - name: Unit and integration tests
+        run: mise run test
+      - name: Production build
+        run: mise run build
+      - name: RLS pgTAP tests
+        run: mise run db:rls:test

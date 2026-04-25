@@ -1,0 +1,85 @@
+[encryption]
+provider = "age"
+
+# Recipients are the age public keys that can decrypt this repo's secrets.
+# Adding yourself: generate a key (`age-keygen -o ~/.config/age/key.txt`),
+# share your pubkey with an existing recipient, who appends it below and
+# re-encrypts every profile (`fnox rekey`). Revocation = remove the pubkey
+# + re-encrypt + rotate any leaked-by-presence values.
+[[recipients]]
+name = "gabeviggers@corridor.health"
+public_key = "age1placeholder000000000000000000000000000000000000000000000"
+
+# CI recipient. The matching age private key is held only in CI's secret store
+# (GitHub Actions, Railway, etc.); never on a developer machine.
+[[recipients]]
+name = "ci@corridor.health"
+public_key = "age1placeholder111111111111111111111111111111111111111111111"
+
+# === Profiles ===
+# Each profile groups the secrets one runtime needs. The matching package.json
+# `dev` script wraps in `fnox run <profile> --` so secrets land in env at start.
+#
+# IMPORTANT: production secrets do NOT live here. Vercel and Railway env vars
+# hold staging + prod values. fnox is for local development and CI only.
+
+[profiles.api_dev]
+secrets = [
+    "CLERK_SECRET_KEY",
+    "CLERK_WEBHOOK_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "PLAID_CLIENT_ID",
+    "PLAID_SECRET",
+    "PLAID_WEBHOOK_SECRET",
+    "RESEND_API_KEY",
+    "SENTRY_DSN",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "DAILY_API_KEY",
+    "ESIGN_API_KEY",
+]
+
+[profiles.workers_dev]
+secrets = [
+    "CLERK_SECRET_KEY",
+    "STRIPE_SECRET_KEY",
+    "RESEND_API_KEY",
+    "SENTRY_DSN",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "REDIS_URL",
+]
+
+[profiles.frontend_app_dev]
+secrets = [
+    "VITE_CLERK_PUBLISHABLE_KEY",
+    "VITE_STRIPE_PUBLISHABLE_KEY",
+    "VITE_SENTRY_DSN",
+    "VITE_API_BASE_URL",
+]
+
+[profiles.frontend_patient_dev]
+secrets = [
+    "VITE_CLERK_PUBLISHABLE_KEY",
+    "VITE_STRIPE_PUBLISHABLE_KEY",
+    "VITE_SENTRY_DSN",
+    "VITE_API_BASE_URL",
+]
+
+[profiles.ci]
+secrets = [
+    "CLERK_SECRET_KEY",
+    "CLERK_WEBHOOK_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "PLAID_SECRET",
+    "RESEND_API_KEY",
+    "SENTRY_DSN",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "DAILY_API_KEY",
+    "ESIGN_API_KEY",
+    "VITE_CLERK_PUBLISHABLE_KEY",
+    "VITE_STRIPE_PUBLISHABLE_KEY",
+]

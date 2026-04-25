@@ -1,0 +1,76 @@
+name: E2E Tests (Post-Deploy)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "App portal URL to test"
+        required: true
+        default: "https://app.staging.corridor.health"
+      patient_url:
+        description: "Patient portal URL to test"
+        required: true
+        default: "https://patient.staging.corridor.health"
+      api_origin_url:
+        description: "API origin URL used for /healthz and /readyz"
+        required: false
+        default: ""
+  workflow_call:
+    inputs:
+      app_url:
+        required: true
+        type: string
+      patient_url:
+        required: true
+        type: string
+      api_origin_url:
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+
+      - name: Install toolchain
+        run: mise install
+
+      - name: Install dependencies
+        run: mise run install
+
+      - name: Verify API liveness and readiness
+        if: ${{ inputs.api_origin_url != '' }}
+        env:
+          API_ORIGIN_URL: ${{ inputs.api_origin_url }}
+        run: |
+          API_URL="${API_ORIGIN_URL%/}"
+          echo "Checking ${API_URL}/healthz"
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${API_URL}/healthz"
+          echo
+          echo "Checking ${API_URL}/readyz"
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${API_URL}/readyz"
+          echo
+
+      - name: Run E2E tests
+        env:
+          APP_URL: ${{ inputs.app_url }}
+          PATIENT_URL: ${{ inputs.patient_url }}
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

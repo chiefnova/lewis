@@ -1,0 +1,39 @@
+name: corridor
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: corridor-postgres
+    environment:
+      POSTGRES_USER: corridor
+      POSTGRES_PASSWORD: corridor
+      POSTGRES_DB: corridor_dev
+    ports:
+      - "${LOCAL_POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - corridor_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corridor -d corridor_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: corridor-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${LOCAL_REDIS_PORT:-16379}:6379"
+    volumes:
+      - corridor_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  corridor_postgres_data:
+  corridor_redis_data:

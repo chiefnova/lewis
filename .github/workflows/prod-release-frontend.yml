@@ -1,0 +1,78 @@
+name: Production Release (Frontend)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Deployment target"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-frontend-${{ github.event.inputs.deploy_target }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+
+      - name: Install toolchain
+        run: mise install
+
+      - name: Install dependencies
+        run: mise run install
+
+      - name: TypeScript check
+        run: pnpm --filter app --filter patient typecheck
+
+      - name: Lint
+        run: pnpm --filter app --filter patient lint
+
+      - name: Build frontend portals
+        env:
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_CLERK_PUBLISHABLE_KEY_PROD || secrets.VITE_CLERK_PUBLISHABLE_KEY_STAGING }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_STRIPE_PUBLISHABLE_KEY_PROD || secrets.VITE_STRIPE_PUBLISHABLE_KEY_STAGING }}
+          VITE_API_BASE_URL: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_API_BASE_URL_PROD || secrets.VITE_API_BASE_URL_STAGING }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: pnpm --filter app --filter patient build
+
+      - name: Remove source maps from deployment artifacts
+        run: |
+          find apps/app/dist apps/patient/dist -name "*.map" -type f -delete
+          MAP_COUNT=$(find apps/app/dist apps/patient/dist -name "*.map" -type f | wc -l)
+          echo "Remaining source maps: $MAP_COUNT"
+          if [ "$MAP_COUNT" -ne 0 ]; then
+            echo "ERROR: source maps still present in frontend artifacts."
+            exit 1
+          fi
+
+      - name: Deploy app portal
+        env:
+          APP_DEPLOY_HOOK_URL: ${{ github.event.inputs.deploy_target == 'production' && secrets.PROD_APP_DEPLOY_HOOK_URL || secrets.STAGING_APP_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$APP_DEPLOY_HOOK_URL" ]; then
+            echo "App portal deploy hook is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$APP_DEPLOY_HOOK_URL"
+
+      - name: Deploy patient portal
+        env:
+          PATIENT_DEPLOY_HOOK_URL: ${{ github.event.inputs.deploy_target == 'production' && secrets.PROD_PATIENT_DEPLOY_HOOK_URL || secrets.STAGING_PATIENT_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$PATIENT_DEPLOY_HOOK_URL" ]; then
+            echo "Patient portal deploy hook is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$PATIENT_DEPLOY_HOOK_URL"

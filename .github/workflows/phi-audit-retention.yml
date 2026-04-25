@@ -1,0 +1,42 @@
+name: PHI Audit Retention
+
+on:
+  schedule:
+    - cron: "20 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phi-audit-retention-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  retention:
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+
+      - name: Install toolchain
+        run: mise install
+
+      - name: Install dependencies
+        run: mise run install
+
+      - name: Build API and workers
+        run: pnpm --filter api --filter workers build
+
+      - name: Run retention maintenance hook
+        env:
+          PHI_AUDIT_RETENTION_HOOK_URL: ${{ secrets.PHI_AUDIT_RETENTION_HOOK_URL }}
+        run: |
+          if [ -z "$PHI_AUDIT_RETENTION_HOOK_URL" ]; then
+            echo "PHI_AUDIT_RETENTION_HOOK_URL is not configured yet."
+            echo "Configure this secret before enabling production PHI retention maintenance."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$PHI_AUDIT_RETENTION_HOOK_URL"
