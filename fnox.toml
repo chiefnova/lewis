@@ -8,13 +8,13 @@ provider = "age"
 # + re-encrypt + rotate any leaked-by-presence values.
 [[recipients]]
 name = "gabeviggers@corridor.health"
-public_key = "age1placeholder000000000000000000000000000000000000000000000"
+public_key = "age1m94qg8j6ylpqem2sucdeduhqtr4vdr2ryyal44jdcdq8x59um5lsjn378u"
 
 # CI recipient. The matching age private key is held only in CI's secret store
 # (GitHub Actions, Railway, etc.); never on a developer machine.
 [[recipients]]
 name = "ci@corridor.health"
-public_key = "age1placeholder111111111111111111111111111111111111111111111"
+public_key = "age18yac0966xfuhkzcz3lwepm4ncm04wuccftv4vh5kpch3mpv4qsfqfw0g9a"
 
 # === Profiles ===
 # Each profile groups the secrets one runtime needs. The matching package.json
