@@ -1,0 +1,50 @@
+name: PR
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+  push:
+    branches:
+      - main
+      - staging
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Install toolchain
+        run: mise install
+      - name: Install dependencies
+        run: mise run install
+      - name: TypeScript check
+        run: mise run typecheck
+      - name: ESLint
+        run: mise run lint
+      - name: Prettier check
+        run: mise run format:check
+      - name: Unit and integration tests
+        run: mise run test
+      # Static RLS-policy completeness check — every RLS-enabled table
+      # must have SELECT + at least one write policy. No DB needed; runs
+      # against migration SQL files. Defense-in-depth: api-ci.yml runs
+      # this too, but pr.yml is the universal gate that fires on every
+      # PR regardless of which paths changed.
+      - name: RLS write-policy coverage
+        run: mise run db:rls:coverage
+      - name: Production build
+        run: mise run build
+      # pgTAP semantic RLS tests are NOT run in CI yet. See note in
+      # api-ci.yml — needs a Postgres image with pgtap preinstalled.
+      # Local devs run them via `mise run db:rls:test`.
+      # - name: RLS pgTAP tests
+      #   run: mise run db:rls:test

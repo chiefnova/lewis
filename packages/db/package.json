@@ -1,0 +1,35 @@
+{
+  "name": "@corridor/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "migrate": "drizzle-kit migrate",
+    "migrate:sql": "tsx scripts/run-psql-files.ts migrations",
+    "generate": "drizzle-kit generate",
+    "rls:test": "pnpm run migrate:sql && tsx scripts/run-psql-files.ts test/rls",
+    "rls:coverage": "tsx scripts/check-rls-coverage.ts",
+    "seed": "tsx scripts/seed-dev.ts"
+  },
+  "dependencies": {
+    "@corridor/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.49.4",
+    "drizzle-orm": "^0.43.1",
+    "pg": "^8.15.6",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.14",
+    "drizzle-kit": "^0.31.1",
+    "tsx": "^4.19.4"
+  }
+}
