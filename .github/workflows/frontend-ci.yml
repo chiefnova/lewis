@@ -62,6 +62,18 @@ jobs:
       - name: Unit tests
         run: pnpm --filter app --filter patient --filter @corridor/ui --filter @corridor/shared --filter @corridor/rbac test
 
+      # Accessibility tests — CLAUDE.md requires axe to gate patient PRs
+      # (patient portal targets WCAG 2.1 AA). Currently the package.json
+      # script is a placeholder echo; will fire real assertions when
+      # axe-via-playwright tests land in Sprint 4 patient UI work.
+      # Bypass `mise run test:a11y` because that mise task declares a
+      # depends-on db:up (Docker Postgres) which would burn ~30s/run for
+      # zero value while the placeholder echo is all there is to run.
+      # When real tests land, switch this to `mise run test:a11y` so the
+      # db:up dependency activates.
+      - name: Accessibility (axe) tests
+        run: pnpm run test:a11y
+
       - name: Prettier check
         run: mise run format:check
 
