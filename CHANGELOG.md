@@ -5,6 +5,24 @@ All notable changes to Corridor are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a 4-digit version format: `MAJOR.MINOR.PATCH.MICRO`.
 
+## [0.0.3.0] - 2026-04-25
+
+Clerk React SDK upgrade from `@clerk/clerk-react@5.61.3` to `@clerk/react@6.4.5`
+across both frontends. Pure dependency migration — no new functionality and no
+change to PHI gating semantics.
+
+### Changed
+
+- **Clerk React SDK upgraded to v6.** `apps/app` and `apps/patient` both moved from `@clerk/clerk-react@5.61.3` to `@clerk/react@6.4.5`. Imports renamed across [apps/app/src/main.tsx](apps/app/src/main.tsx), [apps/app/src/auth/RequireStaffPortal.tsx](apps/app/src/auth/RequireStaffPortal.tsx), [apps/app/src/auth/StaffHomeRedirect.tsx](apps/app/src/auth/StaffHomeRedirect.tsx), [apps/app/src/auth/NoAssignedPortal.tsx](apps/app/src/auth/NoAssignedPortal.tsx), [apps/patient/src/main.tsx](apps/patient/src/main.tsx), and [apps/patient/src/auth/RequirePatientSession.tsx](apps/patient/src/auth/RequirePatientSession.tsx).
+- **`<SignedIn>` / `<SignedOut>` replaced by `<Show when="...">`.** v6 retired the boolean-gate components in favor of a single `<Show>` with a `when` discriminator. Loading-state semantics are identical (`<Show>` returns `null` while Clerk hydrates per its JSDoc), so the patient portal's PHI gate in [RequirePatientSession.tsx](apps/patient/src/auth/RequirePatientSession.tsx) keeps the same safe default.
+- **`afterSignOutUrl="/"` consolidated on `<ClerkProvider>`.** Removed from individual `<UserButton>` instances in `RequireStaffPortal` and `NoAssignedPortal`. One source of truth for sign-out destination across both apps.
+- **Vitest mocks updated.** `vi.mock("@clerk/clerk-react", ...)` → `vi.mock("@clerk/react", ...)` in [RequireStaffPortal.test.tsx](apps/app/src/auth/RequireStaffPortal.test.tsx), [RequirePatientSession.test.tsx](apps/patient/src/auth/RequirePatientSession.test.tsx), and [RequirePatientSession.a11y.test.tsx](apps/patient/src/auth/RequirePatientSession.a11y.test.tsx). The new mocks render `<Show>` based on a `when` prop discriminator, mirroring the runtime behavior. All 39 frontend unit + a11y tests pass.
+
+### Notes
+
+- `publishableKey` is still passed explicitly to `<ClerkProvider>` because `@clerk/react@6.4.5`'s TypeScript types declare it required, even though the runtime falls back to `import.meta.env.VITE_CLERK_PUBLISHABLE_KEY` via `withEnvFallback`. Strict TS would otherwise reject the omission.
+- `<Show>` exposes a new `treatPendingAsSignedOut` prop for handling pending sessions (MFA-required, tasks-incomplete). This migration does not opt in, preserving v5 default behavior. Revisit when MFA is enforced on the patient portal — see TODOS.md.
+
 ## [0.0.2.0] - 2026-04-25
 
 Foundation hardening + Sprint 2 auth start. Closes the runtime-role posture
