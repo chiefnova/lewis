@@ -1,4 +1,4 @@
-import { redactPhi } from "@corridor/shared";
+import { redactPhi } from "@lewis/shared";
 import pino, { type Logger } from "pino";
 
 /**
@@ -26,7 +26,7 @@ const baseLogger: Logger = pino({
   // Tag every log line with the application name so multi-service log
   // aggregation can route correctly.
   base: {
-    service: "corridor-api",
+    service: "lewis-api",
     pid: process.pid,
   },
   timestamp: pino.stdTimeFunctions.isoTime,

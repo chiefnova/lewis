@@ -1,4 +1,4 @@
-import { CursorPageQuery } from "@corridor/shared";
+import { CursorPageQuery } from "@lewis/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 

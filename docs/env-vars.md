@@ -1,6 +1,6 @@
-# Corridor Environment Variables — End-to-End Tracker
+# Lewis Environment Variables — End-to-End Tracker
 
-The single source of truth for every environment variable across Corridor. Use this to:
+The single source of truth for every environment variable across Lewis. Use this to:
 
 - Know **which** runtime needs **which** var
 - Track **when** in the sprint plan you need to obtain each provider account
@@ -100,7 +100,7 @@ Env vars that were referenced in source but not declared in any template or fnox
 | ✅ | `WORKER_ELEVATED` | [apps/workers/src/index.ts:114,120](../apps/workers/src/index.ts#L114-L120) | `true` → workers expect privileged DB role (workers-elevated process); else `app_worker` | Documented (commented) in `env/.env.workers.example`; **set to `true`** (uncommented, required) in `env/.env.workers-elevated.example` |
 | ✅ | `WORKER_RUNTIME_ROLE_OPT_OUT` | [apps/workers/src/index.ts:107](../apps/workers/src/index.ts#L107) | Test-only: skip RLS-bound role assertion | Documented in `env/.env.workers.example` with `NEVER set in staging/prod` warning |
 | ✅ | `API_RUNTIME_ROLE_OPT_OUT` | [apps/api/src/index.ts:23](../apps/api/src/index.ts#L23) | Test-only: skip RLS-bound role assertion | Documented in `env/.env.api.example` with `NEVER set in staging/prod` warning |
-| ✅ | `CORRIDOR_SEED_ALLOW_NON_LOCAL` | [packages/db/scripts/seed-dev.ts:9](../packages/db/scripts/seed-dev.ts#L9) | Deliberate trap — always errors when set | Trap explanation added to `env/.env.local.example` |
+| ✅ | `LEWIS_SEED_ALLOW_NON_LOCAL` | [packages/db/scripts/seed-dev.ts:9](../packages/db/scripts/seed-dev.ts#L9) | Deliberate trap — always errors when set | Trap explanation added to `env/.env.local.example` |
 | ✅ | `RESEND_WEBHOOK_SECRET` | `env/.env.api.example` + Sprint 4 use | Resend delivery webhook signature | **Decision:** keep. Restored to `api_dev` fnox profile in `fnox.toml` so template ↔ fnox stay aligned. Empty until Sprint 4 wires Resend. |
 
 ---
@@ -184,7 +184,7 @@ Env vars that were referenced in source but not declared in any template or fnox
 | ☐ | `WORKER_ELEVATED` | workers, workers-elev | Selects expected DB role + RLS bypass posture |
 | ☐ | `API_RUNTIME_ROLE_OPT_OUT` | api (TEST ONLY) | Skip role assertion in unit tests; **never set in staging/prod** |
 | ☐ | `WORKER_RUNTIME_ROLE_OPT_OUT` | workers (TEST ONLY) | Skip role assertion in unit tests; **never set in staging/prod** |
-| ☐ | `CORRIDOR_SEED_ALLOW_NON_LOCAL` | seed script | **Trap variable — always errors when set.** Documented to prevent confusion |
+| ☐ | `LEWIS_SEED_ALLOW_NON_LOCAL` | seed script | **Trap variable — always errors when set.** Documented to prevent confusion |
 
 ### CI-only (GitHub Secrets / Vars, not fnox)
 
@@ -265,7 +265,7 @@ Env vars that were referenced in source but not declared in any template or fnox
 
 ### What to do when a teammate joins
 
-1. Generate age key: `age-keygen -o ~/.config/corridor-age-maintainer.key`
+1. Generate age key: `age-keygen -o ~/.config/lewis-age-maintainer.key`
 2. Share pubkey with an existing recipient, who appends it to `[providers.age].recipients` in `fnox.toml` and runs `fnox reencrypt`.
 3. Copy `env/.env.local.example` to `.env.local`.
 4. `mise install && mise run install`.
@@ -309,7 +309,7 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 | `WORKER_ELEVATED` | [apps/workers/src/index.ts:114](../apps/workers/src/index.ts#L114) |
 | `API_RUNTIME_ROLE_OPT_OUT` | [apps/api/src/index.ts:23](../apps/api/src/index.ts#L23) |
 | `WORKER_RUNTIME_ROLE_OPT_OUT` | [apps/workers/src/index.ts:107](../apps/workers/src/index.ts#L107) |
-| `CORRIDOR_SEED_ALLOW_NON_LOCAL` | [packages/db/scripts/seed-dev.ts:9](../packages/db/scripts/seed-dev.ts#L9) (trap) |
+| `LEWIS_SEED_ALLOW_NON_LOCAL` | [packages/db/scripts/seed-dev.ts:9](../packages/db/scripts/seed-dev.ts#L9) (trap) |
 | `VITE_*` vars | `apps/app/src/main.tsx`, `apps/patient/src/main.tsx` (`import.meta.env.VITE_*`) |
 
 ---
@@ -322,4 +322,4 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 
 ### Change log
 
-- **2026-04-25** — Initial end-to-end audit. 5 code-vs-config gaps closed: `WORKER_ELEVATED`, `WORKER_RUNTIME_ROLE_OPT_OUT`, `API_RUNTIME_ROLE_OPT_OUT`, `CORRIDOR_SEED_ALLOW_NON_LOCAL` documented in templates; `RESEND_WEBHOOK_SECRET` restored to `api_dev` fnox profile.
+- **2026-04-25** — Initial end-to-end audit. 5 code-vs-config gaps closed: `WORKER_ELEVATED`, `WORKER_RUNTIME_ROLE_OPT_OUT`, `API_RUNTIME_ROLE_OPT_OUT`, `LEWIS_SEED_ALLOW_NON_LOCAL` documented in templates; `RESEND_WEBHOOK_SECRET` restored to `api_dev` fnox profile.

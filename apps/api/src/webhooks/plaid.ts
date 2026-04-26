@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
-import { requiredEnv } from "@corridor/shared";
+import { requiredEnv } from "@lewis/shared";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 import {
   Configuration,

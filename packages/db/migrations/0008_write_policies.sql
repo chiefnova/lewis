@@ -34,22 +34,22 @@
 -- a migration. Keep the list short and avoid action sprawl.)
 -- ---------------------------------------------------------------------------
 --   tenant:write              — administrative write on a tenant record itself
---   user:write                — write to a user row (self only, except corridor_admin)
+--   user:write                — write to a user row (self only, except lewis_admin)
 --   membership:write          — manage tenant_memberships
 --   relationship:write        — manage tenant_relationships
---   support_grant:write       — issue/revoke support_access_grants (corridor_admin only)
+--   support_grant:write       — issue/revoke support_access_grants (lewis_admin only)
 --   audit:write               — INSERT only; UPDATE/DELETE blocked by trigger from 0003
 --   file:write                — write to file_storage_objects
 --   notification:write        — enqueue notifications
 --   feature_flag:write        — toggle feature_flags
---   regulatory:write          — manage regulatory_jurisdictions / regulatory_rule_versions (corridor_admin)
---   sponsor:write             — sponsor_organizations (sponsor_admin or corridor_admin)
---   etc:write                 — etcs (etc_admin or corridor_admin)
---   patient:write             — patients (patient self, ETC care_team, corridor_admin)
+--   regulatory:write          — manage regulatory_jurisdictions / regulatory_rule_versions (lewis_admin)
+--   sponsor:write             — sponsor_organizations (sponsor_admin or lewis_admin)
+--   etc:write                 — etcs (etc_admin or lewis_admin)
+--   patient:write             — patients (patient self, ETC care_team, lewis_admin)
 --   program:write             — programs (sponsor_admin)
 --   device:write              — investigational_devices (sponsor_admin)
 --   facility:write            — inpatient_facility_profiles (etc_admin)
---   payment_rail:write        — payment_rails (corridor_admin)
+--   payment_rail:write        — payment_rails (lewis_admin)
 --   payment_obligation:write  — payment_obligations (etc_admin or sponsor_admin per legal_basis)
 --   payment_transaction:write — payment_transactions (system role via webhook handler — not a user-facing action)
 --   hfar:write                — hfar_path_a_allocations (etc_admin)
@@ -62,9 +62,9 @@
 --   etc_admin, etc_user, etc_clinician
 --   patient
 --   board_reviewer
---   corridor_admin, corridor_support
+--   lewis_admin, lewis_support
 -- There is intentionally no "system role" RLS bypass. Worker and webhook
--- handlers must either run with an auditable Corridor user/tenant context that
+-- handlers must either run with an auditable Lewis user/tenant context that
 -- passes these policies, or use a future explicitly scoped elevated worker
 -- path that writes its own audit evidence. App runtimes never receive
 -- SUPERUSER, BYPASSRLS, or table-owner credentials.
@@ -79,29 +79,29 @@ language sql
 immutable
 as $$
   select case action
-    when 'tenant:write'              then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'user:write'                then role_name in ('corridor_admin')
-    when 'membership:write'          then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'relationship:write'        then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'support_grant:write'       then role_name in ('corridor_admin')
+    when 'tenant:write'              then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'user:write'                then role_name in ('lewis_admin')
+    when 'membership:write'          then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'relationship:write'        then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'support_grant:write'       then role_name in ('lewis_admin')
     when 'audit:write'               then true  -- any authenticated session can write audit rows; immutability trigger from 0003 handles tampering
-    when 'file:write'                then role_name in ('sponsor_admin', 'sponsor_user', 'etc_admin', 'etc_user', 'etc_clinician', 'patient', 'corridor_admin')
-    when 'notification:write'        then role_name in ('corridor_admin')  -- normally enqueued by workers, not directly by users
-    when 'feature_flag:write'        then role_name in ('corridor_admin')
-    when 'regulatory:write'          then role_name in ('corridor_admin')
-    when 'sponsor:write'             then role_name in ('sponsor_admin', 'corridor_admin')
-    when 'etc:write'                 then role_name in ('etc_admin', 'corridor_admin')
-    when 'patient:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'corridor_admin')
-    when 'program:write'             then role_name in ('sponsor_admin', 'corridor_admin')
-    when 'device:write'              then role_name in ('sponsor_admin', 'corridor_admin')
-    when 'facility:write'            then role_name in ('etc_admin', 'corridor_admin')
-    when 'payment_rail:write'        then role_name in ('corridor_admin')
-    when 'payment_obligation:write'  then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'payment_transaction:write' then role_name in ('corridor_admin')  -- normally written by webhook worker
-    when 'hfar:write'                then role_name in ('etc_admin', 'corridor_admin')
-    when 'consent:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'corridor_admin')
-    when 'device_registry:write'     then role_name in ('patient', 'etc_admin', 'etc_clinician', 'corridor_admin')
-    when 'search_index:write'        then role_name in ('corridor_admin')
+    when 'file:write'                then role_name in ('sponsor_admin', 'sponsor_user', 'etc_admin', 'etc_user', 'etc_clinician', 'patient', 'lewis_admin')
+    when 'notification:write'        then role_name in ('lewis_admin')  -- normally enqueued by workers, not directly by users
+    when 'feature_flag:write'        then role_name in ('lewis_admin')
+    when 'regulatory:write'          then role_name in ('lewis_admin')
+    when 'sponsor:write'             then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'etc:write'                 then role_name in ('etc_admin', 'lewis_admin')
+    when 'patient:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
+    when 'program:write'             then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'device:write'              then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'facility:write'            then role_name in ('etc_admin', 'lewis_admin')
+    when 'payment_rail:write'        then role_name in ('lewis_admin')
+    when 'payment_obligation:write'  then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'payment_transaction:write' then role_name in ('lewis_admin')  -- normally written by webhook worker
+    when 'hfar:write'                then role_name in ('etc_admin', 'lewis_admin')
+    when 'consent:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
+    when 'device_registry:write'     then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
+    when 'search_index:write'        then role_name in ('lewis_admin')
     else false  -- default-deny for unknown actions
   end
 $$;
@@ -151,7 +151,7 @@ create policy tenants_write on tenants
 create policy users_write on users
   for all to public
   using (
-    -- A user can update their own row; corridor_admin has user:write and we
+    -- A user can update their own row; lewis_admin has user:write and we
     -- approximate "tenant" for this table by using the user's primary tenant
     -- (any active membership tenant suffices because user:write is admin-only
     -- elsewhere).
@@ -240,7 +240,7 @@ create policy feature_flags_write on feature_flags
 --
 -- regulatory_jurisdictions and regulatory_rule_versions are global lookup
 -- tables. Read is open (SELECT policies in 0002 use `using (true)`). Writes
--- are corridor_admin-only and don't have a tenant column to gate on, so we
+-- are lewis_admin-only and don't have a tenant column to gate on, so we
 -- check role membership directly via a sentinel "any tenant" predicate.
 
 create policy regulatory_jurisdictions_write on regulatory_jurisdictions
@@ -325,7 +325,7 @@ create policy inpatient_facility_profiles_write on inpatient_facility_profiles
   using (app.can_write_for_tenant(etc_tenant_id, 'facility:write'))
   with check (app.can_write_for_tenant(etc_tenant_id, 'facility:write'));
 
--- payment_rails is a global lookup, corridor_admin-only writes.
+-- payment_rails is a global lookup, lewis_admin-only writes.
 create policy payment_rails_write on payment_rails
   for all to public
   using (
@@ -360,7 +360,7 @@ create policy payment_obligations_write on payment_obligations
 
 -- payment_transactions are normally written by webhook handlers. Block broad
 -- user-facing writes by default; webhook workers must set an auditable
--- Corridor admin context or use a future explicitly scoped elevated worker
+-- Lewis admin context or use a future explicitly scoped elevated worker
 -- path, never a general app-runtime RLS bypass.
 create policy payment_transactions_write on payment_transactions
   for all to public
@@ -422,7 +422,7 @@ create policy patient_device_registry_entries_write on patient_device_registry_e
 --
 -- search_index_documents and search_index_jobs are written by background
 -- search indexers, not user-facing handlers. Block broad user writes by
--- default; workers must set an auditable Corridor admin context or use a
+-- default; workers must set an auditable Lewis admin context or use a
 -- future explicitly scoped elevated worker path.
 
 create policy search_index_documents_write on search_index_documents

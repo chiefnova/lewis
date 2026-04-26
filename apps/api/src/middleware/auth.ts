@@ -1,5 +1,5 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
-import { requiredEnv } from "@corridor/shared";
+import { requiredEnv } from "@lewis/shared";
 import type { MiddlewareHandler } from "hono";
 
 import { ApiError } from "./errors.js";
@@ -12,9 +12,9 @@ import { ApiError } from "./errors.js";
  * On success, stores `clerkUserId` on the Hono context. On failure, throws
  * ApiError("unauthenticated").
  *
- * The downstream resolveTenant middleware turns clerkUserId into a Corridor
+ * The downstream resolveTenant middleware turns clerkUserId into a Lewis
  * users.id by looking it up in the database — that's where we cross the
- * Clerk → Corridor identity boundary.
+ * Clerk → Lewis identity boundary.
  */
 
 type AuthVariables = {

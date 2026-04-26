@@ -1,4 +1,4 @@
-/* Corridor Health — design tokens & base.
+/* Lewis Health — design tokens & base.
  * Ported AS IS from the Claude Design handoff (Big Sky / Mineral paper palette).
  * Do not adjust visual values without a design review.
  */
@@ -166,6 +166,13 @@ textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 4px;
+}
+
+/* <main tabIndex={-1}> is focused programmatically on every route change so
+ * screen readers announce the new page. It is not keyboard-tabbable, so the
+ * browser's default focus ring around the entire page is just visual noise. */
+main:focus {
+  outline: none;
 }
 
 /* Scrollbar subtle */

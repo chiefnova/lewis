@@ -1,7 +1,7 @@
-import type { CorridorQueueName } from "@corridor/shared";
+import type { LewisQueueName } from "@lewis/shared";
 
 export type WorkerDefinition = {
-  queueName: CorridorQueueName;
+  queueName: LewisQueueName;
   description: string;
   concurrency: number;
 };

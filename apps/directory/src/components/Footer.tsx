@@ -17,12 +17,12 @@ export function Footer() {
             color: "var(--ink-soft)",
           }}
         >
-          <div>Designed in Bozeman by Corridor Health</div>
+          <div>Designed in Bozeman by Lewis Health</div>
           <div
             className="serif"
             style={{ fontSize: 16, letterSpacing: "-0.01em", textTransform: "none" }}
           >
-            Corridor
+            Lewis
             <span className="serif italic" style={{ color: "var(--ink-soft)" }}>
               {" "}
               / health

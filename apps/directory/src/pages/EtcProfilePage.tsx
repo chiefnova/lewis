@@ -61,7 +61,7 @@ export function EtcProfilePage() {
   const offeredProgram = etc ? getProgramBySlug(etc.programs[0] ?? "") : undefined;
 
   useSeo({
-    title: etc ? `${etc.name} — Corridor Health` : "ETC not found — Corridor Health",
+    title: etc ? `${etc.name} — Lewis Health` : "ETC not found — Lewis Health",
     description: etc
       ? `${etc.name} is a licensed Montana Experimental Treatment Center in ${etc.city}, ${etc.state}. License #${etc.licenseNumber}.`
       : undefined,

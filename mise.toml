@@ -1,4 +1,4 @@
-# mise.toml — toolchain and task runner for Corridor.
+# mise.toml — toolchain and task runner for Lewis.
 # Run `mise install` after clone to provision exact versions.
 # Run `mise tasks` to list everything below.
 
@@ -12,7 +12,7 @@ pnpm = "9"
 # Ubuntu CI runners — that combination broke every workflow on the first
 # /ship attempt before this comment landed. Don't put it back.
 # If you need `psql` locally for ad-hoc queries: `brew install libpq`
-# (macOS) or use `docker exec -it corridor-postgres psql ...`.
+# (macOS) or use `docker exec -it lewis-postgres psql ...`.
 
 [env]
 NODE_ENV = "development"
@@ -45,7 +45,7 @@ description = "Patient portal"
 run = "pnpm --filter patient dev"
 
 [tasks."dev:directory"]
-description = "Public patient directory (corridor.health) — anonymous browse + connect-request handoff"
+description = "Public patient directory (lewis.health) — anonymous browse + connect-request handoff"
 run = "pnpm --filter directory dev"
 
 [tasks."dev:api"]
@@ -155,11 +155,11 @@ run = "pnpm --filter db generate"
 [tasks."db:rls:test"]
 description = "Semantic SQL RLS suite — every PHI table must have runtime-role coverage"
 depends = ["db:up"]
-run = "pnpm --filter @corridor/db rls:test"
+run = "pnpm --filter @lewis/db rls:test"
 
 [tasks."db:rls:coverage"]
 description = "Static check — every RLS-enabled table has FORCE RLS + SELECT + write policies"
-run = "pnpm --filter @corridor/db rls:coverage"
+run = "pnpm --filter @lewis/db rls:coverage"
 
 [tasks."db:seed"]
 description = "Seed local dev data — NEVER run against staging or prod"

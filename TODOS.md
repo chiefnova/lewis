@@ -3,9 +3,9 @@
 Backlog seeded by `/review` against the staged scaffold on `staging` (2026-04-25).
 Originally 12 critical + 22 informational findings.
 
-**Status update (2026-04-25, sixth pass — informational close-out):** Tooling and CI gates hardened end-to-end. `check-fnox-secret-boundaries.mjs` now uses TOML-key-boundary regex with section-header reset and a positive `workers_elevated_dev` assertion. `check-rls-coverage.ts` tracks DROP POLICY in textual order (caught and verified 5 same-file drop-then-create patterns). `check-openapi-route-drift.mjs` rewritten as a TypeScript-AST walker over `server.ts` + each `domains/*/routes.ts` + `openapi.ts`, with auto-discovery of domain dirs, zero-match assertions per route file, support for `.openapi(...)`, template literals, and Hono path edge cases. New CI gate `config:local-defaults:check` keeps `docker-compose.yml`, env examples, and CI workflow DSNs in lockstep with `packages/db/src/local-defaults.ts` (the new TS source of truth for `corridor_app_api`/`corridor_app_worker` passwords + ports 15432/16379). New `packages/db/src/runtime-role.ts` plus `assertRuntimeRole(...)` wired into both `apps/api/src/index.ts` and `apps/workers/src/index.ts` so each process refuses to start unless `current_user` is the expected non-superuser NOBYPASSRLS role. Shared `_local-safety.ts` extracted between `setup-local-runtime-roles.ts` and `seed-dev.ts` with 11 colocated unit tests. `StaffPortal` types + Clerk metadata constants moved to `@corridor/shared/clerk-metadata`. Test harness `throws_ok` now uses a private SQLSTATE class (XX900) and `is_empty` trims trailing semicolons. New RLS tests 0006 (every RLS table has SELECT/INSERT/UPDATE/DELETE grants for app_api + app_worker) and 0007 (helper hoisting regression — STABLE/IMMUTABLE markers preserved + multi-row UPDATE invokes `current_tenant_member_grants_action` ≤ 4 times). Worker `resolveWorkerDatabaseEnv` extracted with 10 precedence tests. Patient portal wired into a real `test:a11y` task using axe-core (component tests for `RequirePatientSession` + a11y assertions). CI workflows: dropped unconditional `docker compose down -v`, removed step-level `DATABASE_URL` duplication, normalized to mise invocation throughout. Component tests added: 6 for `RequireStaffPortal` (jsdom + `@testing-library/react` + Clerk mock), 4 for `RequirePatientSession`. Total: 76 vitest tests, 4 CI drift gates, 8 RLS test files all green.
+**Status update (2026-04-25, sixth pass — informational close-out):** Tooling and CI gates hardened end-to-end. `check-fnox-secret-boundaries.mjs` now uses TOML-key-boundary regex with section-header reset and a positive `workers_elevated_dev` assertion. `check-rls-coverage.ts` tracks DROP POLICY in textual order (caught and verified 5 same-file drop-then-create patterns). `check-openapi-route-drift.mjs` rewritten as a TypeScript-AST walker over `server.ts` + each `domains/*/routes.ts` + `openapi.ts`, with auto-discovery of domain dirs, zero-match assertions per route file, support for `.openapi(...)`, template literals, and Hono path edge cases. New CI gate `config:local-defaults:check` keeps `docker-compose.yml`, env examples, and CI workflow DSNs in lockstep with `packages/db/src/local-defaults.ts` (the new TS source of truth for `lewis_app_api`/`lewis_app_worker` passwords + ports 15432/16379). New `packages/db/src/runtime-role.ts` plus `assertRuntimeRole(...)` wired into both `apps/api/src/index.ts` and `apps/workers/src/index.ts` so each process refuses to start unless `current_user` is the expected non-superuser NOBYPASSRLS role. Shared `_local-safety.ts` extracted between `setup-local-runtime-roles.ts` and `seed-dev.ts` with 11 colocated unit tests. `StaffPortal` types + Clerk metadata constants moved to `@lewis/shared/clerk-metadata`. Test harness `throws_ok` now uses a private SQLSTATE class (XX900) and `is_empty` trims trailing semicolons. New RLS tests 0006 (every RLS table has SELECT/INSERT/UPDATE/DELETE grants for app_api + app_worker) and 0007 (helper hoisting regression — STABLE/IMMUTABLE markers preserved + multi-row UPDATE invokes `current_tenant_member_grants_action` ≤ 4 times). Worker `resolveWorkerDatabaseEnv` extracted with 10 precedence tests. Patient portal wired into a real `test:a11y` task using axe-core (component tests for `RequirePatientSession` + a11y assertions). CI workflows: dropped unconditional `docker compose down -v`, removed step-level `DATABASE_URL` duplication, normalized to mise invocation throughout. Component tests added: 6 for `RequireStaffPortal` (jsdom + `@testing-library/react` + Clerk mock), 4 for `RequirePatientSession`. Total: 76 vitest tests, 4 CI drift gates, 8 RLS test files all green.
 
-**Status update (2026-04-25, fifth pass — same-class hardening close-out):** Migrations 0015 (extend `current_tenant_member_grants_action` requirement to `patients`, `patient_data_sharing_consents`, `patient_device_registry_entries`), 0016 (NULL-tenant writes on `notifications` + `feature_flags` require an active membership whose role grants the action — today corridor*admin only), and 0017 (partial indexes on `tenant_relationships`, `support_access_grants`, `tenant_memberships` to support hot policy expressions) close the same hardening class 0012 named. Migration 0012's new check constraint added as `NOT VALID` then `VALIDATE` for forward deploy safety. Migration 0011 documents the SECURITY DEFINER function-owner contract under FORCE RLS. New RLS test 0005 covers 0015 + 0016 (11 assertions); 0004 extended to 10 assertions (UPDATE/DELETE coverage, self-relationship signing bypass, cross-tenant negative); 0003 extended to 6 assertions (positive read case). Frontend portal access logic extracted to `apps/app/src/auth/portals.ts` with 16 unit tests; staff portals lazy-loaded via `React.lazy` + `<Suspense>`. `setup-local-runtime-roles.ts` now validates passwords against `/^[A-Za-z0-9*-]{8,128}$/`and exports the safety helpers; 25 unit tests cover them.`RequireStaffPortal` denied-redirect loop guard added.
+**Status update (2026-04-25, fifth pass — same-class hardening close-out):** Migrations 0015 (extend `current_tenant_member_grants_action` requirement to `patients`, `patient_data_sharing_consents`, `patient_device_registry_entries`), 0016 (NULL-tenant writes on `notifications` + `feature_flags` require an active membership whose role grants the action — today lewis*admin only), and 0017 (partial indexes on `tenant_relationships`, `support_access_grants`, `tenant_memberships` to support hot policy expressions) close the same hardening class 0012 named. Migration 0012's new check constraint added as `NOT VALID` then `VALIDATE` for forward deploy safety. Migration 0011 documents the SECURITY DEFINER function-owner contract under FORCE RLS. New RLS test 0005 covers 0015 + 0016 (11 assertions); 0004 extended to 10 assertions (UPDATE/DELETE coverage, self-relationship signing bypass, cross-tenant negative); 0003 extended to 6 assertions (positive read case). Frontend portal access logic extracted to `apps/app/src/auth/portals.ts` with 16 unit tests; staff portals lazy-loaded via `React.lazy` + `<Suspense>`. `setup-local-runtime-roles.ts` now validates passwords against `/^[A-Za-z0-9*-]{8,128}$/`and exports the safety helpers; 25 unit tests cover them.`RequireStaffPortal` denied-redirect loop guard added.
 
 **Status update (2026-04-25, fourth pass):** The foundation now includes CI-gated semantic RLS execution under runtime roles, representative/minor-assent write hardening, frontend Clerk route guards, an OpenAPI drift check, corrected local CORS defaults, and explicit documentation that the Sprint 1 worker queues are scaffold processors until their feature phases.
 
@@ -31,11 +31,11 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 ## Open from /review (sixth pass — residual deferrals, 2026-04-25)
 
-The sixth-pass `/review` close-out (see status update at top) landed every CI/runtime hardening item the fifth-pass review left open: `check-fnox-secret-boundaries` hardening, `check-rls-coverage` DROP POLICY tracking, `assertRuntimeRole` startup checks for API + workers, AST-based OpenAPI drift gate with auto-discovery, `_local-safety.ts` extraction, centralized `local-defaults.ts` + drift gate, `StaffPortal` move to `@corridor/shared`, `throws_ok`/`is_empty` harness fixes, RLS test 0006 (grants assertion) + 0007 (helper hoisting regression), `resolveWorkerDatabaseEnv` extraction + tests, `test:a11y` axe-core scaffold, CI workflow cleanup, jsdom + `@testing-library/react` component tests for `RequireStaffPortal` + `RequirePatientSession`. Two items remain intentionally open:
+The sixth-pass `/review` close-out (see status update at top) landed every CI/runtime hardening item the fifth-pass review left open: `check-fnox-secret-boundaries` hardening, `check-rls-coverage` DROP POLICY tracking, `assertRuntimeRole` startup checks for API + workers, AST-based OpenAPI drift gate with auto-discovery, `_local-safety.ts` extraction, centralized `local-defaults.ts` + drift gate, `StaffPortal` move to `@lewis/shared`, `throws_ok`/`is_empty` harness fixes, RLS test 0006 (grants assertion) + 0007 (helper hoisting regression), `resolveWorkerDatabaseEnv` extraction + tests, `test:a11y` axe-core scaffold, CI workflow cleanup, jsdom + `@testing-library/react` component tests for `RequireStaffPortal` + `RequirePatientSession`. Two items remain intentionally open:
 
-### Document `publicMetadata.corridorPortals` Clerk metadata contract
+### Document `publicMetadata.lewisPortals` Clerk metadata contract
 
-**What:** Add a section to `docs/runbooks/developer-onboarding.md` (or a new doc) describing the Clerk publicMetadata shape: `corridorPortals: ('sponsor'|'etc'|'admin')[]` and `corridorDefaultPortal`. Reference the constants in `packages/shared/src/clerk-metadata.ts` and the parallel server-side check that the API will perform via `app.resolve_authenticated_membership`. Note that publicMetadata is server-trusted (Clerk admin only) and is defense-in-depth for UX routing only — backend RLS is the actual gate.
+**What:** Add a section to `docs/runbooks/developer-onboarding.md` (or a new doc) describing the Clerk publicMetadata shape: `lewisPortals: ('sponsor'|'etc'|'admin')[]` and `lewisDefaultPortal`. Reference the constants in `packages/shared/src/clerk-metadata.ts` and the parallel server-side check that the API will perform via `app.resolve_authenticated_membership`. Note that publicMetadata is server-trusted (Clerk admin only) and is defense-in-depth for UX routing only — backend RLS is the actual gate.
 
 **Why:** The contract is now centralized in code (with JSDoc) but a runbook anchor still helps engineers wiring API tenant resolution off it.
 
@@ -44,7 +44,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Restrict `resolveMigrationDatabaseConnectionConfig` to migration tooling
 
-**What:** Add an ESLint `no-restricted-imports` rule preventing `apps/api/**` and `apps/workers/**` from importing `resolveMigrationDatabaseConnectionConfig` from `@corridor/db`, OR move the migration helpers into `packages/db/scripts/_migration-config.ts` so they’re physically not in the package’s public exports.
+**What:** Add an ESLint `no-restricted-imports` rule preventing `apps/api/**` and `apps/workers/**` from importing `resolveMigrationDatabaseConnectionConfig` from `@lewis/db`, OR move the migration helpers into `packages/db/scripts/_migration-config.ts` so they’re physically not in the package’s public exports.
 
 **Why:** The export is module-level public; the new `assertRuntimeRole` startup check catches misconfigured connections, but a static lint rule is cheaper and prevents the wrong import from compiling in the first place.
 
@@ -66,11 +66,11 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Add Clerk auth + tenant resolution middleware on /v1
 
-**What:** Build a middleware chain mounted at the `/v1` router that verifies the Clerk session JWT, loads the active Corridor user from `users`, requires an `active_tenant_id` (header or claim), checks `tenant_memberships` for an active membership, and calls `setAppContext({ userId, activeTenantId, requestId })` so RLS sees the right session variables.
+**What:** Build a middleware chain mounted at the `/v1` router that verifies the Clerk session JWT, loads the active Lewis user from `users`, requires an `active_tenant_id` (header or claim), checks `tenant_memberships` for an active membership, and calls `setAppContext({ userId, activeTenantId, requestId })` so RLS sees the right session variables.
 
-**Why:** Right now `apps/api/src/server.ts:78-82` mounts every domain router (sponsors, etcs, patient, boards, admin) with no auth at all. Per `CLAUDE.md` "API requests must resolve an active Corridor tenant ... missing or invalid tenant context is a 401/403, never a silent service-role fallback." Without this middleware, the first real PHI handler that lands inherits zero tenant isolation.
+**Why:** Right now `apps/api/src/server.ts:78-82` mounts every domain router (sponsors, etcs, patient, boards, admin) with no auth at all. Per `CLAUDE.md` "API requests must resolve an active Lewis tenant ... missing or invalid tenant context is a 401/403, never a silent service-role fallback." Without this middleware, the first real PHI handler that lands inherits zero tenant isolation.
 
-**Context:** `setAppContext` already exists in `packages/db/src/context.ts`. Helpers `app.is_tenant_member`, `app.has_tenant_relationship`, `app.has_active_support_grant` exist in migration 0001 but are unused. Decide: header-based active tenant (`x-corridor-tenant-id`) vs JWT claim. Add a CI grep that fails the build if a `/v1` route is added that doesn't go through the auth-gated router.
+**Context:** `setAppContext` already exists in `packages/db/src/context.ts`. Helpers `app.is_tenant_member`, `app.has_tenant_relationship`, `app.has_active_support_grant` exist in migration 0001 but are unused. Decide: header-based active tenant (`x-lewis-tenant-id`) vs JWT claim. Add a CI grep that fails the build if a `/v1` route is added that doesn't go through the auth-gated router.
 
 **Effort:** L
 **Priority:** P0
@@ -158,7 +158,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Mount CORS + secure-headers + body-size middleware
 
-**What:** Mount `hono/cors` with explicit allowlist (`app.corridor.health`, `patient.corridor.health`, plus dev hosts) sourced from `CORS_ALLOWED_ORIGINS` env (validated with zod at boot). Mount `hono/secure-headers` for HSTS (`max-age=63072000; includeSubDomains; preload`), `Referrer-Policy: no-referrer`, `X-Content-Type-Options`, `X-Frame-Options DENY`. Add a body size limit (1MB default, override per route). Add explicit `Cache-Control: no-store` on every PHI route.
+**What:** Mount `hono/cors` with explicit allowlist (`app.lewis.health`, `patient.lewis.health`, plus dev hosts) sourced from `CORS_ALLOWED_ORIGINS` env (validated with zod at boot). Mount `hono/secure-headers` for HSTS (`max-age=63072000; includeSubDomains; preload`), `Referrer-Policy: no-referrer`, `X-Content-Type-Options`, `X-Frame-Options DENY`. Add a body size limit (1MB default, override per route). Add explicit `Cache-Control: no-store` on every PHI route.
 
 **Why:** `apps/app` and `apps/patient` are separate origins and will be blocked without CORS. HSTS + secure headers are HIPAA defense-in-depth. Body size limit prevents abuse.
 
@@ -178,7 +178,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Internal admin role gate + break-glass enforcement
 
-**What:** Add `requireCorridorInternal` middleware on `/v1/admin/*` that asserts `corridor_admin` role + a present `X-Support-Ticket-Id` header, records the access to `audit_log`, and returns 403 otherwise. Until real handlers exist, return 501.
+**What:** Add `requireLewisInternal` middleware on `/v1/admin/*` that asserts `lewis_admin` role + a present `X-Support-Ticket-Id` header, records the access to `audit_log`, and returns 403 otherwise. Until real handlers exist, return 501.
 
 **Why:** `apps/api/src/domains/internal-admin/routes.ts:3` mounts admin routes with no role guard. CLAUDE.md mandates ticket reference + audit log for break-glass admin access.
 
@@ -743,13 +743,13 @@ synthetic-data tenants without doc edits.
 
 ## Completed
 
-### Directory app launch (apps/directory) — corridor.health public patient directory
+### Directory app launch (apps/directory) — lewis.health public patient directory
 
 **What:** New Vite/React/TS SPA at [apps/directory/](apps/directory/) covering homepage, browse, treatment detail, ETC profile, eligibility self-screen, connect-request handoff, and supporting static pages. Anonymous-first (Clerk not in bundle). Bundle 109.96 KB gzipped (under 120 KB above-the-fold budget). Public-API contract module [packages/shared/src/api/public.ts](packages/shared/src/api/public.ts) defines the `/v1/public/*` Zod schemas. SEO infrastructure (per-route head meta, JSON-LD, robots.txt, build-time sitemap.xml). 24 vitest tests covering eligibility evaluator, anonymous-session round-trip, catalog lookups, schema validation, and axe-core a11y sweeps. Monorepo glue: `dev:directory` task, `frontend_directory_dev` fnox profile, eslint browser-globals block scoped to frontend apps, `.claude/rules/frontend.md` updated. Followed by `/review` (multi-specialist; quality_score 9.0) which auto-fixed 10 mechanical issues (SVG `id` collision, dead state, broken canonical URLs, etc.) and applied option-C polish (cards as Link, auto-advance removed for WCAG 2.2.1, mobile responsive, full a11y test suite).
 
 **Followups (deferred per scope):**
 
-- `packages/auth` scaffold for cross-subdomain `.corridor.health` Clerk session sharing — directory's connect-request flow will lazy-load Clerk through this package.
+- `packages/auth` scaffold for cross-subdomain `.lewis.health` Clerk session sharing — directory's connect-request flow will lazy-load Clerk through this package.
 - SSG via `vite-plugin-ssr` for crawler coverage (Googlebot reads `useSeo` runtime tags today; SSG bakes them at build for non-JS crawlers).
 - Hardcoded WST-057 detail content → catalog-driven (acceptable while WST-057 is the only available program; refactor when a second lands).
 - React.lazy route splitting (bundle is under budget without it; revisit if budget tightens).
@@ -806,7 +806,7 @@ synthetic-data tenants without doc edits.
 
 ### Hard env+host guard on seed-dev.ts (Fix #5)
 
-**What:** Added `assertSeedSafeOrExit()` to `packages/db/scripts/seed-dev.ts` that refuses to run unless `NODE_ENV in {development, test}` AND the `DATABASE_URL` host is in `{127.0.0.1, ::1, localhost, host.docker.internal, postgres}` or ends in `.local`/`.localhost`. Also rejects a fake `CORRIDOR_SEED_ALLOW_NON_LOCAL` escape hatch with an explicit error message — there is intentionally no override.
+**What:** Added `assertSeedSafeOrExit()` to `packages/db/scripts/seed-dev.ts` that refuses to run unless `NODE_ENV in {development, test}` AND the `DATABASE_URL` host is in `{127.0.0.1, ::1, localhost, host.docker.internal, postgres}` or ends in `.local`/`.localhost`. Also rejects a fake `LEWIS_SEED_ALLOW_NON_LOCAL` escape hatch with an explicit error message — there is intentionally no override.
 
 **Completed:** 2026-04-25
 
@@ -849,7 +849,7 @@ All three helpers pinned to `set search_path = public, app` to avoid search-path
 - Write policies on every RLS-enabled table from migrations 0001/0002/0004/0005, using thin per-table policies that delegate to `can_write_for_tenant` with the right action constant. patients_write and consent_write also accept care_team relationship for ETC-managed patient onboarding.
 - audit_log gets INSERT-only policy; UPDATE/DELETE physically blocked by 0003 immutability triggers.
 
-The `vibility check` is now consistent: every RLS-enabled table has a SELECT policy AND at least one write policy. CI gate `pnpm --filter @corridor/db rls:coverage` enforces this.
+The `vibility check` is now consistent: every RLS-enabled table has a SELECT policy AND at least one write policy. CI gate `pnpm --filter @lewis/db rls:coverage` enforces this.
 
 **Completed:** 2026-04-25
 
@@ -876,7 +876,7 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 **What:** Three composable middlewares in `apps/api/src/middleware/`:
 
 - `auth.ts` — `requireClerkAuth` extracts the Clerk session JWT from `Authorization: Bearer ...` or the `__session` cookie, verifies via `@clerk/backend.verifyToken`, sets `c.var.clerkUserId`. Configurable via `CLERK_SECRET_KEY`, `CLERK_JWT_AUDIENCE`, `CLERK_AUTHORIZED_PARTIES` env.
-- `tenant.ts` — `resolveTenant` reads `x-corridor-tenant-id` header, validates as UUID, looks up the matching `users.id` + active `tenant_memberships` row in a single query, sets `c.var.appContext = { userId, activeTenantId, requestId }`. Returns `403 forbidden` (deliberately not distinguishing "no Corridor user" from "no active membership" — that distinction is information disclosure).
+- `tenant.ts` — `resolveTenant` reads `x-lewis-tenant-id` header, validates as UUID, looks up the matching `users.id` + active `tenant_memberships` row in a single query, sets `c.var.appContext = { userId, activeTenantId, requestId }`. Returns `403 forbidden` (deliberately not distinguishing "no Lewis user" from "no active membership" — that distinction is information disclosure).
 - `db-context.ts` — `withDbContext` acquires a per-request `PoolClient`, BEGINs a transaction, calls `setAppContext(client, appContext)` to set `app.user_id` / `app.active_tenant_id` / `app.request_id` for RLS, exposes the client on `c.var.dbClient`. COMMITs on 2xx, ROLLBACKs on anything else (or on thrown exception). Defense-in-depth resolution tracker guarantees no leaked transactions.
 
 `server.ts` restructured: `v1Public` sub-router (no auth: `/v1/health`, `/v1/webhooks/*`) is registered before the `v1Authed` sub-router whose `use("*", ...)` chain runs all three middlewares for `/v1/sponsors`, `/v1/etcs`, `/v1/patients`, `/v1/boards`, `/v1/admin`, `/v1/search`. Pluralized `/v1/patient` → `/v1/patients`. Internal-admin sub-router additionally requires `x-support-ticket-id` header per CLAUDE.md break-glass posture.
@@ -901,7 +901,7 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 4. `SUPABASE_SERVICE_ROLE_KEY` env-read ban in `apps/api/src` and `apps/workers/src`.
 5. Webhook routes must verify: every `.post(...)` handler under `apps/api/src/domains/webhooks/*.ts` must call a `verify*Webhook(...)` function.
 6. `/v1` routes must be auth-gated: `server.ts` must mount `requireClerkAuth`, `resolveTenant`, `withDbContext` on the `v1Authed` sub-router.
-7. RLS write-policy coverage: every `enable row level security` table must have a SELECT policy AND a write policy (INSERT/UPDATE/DELETE/ALL). Implemented as `packages/db/scripts/check-rls-coverage.ts`, exposed as `pnpm --filter @corridor/db rls:coverage` and `mise run db:rls:coverage`.
+7. RLS write-policy coverage: every `enable row level security` table must have a SELECT policy AND a write policy (INSERT/UPDATE/DELETE/ALL). Implemented as `packages/db/scripts/check-rls-coverage.ts`, exposed as `pnpm --filter @lewis/db rls:coverage` and `mise run db:rls:coverage`.
 
 `mise.toml` `tasks.ci` now depends on `db:rls:coverage` so local pre-commit gates match CI.
 
@@ -936,9 +936,9 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 
 **Completed:** 2026-04-25
 
-### Internal-admin: corridor_admin role + audited break-glass access
+### Internal-admin: lewis_admin role + audited break-glass access
 
-**What:** `apps/api/src/domains/internal-admin/routes.ts` now uses `requireRole("corridor_admin")` and writes an `admin:access` audit_log row via `app.write_audit()` in the same transaction as the request, capturing the X-Support-Ticket-Id, path, and method. Per CLAUDE.md break-glass posture.
+**What:** `apps/api/src/domains/internal-admin/routes.ts` now uses `requireRole("lewis_admin")` and writes an `admin:access` audit_log row via `app.write_audit()` in the same transaction as the request, capturing the X-Support-Ticket-Id, path, and method. Per CLAUDE.md break-glass posture.
 
 **Completed:** 2026-04-25
 
@@ -959,7 +959,7 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 **What:** `apps/api/src/middleware/security-headers.ts` exports:
 
 - `secureHeadersMiddleware` — HSTS (2y, includeSubDomains, preload), Referrer-Policy no-referrer, X-Content-Type-Options nosniff, X-Frame-Options DENY, strict CSP (default-src 'none', frame-ancestors 'none', base-uri 'none', form-action 'none'). API responses are JSON; nothing should ever load.
-- `buildCorsMiddleware()` — allowlist sourced from `CORS_ALLOWED_ORIGINS` env (csv); throws at boot if missing in non-test environments. Allows credentials, exposes x-request-id, allows the canonical headers (Authorization, Idempotency-Key, x-corridor-tenant-id, x-support-ticket-id).
+- `buildCorsMiddleware()` — allowlist sourced from `CORS_ALLOWED_ORIGINS` env (csv); throws at boot if missing in non-test environments. Allows credentials, exposes x-request-id, allows the canonical headers (Authorization, Idempotency-Key, x-lewis-tenant-id, x-support-ticket-id).
 - `bodyLimitMiddleware` — 1 MB default, throws `unprocessable` ApiError on exceed.
 
 All three mounted globally in `apps/api/src/server.ts` before the access logger.
@@ -1033,7 +1033,7 @@ landed on 2026-04-25.)
 - `patient_representatives` — patient_tenant_id, jurisdiction_id, user_id, relationship_type (constrained to self|caregiver|legal_guardian|parent_guardian|provider_proxy), authority_basis, authority_document_file_id, access_scope text array, signing_permission, messaging_permission, effective/expires/revoked timestamps, verified_by_user_id + verified_at. Check constraint refuses `signing_permission=true` for non-self relationships unless verified. Partial unique index on `(patient_tenant_id, user_id) WHERE revoked_at IS NULL` so revocation + re-add creates a new row.
 - `minor_assents` — patient_tenant_id, jurisdiction_id, enrollment_id (nullable forward-compat for Sprint 4), assent_status (constrained to collected|declined|waived|not_applicable), waiver_reason + waiver_medical_director_user_id (check constraint: required when status=waived), assented_at, recorded_by_user_id, recording_file_id.
 - RLS read policies: patient self, ETC care_team, support grant for both tables.
-- Two new write actions in `app.role_grants_action`: `representative:write` (patient/etc_admin/etc_clinician/corridor_admin) and `minor_assent:write` (etc_admin/etc_clinician/corridor_admin only).
+- Two new write actions in `app.role_grants_action`: `representative:write` (patient/etc_admin/etc_clinician/lewis_admin) and `minor_assent:write` (etc_admin/etc_clinician/lewis_admin only).
 - RLS write policies: `can_write_for_tenant` + care_team relationship.
 
 **Why:** Per implementation.md § 2.1.1 the patient representative + minor assent model is Sprint-1 schema foundation. Without these tables, Sprint 4 patient registration would either bolt on the model under deadline pressure (rushed RLS, missing tests) or silently model "patient = tenant member with a single role" — which can't represent caregiver-vs-guardian authority distinctions.

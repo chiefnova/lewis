@@ -6,11 +6,11 @@ on:
       app_url:
         description: "App portal URL to test"
         required: true
-        default: "https://app.staging.corridor.health"
+        default: "https://app.staging.lewis.health"
       patient_url:
         description: "Patient portal URL to test"
         required: true
-        default: "https://patient.staging.corridor.health"
+        default: "https://patient.staging.lewis.health"
       api_origin_url:
         description: "API origin URL used for /healthz and /readyz"
         required: false

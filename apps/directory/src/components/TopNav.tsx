@@ -24,12 +24,12 @@ export function TopNav() {
           to="/"
           aria-label={intl.formatMessage({
             id: "directory.home.aria",
-            defaultMessage: "Corridor home",
+            defaultMessage: "Lewis home",
           })}
           style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}
         >
           <span className="serif" style={{ fontSize: 24, letterSpacing: "-0.015em" }}>
-            Corridor
+            Lewis
           </span>
           <span
             style={{

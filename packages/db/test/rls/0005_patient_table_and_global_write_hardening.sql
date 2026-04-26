@@ -7,7 +7,7 @@
 --     three remaining patient-tenant write policies).
 --   * 0016 — NULL-tenant notifications and feature_flags writes require an
 --     authenticated session whose role grants the corresponding *:write
---     action (today: corridor_admin only).
+--     action (today: lewis_admin only).
 
 begin;
 
@@ -17,18 +17,18 @@ insert into tenants (id, kind, status, display_name) values
   ('55000000-0000-0000-0000-000000000001', 'etc', 'active', 'ETC Hardened Patient Writes'),
   ('55000000-0000-0000-0000-000000000002', 'patient', 'active', 'Patient Hardened Patient Writes'),
   ('55000000-0000-0000-0000-000000000003', 'sponsor', 'active', 'Sponsor for consent test'),
-  ('55000000-0000-0000-0000-000000000004', 'sponsor', 'active', 'Corridor admin home tenant');
+  ('55000000-0000-0000-0000-000000000004', 'sponsor', 'active', 'Lewis admin home tenant');
 
 insert into users (id, clerk_user_id, email, name) values
   ('55000000-0000-0000-1000-000000000001', 'rls5_etc_clinician', 'clin5@test.local', 'ETC Clinician'),
   ('55000000-0000-0000-1000-000000000002', 'rls5_etc_user', 'ops5@test.local', 'ETC Ops User'),
-  ('55000000-0000-0000-1000-000000000003', 'rls5_corridor_admin', 'admin5@test.local', 'Corridor Admin'),
+  ('55000000-0000-0000-1000-000000000003', 'rls5_lewis_admin', 'admin5@test.local', 'Lewis Admin'),
   ('55000000-0000-0000-1000-000000000004', 'rls5_sponsor_user', 'sponsor5@test.local', 'Sponsor User');
 
 insert into tenant_memberships (user_id, tenant_id, role) values
   ('55000000-0000-0000-1000-000000000001', '55000000-0000-0000-0000-000000000001', 'etc_clinician'),
   ('55000000-0000-0000-1000-000000000002', '55000000-0000-0000-0000-000000000001', 'etc_user'),
-  ('55000000-0000-0000-1000-000000000003', '55000000-0000-0000-0000-000000000004', 'corridor_admin'),
+  ('55000000-0000-0000-1000-000000000003', '55000000-0000-0000-0000-000000000004', 'lewis_admin'),
   ('55000000-0000-0000-1000-000000000004', '55000000-0000-0000-0000-000000000003', 'sponsor_user');
 
 insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, status) values
@@ -219,24 +219,24 @@ select throws_ok(
   'etc_user cannot INSERT NULL-tenant feature_flag'
 );
 
--- 10. corridor_admin CAN INSERT a NULL-tenant notification.
+-- 10. lewis_admin CAN INSERT a NULL-tenant notification.
 select set_config('app.user_id', '55000000-0000-0000-1000-000000000003', true);
 select set_config('app.active_tenant_id', '55000000-0000-0000-0000-000000000004', true);
 select lives_ok(
   $$
   insert into notifications (tenant_id, channel, template, recipient)
-  values (null, 'email', 'corridor_admin_global', 'all')
+  values (null, 'email', 'lewis_admin_global', 'all')
   $$,
-  'corridor_admin CAN INSERT NULL-tenant notification'
+  'lewis_admin CAN INSERT NULL-tenant notification'
 );
 
--- 11. corridor_admin CAN INSERT a NULL-tenant feature_flag.
+-- 11. lewis_admin CAN INSERT a NULL-tenant feature_flag.
 select lives_ok(
   $$
   insert into feature_flags (tenant_id, flag_key, enabled)
-  values (null, 'rls5_corridor_admin_global', true)
+  values (null, 'rls5_lewis_admin_global', true)
   $$,
-  'corridor_admin CAN INSERT NULL-tenant feature_flag'
+  'lewis_admin CAN INSERT NULL-tenant feature_flag'
 );
 
 reset role;

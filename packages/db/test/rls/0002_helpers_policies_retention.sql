@@ -230,10 +230,10 @@ select ok(
 -- 5-7: role_grants_action + can_write_for_tenant
 -- ---------------------------------------------------------------------------
 
--- 5. role_grants_action: corridor_admin grants membership:write
+-- 5. role_grants_action: lewis_admin grants membership:write
 select ok(
-  app.role_grants_action('corridor_admin', 'membership:write'),
-  'role_grants_action: corridor_admin → membership:write'
+  app.role_grants_action('lewis_admin', 'membership:write'),
+  'role_grants_action: lewis_admin → membership:write'
 );
 
 -- 6. role_grants_action: patient does NOT grant tenant:write

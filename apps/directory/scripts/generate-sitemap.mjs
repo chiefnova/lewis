@@ -4,7 +4,7 @@
 // want to pull TSX into a Node script).
 //
 // Output: apps/directory/public/sitemap.xml — Vite copies it verbatim into the
-// build output so Vercel serves it from corridor.health/sitemap.xml.
+// build output so Vercel serves it from lewis.health/sitemap.xml.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -15,7 +15,7 @@ const ROOT = resolve(HERE, "..");
 const CATALOG_PATH = resolve(ROOT, "src/data/catalog.tsx");
 const OUT = resolve(ROOT, "public/sitemap.xml");
 
-const SITE = "https://corridor.health";
+const SITE = "https://lewis.health";
 
 const STATIC_PATHS = [
   "/",

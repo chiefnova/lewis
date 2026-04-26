@@ -10,7 +10,7 @@ interface PlaceholderProps {
 
 function StaticShell({ title, path, body, description }: PlaceholderProps) {
   useSeo({
-    title: `${title} — Corridor Health`,
+    title: `${title} — Lewis Health`,
     canonical: siteUrl(path),
     description: description ?? body,
   });
@@ -51,7 +51,7 @@ export function PrivacyPage() {
     <StaticShell
       title="Privacy"
       path="/privacy"
-      body="Corridor is a HIPAA Business Associate. The directory itself is anonymous to browse — no account is required and no PHI is collected on this site. PHI is only collected after you connect with a licensed ETC, on the patient.corridor.health portal."
+      body="Lewis is a HIPAA Business Associate. The directory itself is anonymous to browse — no account is required and no PHI is collected on this site. PHI is only collected after you connect with a licensed ETC, on the patient.lewis.health portal."
     />
   );
 }
@@ -61,7 +61,7 @@ export function TermsPage() {
     <StaticShell
       title="Terms"
       path="/terms"
-      body="Use of the Corridor directory is governed by these terms. Treatments listed are investigational and delivered by licensed Montana Experimental Treatment Centers under SB 535 and MAR 2026-427.1."
+      body="Use of the Lewis directory is governed by these terms. Treatments listed are investigational and delivered by licensed Montana Experimental Treatment Centers under SB 535 and MAR 2026-427.1."
     />
   );
 }
@@ -81,7 +81,7 @@ export function FeedbackPage() {
     <StaticShell
       title="Share feedback"
       path="/feedback"
-      body="If you've worked with an ETC through Corridor, we'd like to hear how it went. We read every message."
+      body="If you've worked with an ETC through Lewis, we'd like to hear how it went. We read every message."
     />
   );
 }
@@ -91,7 +91,7 @@ export function ForEtcsPage() {
     <StaticShell
       title="For ETCs"
       path="/for-etcs"
-      body="Corridor is the operating platform for Montana's Experimental Treatment Center regime. Licensed ETCs use Corridor to manage their P&P manual, ETRB, patient intake, adverse-event reporting, and annual filings."
+      body="Lewis is the operating platform for Montana's Experimental Treatment Center regime. Licensed ETCs use Lewis to manage their P&P manual, ETRB, patient intake, adverse-event reporting, and annual filings."
     />
   );
 }
@@ -101,7 +101,7 @@ export function ForSponsorsPage() {
     <StaticShell
       title="For Sponsors"
       path="/for-sponsors"
-      body="Drug manufacturers can list their investigational programs in the Corridor directory once a licensed Montana ETC is offering them. Listing is free; Corridor charges per enrolled patient via the operating platform."
+      body="Drug manufacturers can list their investigational programs in the Lewis directory once a licensed Montana ETC is offering them. Listing is free; Lewis charges per enrolled patient via the operating platform."
     />
   );
 }

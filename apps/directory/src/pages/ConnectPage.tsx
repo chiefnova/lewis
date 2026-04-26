@@ -26,8 +26,8 @@ export function ConnectPage() {
 
   useSeo({
     title: program
-      ? `Connect about ${program.name} — Corridor Health`
-      : "Connect with an ETC — Corridor Health",
+      ? `Connect about ${program.name} — Lewis Health`
+      : "Connect with an ETC — Lewis Health",
     description:
       "Submit a connect request to the licensed Montana ETC offering this program. The clinical coordinator will follow up directly.",
     canonical: siteUrl(`/connect/${programSlug}`),

@@ -1,4 +1,4 @@
-import { BoardPathParams, CursorPageQuery } from "@corridor/shared";
+import { BoardPathParams, CursorPageQuery } from "@lewis/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 

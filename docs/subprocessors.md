@@ -1,4 +1,4 @@
-# Corridor Subprocessor Register
+# Lewis Subprocessor Register
 
 This register is the Phase 0 source of truth for vendor data posture until the Internal Admin DB-backed subprocessor view ships in Sprint 6. Any vendor that can receive production operational data must have a row here before it is enabled.
 
@@ -20,7 +20,7 @@ Data posture meanings:
 | Sentry | Error monitoring | Errors, stack traces, scrubbed request metadata | No PHI by configuration | Business BAA required if PHI ever permitted | Engineering | Week 0 | PHI scrubber test required in CI. |
 | Cloudflare | DNS/WAF/CDN | DNS, WAF events, request metadata | No PHI by configuration | Enterprise BAA required before WAF logs include PHI paths/payloads | Founding product | Week 1 | DNS alone does not need BAA; WAF/logging posture does. |
 | Daily.co or chosen video provider | Informed consent video | Consent session media and metadata | PHI allowed with BAA | HIPAA/BAA required before Sprint 4 | Founding product | Week 4 | Transcript provider must be covered here or have its own row. |
-| Documenso self-hosted or chosen e-sign vendor | E-signature | Signed PPA, consent, agreement artifacts | PHI allowed with BAA | Self-host preferred; BAA required for hosted vendor | Founding product | Week 2 | Signed regulated documents also stored immutably in Corridor storage. |
+| Documenso self-hosted or chosen e-sign vendor | E-signature | Signed PPA, consent, agreement artifacts | PHI allowed with BAA | Self-host preferred; BAA required for hosted vendor | Founding product | Week 2 | Signed regulated documents also stored immutably in Lewis storage. |
 | Better Stack or Axiom | Log aggregation | Service logs with PHI redacted | No PHI by configuration | BAA required before any PHI-bearing logs | Engineering | Week 0 | No request bodies, document text, patient names, or identifiers in logs. |
 | Checkly or BetterStack uptime | Synthetic monitoring/status | Public health checks and synthetic test data | Synthetic data only | No BAA if limited to public/synthetic checks | Engineering | Week 0 | Checks must not log into production patient/staff workflows with real data. |
 | PostHog | Product analytics | Redacted tenant/user event taxonomy and funnel events | No PHI by configuration | Self-host preferred; BAA/DPA required before hosted PHI | Product/engineering | Week 0 | No patient names, diagnoses, free text, document names, or message content. |

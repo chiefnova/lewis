@@ -1,4 +1,4 @@
-import { CursorPageQuery, SponsorPathParams } from "@corridor/shared";
+import { CursorPageQuery, SponsorPathParams } from "@lewis/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 

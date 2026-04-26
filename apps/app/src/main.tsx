@@ -27,7 +27,7 @@ function RequireSignedIn({ children }: { children: React.ReactNode }) {
       <Show when="signed-in">{children}</Show>
       <Show when="signed-out">
         <div className="auth-shell">
-          <h1>Corridor</h1>
+          <h1>Lewis</h1>
           <SignInButton mode="modal">
             <button type="button">Sign in</button>
           </SignInButton>
@@ -40,7 +40,7 @@ function RequireSignedIn({ children }: { children: React.ReactNode }) {
 function MissingClerkConfig() {
   return (
     <div className="auth-shell">
-      <h1>Corridor</h1>
+      <h1>Lewis</h1>
       <p>Missing VITE_CLERK_PUBLISHABLE_KEY.</p>
     </div>
   );

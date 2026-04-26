@@ -1,4 +1,4 @@
-import type { PoolClient } from "@corridor/db";
+import type { PoolClient } from "@lewis/db";
 import type {
   AppContext,
   CursorPageQuery,
@@ -7,7 +7,7 @@ import type {
   EtcDrugInventoryLotsResponse,
   EtcId,
   EtcMessagesResponse,
-} from "@corridor/shared";
+} from "@lewis/shared";
 
 /**
  * ETC service layer. See sponsors/service.ts for the contract and the

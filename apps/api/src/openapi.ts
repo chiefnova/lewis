@@ -21,7 +21,7 @@ import {
   AdminTenantsResponse,
   SearchQueryParams,
   SearchResponse,
-} from "@corridor/shared";
+} from "@lewis/shared";
 import {
   OpenAPIRegistry,
   OpenApiGeneratorV31,
@@ -32,7 +32,7 @@ import { z } from "zod";
 extendZodWithOpenApi(z);
 
 /**
- * Build the Corridor OpenAPI 3.1 document from registered zod schemas + a
+ * Build the Lewis OpenAPI 3.1 document from registered zod schemas + a
  * hand-authored paths block. The paths block is intentionally hand-written
  * so we don't have to refactor every Hono route to OpenAPIHono today.
  * `mise run contracts:openapi:check` guards this scaffold against route/path
@@ -101,7 +101,7 @@ export function buildOpenApiDocument(baseUrl: string) {
     500: { $ref: "#/components/responses/InternalError" },
   };
   const tenantHeader = {
-    name: "x-corridor-tenant-id",
+    name: "x-lewis-tenant-id",
     in: "header" as const,
     required: true,
     schema: { type: "string", format: "uuid" } as const,
@@ -123,7 +123,7 @@ export function buildOpenApiDocument(baseUrl: string) {
     ? new OpenApiGeneratorV31(registry.definitions).generateDocument({
         openapi: "3.1.0",
         info: {
-          title: "Corridor API",
+          title: "Lewis API",
           version: "0.1.0",
           description:
             "Operating platform for Montana's Experimental Treatment Center (ETC) regime under SB 535 + MAR 2026-427.1.",
@@ -132,7 +132,7 @@ export function buildOpenApiDocument(baseUrl: string) {
       })
     : {
         openapi: "3.1.0",
-        info: { title: "Corridor API", version: "0.1.0" },
+        info: { title: "Lewis API", version: "0.1.0" },
         paths: {},
         components: {},
       };
@@ -226,7 +226,7 @@ export function buildOpenApiDocument(baseUrl: string) {
     },
     "/v1/search": {
       get: {
-        summary: "Full-text search across all visible Corridor content",
+        summary: "Full-text search across all visible Lewis content",
         security: [{ ClerkBearer: [] }],
         parameters: [
           tenantHeader,
@@ -425,7 +425,7 @@ export function buildOpenApiDocument(baseUrl: string) {
     "/v1/admin/tenants": {
       get: {
         summary: "Internal admin: list tenants",
-        description: "Requires corridor_admin role and X-Support-Ticket-Id header. Audit-logged.",
+        description: "Requires lewis_admin role and X-Support-Ticket-Id header. Audit-logged.",
         security: [{ ClerkBearer: [] }],
         parameters: [
           tenantHeader,

@@ -1,4 +1,4 @@
-import { requiredEnv } from "@corridor/shared";
+import { requiredEnv } from "@lewis/shared";
 import Stripe from "stripe";
 
 import { ApiError } from "../middleware/errors.js";

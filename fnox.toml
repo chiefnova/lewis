@@ -1,17 +1,17 @@
-# Local + CI secrets for Corridor. Production lives in Vercel/Railway env vars.
-# Adding yourself: generate a key (`age-keygen -o ~/.config/corridor-age-maintainer.key`),
+# Local + CI secrets for Lewis. Production lives in Vercel/Railway env vars.
+# Adding yourself: generate a key (`age-keygen -o ~/.config/lewis-age-maintainer.key`),
 # share your pubkey with an existing recipient, who appends it below and re-encrypts
 # every secret (`fnox reencrypt`).
 
 default_provider = "age"
-age_key_file = "~/.config/corridor-age-maintainer.key"
+age_key_file = "~/.config/lewis-age-maintainer.key"
 if_missing = "warn"  # secrets without encrypted values warn instead of crashing dev
 
 [providers.age]
 type = "age"
 recipients = [
-  "age1m94qg8j6ylpqem2sucdeduhqtr4vdr2ryyal44jdcdq8x59um5lsjn378u",  # gabeviggers@corridor.health
-  "age18yac0966xfuhkzcz3lwepm4ncm04wuccftv4vh5kpch3mpv4qsfqfw0g9a",  # ci@corridor.health
+  "age1m94qg8j6ylpqem2sucdeduhqtr4vdr2ryyal44jdcdq8x59um5lsjn378u",  # gabeviggers@lewis.health
+  "age18yac0966xfuhkzcz3lwepm4ncm04wuccftv4vh5kpch3mpv4qsfqfw0g9a",  # ci@lewis.health
 ]
 
 # Secrets are added with `fnox set --profile <name> <KEY> <value>` and stored
@@ -59,7 +59,7 @@ VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
 VITE_SENTRY_DSN = { provider = "age" }
 VITE_API_BASE_URL = { provider = "age" }
 
-# Directory (corridor.health) is anonymous-first: it does NOT receive
+# Directory (lewis.health) is anonymous-first: it does NOT receive
 # Stripe/Plaid credentials and Clerk is only used at the connect-request
 # handoff. Keeping the surface area minimal makes the "directory bundle has
 # no PHI code paths" pen-test posture verifiable.

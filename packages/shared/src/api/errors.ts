@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Canonical error code vocabulary for all Corridor API responses.
+ * Canonical error code vocabulary for all Lewis API responses.
  *
  * Mapping to HTTP status:
  *   validation_error  → 400

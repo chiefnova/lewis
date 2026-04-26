@@ -36,7 +36,7 @@ describe("anonymousSession", () => {
   });
 
   test("corrupted JSON returns null (not throw)", () => {
-    window.localStorage.setItem("corridor:eligibility:wst-057", "not-json{");
+    window.localStorage.setItem("lewis:eligibility:wst-057", "not-json{");
     expect(getStoredScreen("wst-057")).toBeNull();
   });
 

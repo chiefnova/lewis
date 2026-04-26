@@ -15,13 +15,13 @@ import { readFileSync } from "node:fs";
 const CANONICAL = {
   postgresPort: 15432,
   redisPort: 16379,
-  bootstrapUser: "corridor",
-  bootstrapPassword: "corridor",
-  dbName: "corridor_dev",
+  bootstrapUser: "lewis",
+  bootstrapPassword: "lewis",
+  dbName: "lewis_dev",
   apiUser: "app_api",
-  apiPassword: "corridor_app_api",
+  apiPassword: "lewis_app_api",
   workerUser: "app_worker",
-  workerPassword: "corridor_app_worker",
+  workerPassword: "lewis_app_worker",
 };
 
 const apiUrl = `postgres://${CANONICAL.apiUser}:${CANONICAL.apiPassword}@127.0.0.1:${CANONICAL.postgresPort}/${CANONICAL.dbName}`;

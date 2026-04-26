@@ -15,18 +15,18 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@corridor/shared": ["packages/shared/src/index.ts"],
-      "@corridor/shared/*": ["packages/shared/src/*"],
-      "@corridor/db": ["packages/db/src/index.ts"],
-      "@corridor/db/*": ["packages/db/src/*"],
-      "@corridor/rbac": ["packages/rbac/src/index.ts"],
-      "@corridor/rbac/*": ["packages/rbac/src/*"],
-      "@corridor/notifications": ["packages/notifications/src/index.ts"],
-      "@corridor/notifications/*": ["packages/notifications/src/*"],
-      "@corridor/pdf": ["packages/pdf/src/index.ts"],
-      "@corridor/pdf/*": ["packages/pdf/src/*"],
-      "@corridor/ui": ["packages/ui/src/index.ts"],
-      "@corridor/ui/*": ["packages/ui/src/*"]
+      "@lewis/shared": ["packages/shared/src/index.ts"],
+      "@lewis/shared/*": ["packages/shared/src/*"],
+      "@lewis/db": ["packages/db/src/index.ts"],
+      "@lewis/db/*": ["packages/db/src/*"],
+      "@lewis/rbac": ["packages/rbac/src/index.ts"],
+      "@lewis/rbac/*": ["packages/rbac/src/*"],
+      "@lewis/notifications": ["packages/notifications/src/index.ts"],
+      "@lewis/notifications/*": ["packages/notifications/src/*"],
+      "@lewis/pdf": ["packages/pdf/src/index.ts"],
+      "@lewis/pdf/*": ["packages/pdf/src/*"],
+      "@lewis/ui": ["packages/ui/src/index.ts"],
+      "@lewis/ui/*": ["packages/ui/src/*"]
     }
   }
 }

@@ -1,5 +1,5 @@
-import { getDatabasePool } from "@corridor/db";
-import { AppContextSchema, TenantId, type AppContext } from "@corridor/shared";
+import { getDatabasePool } from "@lewis/db";
+import { AppContextSchema, TenantId, type AppContext } from "@lewis/shared";
 import type { MiddlewareHandler } from "hono";
 
 import { ApiError } from "./errors.js";
@@ -7,8 +7,8 @@ import type { AuthenticatedClerkVariables } from "./auth.js";
 
 /**
  * resolveTenant — turns a Clerk user id (set by requireClerkAuth) into a
- * Corridor users.id, then validates the active tenant against the
- * `x-corridor-tenant-id` header by checking tenant_memberships. The
+ * Lewis users.id, then validates the active tenant against the
+ * `x-lewis-tenant-id` header by checking tenant_memberships. The
  * membership row's role is also captured so downstream middleware
  * (requireRole, internal-admin gate) can authorize without re-querying.
  *
@@ -19,11 +19,11 @@ import type { AuthenticatedClerkVariables } from "./auth.js";
  *
  * On success: c.var.appContext is populated with { userId, activeTenantId,
  * requestId, role }. On failure: 403 (no membership) — we deliberately do
- * NOT distinguish "no Corridor user" from "no membership" because the
+ * NOT distinguish "no Lewis user" from "no membership" because the
  * distinction is information disclosure.
  */
 
-const TENANT_HEADER = "x-corridor-tenant-id";
+const TENANT_HEADER = "x-lewis-tenant-id";
 const SUPPORT_TICKET_HEADER = "x-support-ticket-id";
 
 type TenantVariables = AuthenticatedClerkVariables & {

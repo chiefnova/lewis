@@ -1,11 +1,11 @@
-import type { PoolClient } from "@corridor/db";
+import type { PoolClient } from "@lewis/db";
 import type {
   AppContext,
   BoardAnnualReportResponse,
   BoardId,
   BoardProtocolReviewsResponse,
   CursorPageQuery,
-} from "@corridor/shared";
+} from "@lewis/shared";
 
 /**
  * Review board service layer. See sponsors/service.ts for the

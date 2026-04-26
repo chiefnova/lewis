@@ -6,9 +6,9 @@ import { assertLocalDatabaseSafe } from "./_local-safety.js";
 function assertSeedSafeOrExit(connectionString: string): void {
   assertLocalDatabaseSafe({ connectionString, scriptName: "seed-dev.ts" });
 
-  if (process.env.CORRIDOR_SEED_ALLOW_NON_LOCAL === "true") {
+  if (process.env.LEWIS_SEED_ALLOW_NON_LOCAL === "true") {
     throw new Error(
-      "CORRIDOR_SEED_ALLOW_NON_LOCAL is not a real escape hatch. The seed script intentionally has no override.",
+      "LEWIS_SEED_ALLOW_NON_LOCAL is not a real escape hatch. The seed script intentionally has no override.",
     );
   }
 }
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
         ($2, 'etc', 'active', 'Local Experimental Treatment Center'),
         ($3, 'patient', 'active', 'Local Synthetic Patient'),
         ($4, 'board', 'active', 'Local Review Board'),
-        ($5, 'corridor_internal', 'active', 'Corridor Internal')
+        ($5, 'lewis_internal', 'active', 'Lewis Internal')
       on conflict (id) do update set
         status = excluded.status,
         display_name = excluded.display_name,
@@ -92,7 +92,7 @@ async function main(): Promise<void> {
         ($2, 'local_etc_user', 'etc@example.test', 'Local ETC User'),
         ($3, 'local_patient_user', 'patient@example.test', 'Local Synthetic Patient'),
         ($4, 'local_board_user', 'board@example.test', 'Local Board User'),
-        ($5, 'local_internal_user', 'internal@example.test', 'Local Corridor Admin')
+        ($5, 'local_internal_user', 'internal@example.test', 'Local Lewis Admin')
       on conflict (clerk_user_id) do update set
         email = excluded.email,
         name = excluded.name,
@@ -109,7 +109,7 @@ async function main(): Promise<void> {
         ($2, $7, 'etc_admin', 'active'),
         ($3, $8, 'patient', 'active'),
         ($4, $9, 'board_reviewer', 'active'),
-        ($5, $10, 'corridor_admin', 'active')
+        ($5, $10, 'lewis_admin', 'active')
       on conflict (user_id, tenant_id, role) do update set status = excluded.status
       `,
       [
@@ -207,7 +207,7 @@ async function main(): Promise<void> {
     );
 
     await client.query("commit");
-    console.warn("Seeded local synthetic Corridor tenants, users, relationships, and program.");
+    console.warn("Seeded local synthetic Lewis tenants, users, relationships, and program.");
   } catch (error) {
     await client.query("rollback");
     throw error;

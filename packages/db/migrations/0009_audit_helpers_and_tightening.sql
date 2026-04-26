@@ -5,7 +5,7 @@
 --   (a) audit_log.tenant_id is currently nullable. Per CLAUDE.md, every state
 --       change must write an audit row; nullable tenant_id makes "unread by
 --       any tenant" rows possible — a hidden audit gap. Add a system-events
---       sentinel tenant (kind='corridor_internal'), make audit_log.tenant_id
+--       sentinel tenant (kind='lewis_internal'), make audit_log.tenant_id
 --       NOT NULL, default to the sentinel for system events.
 --
 --   (b) app.write_audit(...) helper. SECURITY DEFINER. Every domain mutation
@@ -46,9 +46,9 @@
 insert into tenants (id, kind, status, display_name)
 values (
   '00000000-0000-4000-8000-00000000C0DE'::uuid,
-  'corridor_internal',
+  'lewis_internal',
   'active',
-  'Corridor System Events'
+  'Lewis System Events'
 )
 on conflict (id) do update set
   status = excluded.status,

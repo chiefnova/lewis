@@ -1,4 +1,4 @@
-import { buildErrorResponse, HTTP_STATUS_BY_CODE, type ErrorCode } from "@corridor/shared";
+import { buildErrorResponse, HTTP_STATUS_BY_CODE, type ErrorCode } from "@lewis/shared";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";

@@ -1,7 +1,7 @@
 // Static catalog seed for launch. Faithful port of the design handoff fixture.
 // This will be replaced by the public API (/v1/public/programs, /v1/public/etcs)
 // once those endpoints exist; the shape here matches the public Zod schemas in
-// @corridor/shared/api/public.ts.
+// @lewis/shared/api/public.ts.
 
 import type { ReactNode } from "react";
 import { Capsule, IVBag, Pen, RoundTablet, TopicalTube, Vial } from "../components/Products";

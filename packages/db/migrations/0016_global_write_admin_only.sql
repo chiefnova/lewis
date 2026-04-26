@@ -12,7 +12,7 @@
 --
 -- This migration tightens the NULL-tenant branch to require an authenticated
 -- session whose role explicitly grants notification:write / feature_flag:write
--- via app.role_grants_action (today: corridor_admin only, per 0008's mapping).
+-- via app.role_grants_action (today: lewis_admin only, per 0008's mapping).
 -- Pattern matches regulatory_jurisdictions_write and payment_rails_write in
 -- 0008, which already gate global writes via an explicit role-membership check.
 

@@ -1,14 +1,14 @@
-import type { PoolClient } from "@corridor/db";
+import type { PoolClient } from "@lewis/db";
 import type {
   AdminAuditLogResponse,
   AdminComplianceResponse,
   AdminTenantsResponse,
   AppContext,
   CursorPageQuery,
-} from "@corridor/shared";
+} from "@lewis/shared";
 
 /**
- * Internal-admin service layer. Routes are role-gated (corridor_admin) and
+ * Internal-admin service layer. Routes are role-gated (lewis_admin) and
  * audit-logged before reaching these functions. See sponsors/service.ts for
  * the sprint-marker key (docs/implementation.md § 0.2).
  */
@@ -18,7 +18,7 @@ export async function listTenants(
   _ctx: AppContext,
   _page: CursorPageQuery,
 ): Promise<AdminTenantsResponse> {
-  // TODO(sprint-6): SELECT FROM tenants — RLS allows corridor_admin to see all
+  // TODO(sprint-6): SELECT FROM tenants — RLS allows lewis_admin to see all
   // via support_access_grants or a future role-based path.
   // Sprint 6 ships admin portal completion (alongside pen test, a11y, perf).
   return { items: [], nextCursor: null, hasMore: false };

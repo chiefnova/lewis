@@ -1,4 +1,4 @@
-import { type StaffPortal, defaultStaffPath, readStaffPortals } from "@corridor/shared";
+import { type StaffPortal, defaultStaffPath, readStaffPortals } from "@lewis/shared";
 import { UserButton, useUser } from "@clerk/react";
 import React from "react";
 import { Navigate } from "react-router-dom";

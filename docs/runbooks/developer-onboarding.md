@@ -4,7 +4,7 @@
 2. Install Docker Desktop or another Docker Compose v2-compatible engine.
 3. Install `fnox` and `age` (`brew install fnox age` on macOS).
 4. Run `mise install`.
-5. Generate an age key: `age-keygen -o ~/.config/corridor-age-maintainer.key`.
+5. Generate an age key: `age-keygen -o ~/.config/lewis-age-maintainer.key`.
 6. Share the public key with the founding product owner for `fnox.toml`.
 7. Run `mise run install`.
 8. Copy `env/.env.local.example` to `.env.local`.

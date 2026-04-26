@@ -81,8 +81,8 @@ describe("assertLocalRoleSetupSafe", () => {
 
 describe("assertSafeRolePassword", () => {
   it("accepts the bundled defaults", () => {
-    expect(() => assertSafeRolePassword("corridor_app_api", "X")).not.toThrow();
-    expect(() => assertSafeRolePassword("corridor_app_worker", "X")).not.toThrow();
+    expect(() => assertSafeRolePassword("lewis_app_api", "X")).not.toThrow();
+    expect(() => assertSafeRolePassword("lewis_app_worker", "X")).not.toThrow();
   });
 
   it("accepts alphanumeric + dash + underscore", () => {

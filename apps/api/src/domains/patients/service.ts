@@ -1,11 +1,11 @@
-import type { PoolClient } from "@corridor/db";
+import type { PoolClient } from "@lewis/db";
 import type {
   AppContext,
   CursorPageQuery,
   PatientDocumentsResponse,
   PatientMeResponse,
   PatientMessagesResponse,
-} from "@corridor/shared";
+} from "@lewis/shared";
 
 /**
  * Patient service layer. The patient portal's "me" endpoints resolve the

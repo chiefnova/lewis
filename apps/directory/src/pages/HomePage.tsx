@@ -62,7 +62,7 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
             lineHeight: 1.55,
           }}
         >
-          Corridor connects patients to Montana's licensed Experimental Treatment Centers offering
+          Lewis connects patients to Montana's licensed Experimental Treatment Centers offering
           investigational treatments under the state's Right to Try framework.
         </p>
 
@@ -136,8 +136,8 @@ function ProblemSection() {
             something else.
           </p>
           <p>
-            Corridor is the public directory for that program. We don't manufacture treatments and
-            we don't operate clinics. We connect patients to the licensed centers that do, with the
+            Lewis is the public directory for that program. We don't manufacture treatments and we
+            don't operate clinics. We connect patients to the licensed centers that do, with the
             information needed to make a real decision: what the treatment is, who it's for, where
             it's offered, and what to expect next.
           </p>
@@ -417,8 +417,8 @@ function ForPhysicians() {
 
 const FAQS_PATIENT: ReadonlyArray<readonly [string, string]> = [
   [
-    "What is Corridor?",
-    "Corridor is the public directory of investigational treatments available at licensed Montana Experimental Treatment Centers. We are independent of any manufacturer or ETC and do not bill patients.",
+    "What is Lewis?",
+    "Lewis is the public directory of investigational treatments available at licensed Montana Experimental Treatment Centers. We are independent of any manufacturer or ETC and do not bill patients.",
   ],
   [
     "What is a Right to Try program in Montana?",
@@ -433,8 +433,8 @@ const FAQS_PATIENT: ReadonlyArray<readonly [string, string]> = [
     "Costs are set by the ETC and confirmed during enrollment. Each program page lists a typical range. Insurance does not currently cover treatments delivered under Montana's RTT framework.",
   ],
   [
-    "Does Corridor charge me anything?",
-    "No. Corridor never charges patients. You pay the ETC directly for the treatment.",
+    "Does Lewis charge me anything?",
+    "No. Lewis never charges patients. You pay the ETC directly for the treatment.",
   ],
   [
     "Can I use insurance?",
@@ -465,7 +465,7 @@ const FAQS_PHYS: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "Can I refer patients to a specific ETC?",
-    "Yes. ETC profile pages include direct clinical inquiry contacts. Referrals are not required to use Corridor — patients may also self-refer.",
+    "Yes. ETC profile pages include direct clinical inquiry contacts. Referrals are not required to use Lewis — patients may also self-refer.",
   ],
   [
     "How does the ETC review work?",
@@ -476,8 +476,8 @@ const FAQS_PHYS: ReadonlyArray<readonly [string, string]> = [
     "ETCs are required to report adverse events to the Montana DPHHS and to the program's sponsor. Annual safety summaries are published on each ETC's profile.",
   ],
   [
-    "Is Corridor affiliated with any specific manufacturer or ETC?",
-    "No. Corridor is operated independently. We do not receive payment from manufacturers based on patient enrollment.",
+    "Is Lewis affiliated with any specific manufacturer or ETC?",
+    "No. Lewis is operated independently. We do not receive payment from manufacturers based on patient enrollment.",
   ],
 ];
 
@@ -677,14 +677,14 @@ function BeginningSection() {
 export function HomePage() {
   const navigate = useNavigate();
   useSeo({
-    title: "Corridor Health — Patient Directory",
+    title: "Lewis Health — Patient Directory",
     description:
       "Find experimental treatments available in Montana through licensed Experimental Treatment Centers. Anonymous to browse; an account is only required to connect with an ETC.",
     canonical: siteUrl("/"),
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "Corridor Health",
+      name: "Lewis Health",
       url: siteUrl("/"),
       description:
         "Public directory of investigational treatments available at Montana Experimental Treatment Centers under SB 535.",

@@ -1,4 +1,4 @@
-import { buildErrorResponse } from "@corridor/shared";
+import { buildErrorResponse } from "@lewis/shared";
 import { Hono, type Context } from "hono";
 
 import { ApiError } from "../../middleware/errors.js";

@@ -18,7 +18,7 @@ export function RequirePatientSession({ children }: { children: React.ReactNode 
       </Show>
       <Show when="signed-out">
         <div className="patient-shell auth-shell">
-          <h1>Corridor Patient</h1>
+          <h1>Lewis Patient</h1>
           <SignInButton mode="modal">
             <button type="button">Sign in</button>
           </SignInButton>

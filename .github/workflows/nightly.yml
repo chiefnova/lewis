@@ -38,6 +38,6 @@ jobs:
     needs: nightly
     uses: ./.github/workflows/e2e-post-deploy.yml
     with:
-      app_url: ${{ vars.STAGING_APP_URL || 'https://app.staging.corridor.health' }}
-      patient_url: ${{ vars.STAGING_PATIENT_URL || 'https://patient.staging.corridor.health' }}
-      api_origin_url: ${{ vars.STAGING_API_ORIGIN_URL || 'https://api.staging.corridor.health' }}
+      app_url: ${{ vars.STAGING_APP_URL || 'https://app.staging.lewis.health' }}
+      patient_url: ${{ vars.STAGING_PATIENT_URL || 'https://patient.staging.lewis.health' }}
+      api_origin_url: ${{ vars.STAGING_API_ORIGIN_URL || 'https://api.staging.lewis.health' }}

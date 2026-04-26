@@ -1,7 +1,7 @@
-// Public-API schemas for the corridor.health directory app. These endpoints
+// Public-API schemas for the lewis.health directory app. These endpoints
 // are intentionally narrow — anonymous browse, anonymous eligibility-screen
 // session, and the connect-request submission. No PHI ever lands on these
-// routes; the patient portal (patient.corridor.health) handles enrollment
+// routes; the patient portal (patient.lewis.health) handles enrollment
 // and consent on its own authenticated surface.
 
 import { z } from "zod";

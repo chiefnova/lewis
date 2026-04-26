@@ -1,4 +1,4 @@
-import type { PoolClient } from "@corridor/db";
+import type { PoolClient } from "@lewis/db";
 import type {
   AppContext,
   CursorPageQuery,
@@ -6,7 +6,7 @@ import type {
   SponsorEtcsResponse,
   SponsorId,
   SponsorProgramsResponse,
-} from "@corridor/shared";
+} from "@lewis/shared";
 
 /**
  * Sponsor service layer. Routes call these functions; functions own the DB

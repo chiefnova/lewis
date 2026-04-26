@@ -39,7 +39,7 @@ describe("RequirePatientSession", () => {
     expect(screen.queryByTestId("phi")).toBeNull();
     // Sign-in affordance is shown instead. The fallback heading is present
     // exactly once (no leakage from a previous test).
-    expect(screen.getByText("Corridor Patient")).toBeTruthy();
+    expect(screen.getByText("Lewis Patient")).toBeTruthy();
     expect(screen.getByTestId("sign-in-button")).toBeTruthy();
   });
 
@@ -54,7 +54,7 @@ describe("RequirePatientSession", () => {
     // UserButton (sign-out affordance) is rendered alongside.
     expect(screen.getByTestId("user-button")).toBeTruthy();
     // Signed-out heading must NOT leak through.
-    expect(screen.queryByText("Corridor Patient")).toBeNull();
+    expect(screen.queryByText("Lewis Patient")).toBeNull();
   });
 
   it("does NOT leak the sign-in fallback when the user is signed in", () => {

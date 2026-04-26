@@ -34,8 +34,8 @@ import "./styles.css";
 //
 // Clerk is only imported lazily by the ConnectPage flow at the moment a user
 // commits to creating an account, and by the eligibility-result CTA when it
-// detects an existing .corridor.health session cookie and wants to deep-link
-// the user into patient.corridor.health. Both flows go through
+// detects an existing .lewis.health session cookie and wants to deep-link
+// the user into patient.lewis.health. Both flows go through
 // packages/auth (when scaffolded) so the import boundary is auditable.
 
 const router = createBrowserRouter([

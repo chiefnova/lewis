@@ -16,8 +16,8 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.3.0",
     "@clerk/backend": "^3.4.1",
-    "@corridor/db": "workspace:*",
-    "@corridor/shared": "workspace:*",
+    "@lewis/db": "workspace:*",
+    "@lewis/shared": "workspace:*",
     "@hono/node-server": "^1.14.1",
     "@hono/zod-validator": "^0.7.6",
     "@scalar/hono-api-reference": "^0.5.0",

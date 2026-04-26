@@ -15,8 +15,8 @@ export function TreatmentDetailPage() {
 
   useSeo({
     title: program
-      ? `${program.name} in Montana — Corridor Health`
-      : "Treatment not found — Corridor Health",
+      ? `${program.name} in Montana — Lewis Health`
+      : "Treatment not found — Lewis Health",
     description: program
       ? `${program.name} ${program.indication}. Investigational topical treatment from WinSanTor available at a licensed Montana Experimental Treatment Center under SB 535.`
       : undefined,
@@ -242,7 +242,7 @@ export function TreatmentDetailPage() {
             <li>Complete informed consent and the patient agreement before your first visit.</li>
           </ol>
           <div style={{ fontSize: 13, color: "var(--ink-soft)", fontStyle: "italic" }}>
-            Corridor never charges patients. You'll pay the ETC directly for the treatment.
+            Lewis never charges patients. You'll pay the ETC directly for the treatment.
           </div>
         </Panel>
 
@@ -270,7 +270,7 @@ export function TreatmentDetailPage() {
 
         <div style={{ marginTop: 32, paddingTop: 28, borderTop: "1px solid var(--rule)" }}>
           <div className="serif" style={{ fontSize: 19, marginBottom: 8 }}>
-            Used Corridor?
+            Used Lewis?
           </div>
           <div style={{ color: "var(--ink-soft)", fontSize: 14, marginBottom: 14 }}>
             If you've worked with an ETC through this directory, please share your story.
