@@ -34,8 +34,9 @@ extendZodWithOpenApi(z);
 /**
  * Build the Corridor OpenAPI 3.1 document from registered zod schemas + a
  * hand-authored paths block. The paths block is intentionally hand-written
- * so we don't have to refactor every Hono route to OpenAPIHono today —
- * new routes should adopt OpenAPIHono's createRoute pattern when they land.
+ * so we don't have to refactor every Hono route to OpenAPIHono today.
+ * `mise run contracts:openapi:check` guards this scaffold against route/path
+ * drift until routes move to OpenAPIHono's createRoute pattern.
  *
  * Served at /v1/openapi.json with a Scalar UI at /v1/docs.
  */
