@@ -38,6 +38,24 @@ insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, status) va
 -- patient-tenant), so seeding would collide with test 2's clinician INSERT.
 -- Test 2 creates the patient row that tests 3 and 4 then operate against.
 
+-- Seed one investigational_device so test 7's INSERT into
+-- patient_device_registry_entries clears the device_id NOT NULL + FK and gets
+-- to RLS WITH CHECK (the thing test 7 is actually asserting).
+do $$
+declare v_jur uuid;
+begin
+  select id into v_jur from regulatory_jurisdictions where code = 'US-MT';
+
+  insert into investigational_devices (
+    id, sponsor_tenant_id, jurisdiction_id, device_name
+  ) values (
+    '55000000-0000-0000-3000-000000000001',
+    '55000000-0000-0000-0000-000000000003',
+    v_jur,
+    'Test Pacemaker'
+  );
+end $$;
+
 set local role app_api;
 
 -- ---------------------------------------------------------------------------
@@ -156,11 +174,12 @@ select set_config('app.user_id', '55000000-0000-0000-1000-000000000002', true);
 select throws_ok(
   $$
   insert into patient_device_registry_entries (
-    patient_tenant_id, jurisdiction_id, device_label, status
+    patient_tenant_id, jurisdiction_id, device_id, device_identifier, status
   ) values (
     '55000000-0000-0000-0000-000000000002',
     (select id from regulatory_jurisdictions where code = 'US-MT'),
-    'Pacemaker',
+    '55000000-0000-0000-3000-000000000001',
+    'PACE-SN-001',
     'active'
   )
   $$,
