@@ -27,7 +27,9 @@ select plan(2);
 --    STABLE (or IMMUTABLE) so the planner can hoist or memoize it.
 select is(
   (
-    select string_agg(p.proname || ':' || p.provolatile, ',' order by p.proname)
+    -- p.provolatile is type "char" (single-byte internal); cast to text so
+    -- Postgres can pick the (text || text) || candidate without ambiguity.
+    select string_agg(p.proname || ':' || p.provolatile::text, ',' order by p.proname)
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app'
