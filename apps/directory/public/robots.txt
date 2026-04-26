@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /eligibility/
+Disallow: /connect/
+
+Sitemap: https://corridor.health/sitemap.xml

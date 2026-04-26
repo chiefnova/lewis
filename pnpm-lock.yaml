@@ -143,6 +143,46 @@ importers:
         specifier: ^18.3.6
         version: 18.3.7(@types/react@18.3.28)
 
+  apps/directory:
+    dependencies:
+      '@clerk/react':
+        specifier: ^6.4.5
+        version: 6.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@corridor/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@corridor/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@vitejs/plugin-react':
+        specifier: ^4.4.1
+        version: 4.7.0(vite@6.4.2(@types/node@20.19.39)(tsx@4.21.0)(yaml@2.8.3))
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-intl:
+        specifier: ^7.1.10
+        version: 7.1.14(react@18.3.1)(typescript@5.9.3)
+      react-router-dom:
+        specifier: ^7.5.3
+        version: 7.14.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      vite:
+        specifier: ^6.3.4
+        version: 6.4.2(@types/node@20.19.39)(tsx@4.21.0)(yaml@2.8.3)
+      zod:
+        specifier: ^3.24.3
+        version: 3.25.76
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.20
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: ^18.3.6
+        version: 18.3.7(@types/react@18.3.28)
+
   apps/patient:
     dependencies:
       '@clerk/react':
