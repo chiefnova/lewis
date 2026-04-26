@@ -4,16 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "fnox run frontend_patient_dev -- vite --host 0.0.0.0 --port 13002 --strictPort",
+    "dev": "fnox run -P frontend_patient_dev -- vite --host 0.0.0.0 --port 13002 --strictPort",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview --port 13002 --strictPort",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:a11y": "vitest run --passWithNoTests a11y"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.3",
     "@corridor/shared": "workspace:*",
     "@corridor/ui": "workspace:*",
     "@vitejs/plugin-react": "^4.4.1",
