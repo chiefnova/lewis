@@ -85,19 +85,26 @@ select lives_ok(
 );
 
 -- 3. etc_user UPDATE on patients affects zero rows (RLS hides via USING).
+--    Postgres requires WITH-containing-DML at the top level of SELECT/INSERT/
+--    UPDATE/DELETE/MERGE — we capture the affected-row count via CTAS into a
+--    temp table, then pass the scalar to is().
 select set_config('app.user_id', '55000000-0000-0000-1000-000000000002', true);
+
+create temp table _patients_test3_affected as
+with updated as (
+  update patients set full_name = full_name || ' (touched)'
+   where tenant_id = '55000000-0000-0000-0000-000000000002'
+   returning 1
+)
+select count(*)::integer as cnt from updated;
+
 select is(
-  (
-    with updated as (
-      update patients set full_name = full_name || ' (touched)'
-       where tenant_id = '55000000-0000-0000-0000-000000000002'
-       returning 1
-    )
-    select count(*)::integer from updated
-  ),
+  (select cnt from _patients_test3_affected),
   0,
   'etc_user UPDATE on patients affects zero rows'
 );
+
+drop table _patients_test3_affected;
 
 -- 4. etc_clinician UPDATE on patients lives.
 select set_config('app.user_id', '55000000-0000-0000-1000-000000000001', true);

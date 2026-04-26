@@ -191,37 +191,46 @@ select lives_ok(
 
 -- 8. UPDATE: relationship-only etc_user is denied. Postgres reports zero
 --    affected rows (RLS hides the row via USING) rather than 42501; assert
---    the no-op semantic.
+--    the no-op semantic. Postgres requires WITH-containing-DML at the top
+--    level of SELECT/INSERT/UPDATE/DELETE/MERGE — we capture the affected-
+--    row count via CTAS into a temp table, then pass the scalar to is().
 select set_config('app.user_id', '44000000-0000-0000-1000-000000000002', true);
+
+create temp table _rep_test8_affected as
+with updated as (
+  update patient_representatives
+     set access_scope = array['schedule:read']
+   where patient_tenant_id = '44000000-0000-0000-0000-000000000002'
+     and relationship_type = 'caregiver'
+   returning 1
+)
+select count(*)::integer as cnt from updated;
+
 select is(
-  (
-    with updated as (
-      update patient_representatives
-         set access_scope = array['schedule:read']
-       where patient_tenant_id = '44000000-0000-0000-0000-000000000002'
-         and relationship_type = 'caregiver'
-       returning 1
-    )
-    select count(*)::integer from updated
-  ),
+  (select cnt from _rep_test8_affected),
   0,
   'relationship-only etc_user UPDATE on patient_representatives affects zero rows'
 );
 
+drop table _rep_test8_affected;
+
 -- 9. DELETE: relationship-only etc_user is denied (zero affected rows).
+create temp table _rep_test9_affected as
+with deleted as (
+  delete from patient_representatives
+   where patient_tenant_id = '44000000-0000-0000-0000-000000000002'
+     and relationship_type = 'caregiver'
+   returning 1
+)
+select count(*)::integer as cnt from deleted;
+
 select is(
-  (
-    with deleted as (
-      delete from patient_representatives
-       where patient_tenant_id = '44000000-0000-0000-0000-000000000002'
-         and relationship_type = 'caregiver'
-       returning 1
-    )
-    select count(*)::integer from deleted
-  ),
+  (select cnt from _rep_test9_affected),
   0,
   'relationship-only etc_user DELETE on patient_representatives affects zero rows'
 );
+
+drop table _rep_test9_affected;
 
 -- 10. Cross-tenant negative: ETC clinician with care_team to tenant A cannot
 --     INSERT a rep row whose patient_tenant_id points to an unrelated tenant.
