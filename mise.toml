@@ -119,8 +119,12 @@ run = "pnpm -r build"
 # ----- database -----
 
 [tasks."db:up"]
-description = "Start local Docker Postgres"
-run = "docker compose up -d postgres"
+description = "Start local Docker Postgres (waits for healthcheck)"
+# `--wait` blocks until the postgres healthcheck passes; without it, `up -d`
+# returns as soon as the container is *started* and downstream tasks
+# (db:migrate, db:rls:test) race the Postgres init and fail with
+# "Connection terminated unexpectedly" on a cold CI runner.
+run = "docker compose up -d --wait postgres"
 
 [tasks."db:down"]
 description = "Stop local Docker Postgres"
