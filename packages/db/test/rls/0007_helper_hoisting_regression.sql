@@ -58,15 +58,19 @@ declare
   v_after bigint;
   v_delta bigint;
   v_row_count integer := 5;
+  v_subject_id uuid;
 begin
   -- Seed: 1 ETC tenant, 1 patient tenant, care_team relationship, ETC
-  -- clinician membership granting representative:write, plus N rep rows.
+  -- clinician membership granting representative:write, plus N rep rows
+  -- where each rep has a distinct user_id (the partial unique index
+  -- patient_representatives_active_unique on (patient_tenant_id, user_id)
+  -- WHERE revoked_at IS NULL forbids duplicate active reps for the same
+  -- (patient, user)).
   insert into tenants (id, kind, status, display_name) values
     ('77000000-0000-0000-0000-000000000001', 'etc', 'active', 'Hoist ETC'),
     ('77000000-0000-0000-0000-000000000002', 'patient', 'active', 'Hoist Patient');
   insert into users (id, clerk_user_id, email, name) values
-    ('77000000-0000-0000-1000-000000000001', 'rls7_clinician', 'clin7@test.local', 'Clinician'),
-    ('77000000-0000-0000-1000-000000000002', 'rls7_subject', 'subj7@test.local', 'Subject');
+    ('77000000-0000-0000-1000-000000000001', 'rls7_clinician', 'clin7@test.local', 'Clinician');
   insert into tenant_memberships (user_id, tenant_id, role) values
     ('77000000-0000-0000-1000-000000000001', '77000000-0000-0000-0000-000000000001', 'etc_clinician');
   insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, status) values
@@ -78,12 +82,20 @@ begin
   values ('77000000-0000-0000-0000-000000000002', v_jur, 'Hoist Patient');
 
   for i in 1..v_row_count loop
+    v_subject_id := ('77000000-0000-0000-2000-' || lpad(i::text, 12, '0'))::uuid;
+
+    insert into users (id, clerk_user_id, email, name) values
+      (v_subject_id,
+       'rls7_subject_' || i,
+       'subj7_' || i || '@test.local',
+       'Subject ' || i);
+
     insert into patient_representatives (
       patient_tenant_id, jurisdiction_id, user_id, relationship_type,
       authority_basis, access_scope, signing_permission
     ) values (
       '77000000-0000-0000-0000-000000000002', v_jur,
-      '77000000-0000-0000-1000-000000000002',
+      v_subject_id,
       'caregiver', 'designated_by_patient',
       array['schedule:read'], false
     );
