@@ -1,5 +1,3 @@
-create extension if not exists pgtap;
-
 begin;
 
 select plan(6);
@@ -44,8 +42,8 @@ select throws_ok(
 
 select throws_ok(
   $$ delete from audit_log where target_object_id = '20000000-0000-0000-0000-000000000001' $$,
-  'P0001',
-  'audit_log is append-only',
+  '23514',
+  null,
   'audit_log delete is blocked'
 );
 

@@ -1,6 +1,6 @@
 -- 0002_helpers_policies_retention.sql
 --
--- Comprehensive pgTAP coverage for the helpers, policies, and triggers
+-- Comprehensive semantic SQL coverage for the helpers, policies, and triggers
 -- introduced in migrations 0006-0010. Closes the Sprint-1 coverage gap per
 -- implementation.md § 2.2.1.
 --
@@ -30,8 +30,6 @@
 -- Test session uses a NOBYPASSRLS role so policy USING/WITH CHECK clauses
 -- actually fire (the postgres superuser bypasses RLS by default).
 
-create extension if not exists pgtap;
-
 begin;
 
 select plan(38);
@@ -52,13 +50,13 @@ select plan(38);
 -- ---------------------------------------------------------------------------
 
 insert into tenants (id, kind, status, display_name) values
-  ('22000000-0000-0000-0000-00000000000S', 'sponsor', 'active', 'Sponsor S'),
-  ('22000000-0000-0000-0000-00000000000E', 'etc', 'active', 'ETC E'),
-  ('22000000-0000-0000-0000-00000000000B', 'board', 'active', 'Board B'),
-  ('22000000-0000-0000-0000-00000000000A', 'patient', 'active', 'Patient P (adult)'),
-  ('22000000-0000-0000-0000-00000000000C', 'patient', 'active', 'Patient C (with caregiver)'),
-  ('22000000-0000-0000-0000-00000000000D', 'patient', 'active', 'Patient M (minor)'),
-  ('22000000-0000-0000-0000-00000000000F', 'sponsor', 'active', 'Tenant X (unrelated)');
+  ('22000000-0000-0000-0000-0000000000a1', 'sponsor', 'active', 'Sponsor S'),
+  ('22000000-0000-0000-0000-0000000000e1', 'etc', 'active', 'ETC E'),
+  ('22000000-0000-0000-0000-0000000000b1', 'board', 'active', 'Board B'),
+  ('22000000-0000-0000-0000-0000000000a2', 'patient', 'active', 'Patient P (adult)'),
+  ('22000000-0000-0000-0000-0000000000c1', 'patient', 'active', 'Patient C (with caregiver)'),
+  ('22000000-0000-0000-0000-0000000000d1', 'patient', 'active', 'Patient M (minor)'),
+  ('22000000-0000-0000-0000-0000000000f1', 'sponsor', 'active', 'Tenant X (unrelated)');
 
 insert into users (id, clerk_user_id, email, name) values
   ('22000000-0000-0000-1000-000000000001', 'rls2_user_S', 'sponsor_s@test.local', 'Sponsor User'),
@@ -67,21 +65,23 @@ insert into users (id, clerk_user_id, email, name) values
   ('22000000-0000-0000-1000-000000000004', 'rls2_user_P', 'patient_p@test.local', 'Patient P User'),
   ('22000000-0000-0000-1000-000000000005', 'rls2_user_Mparent', 'parent_m@test.local', 'Minor M Parent'),
   ('22000000-0000-0000-1000-000000000006', 'rls2_user_Ccaregiver', 'caregiver_c@test.local', 'Patient C Caregiver'),
-  ('22000000-0000-0000-1000-000000000007', 'rls2_user_X', 'tenant_x@test.local', 'Unrelated User');
+  ('22000000-0000-0000-1000-000000000007', 'rls2_user_X', 'tenant_x@test.local', 'Unrelated User'),
+  ('22000000-0000-0000-1000-000000000008', 'rls2_user_Eops', 'ops_e@test.local', 'ETC Ops User');
 
 insert into tenant_memberships (user_id, tenant_id, role) values
-  ('22000000-0000-0000-1000-000000000001', '22000000-0000-0000-0000-00000000000S', 'sponsor_admin'),
-  ('22000000-0000-0000-1000-000000000002', '22000000-0000-0000-0000-00000000000E', 'etc_clinician'),
-  ('22000000-0000-0000-1000-000000000003', '22000000-0000-0000-0000-00000000000B', 'board_reviewer'),
-  ('22000000-0000-0000-1000-000000000004', '22000000-0000-0000-0000-00000000000A', 'patient'),
-  ('22000000-0000-0000-1000-000000000007', '22000000-0000-0000-0000-00000000000F', 'sponsor_admin');
+  ('22000000-0000-0000-1000-000000000001', '22000000-0000-0000-0000-0000000000a1', 'sponsor_admin'),
+  ('22000000-0000-0000-1000-000000000002', '22000000-0000-0000-0000-0000000000e1', 'etc_clinician'),
+  ('22000000-0000-0000-1000-000000000003', '22000000-0000-0000-0000-0000000000b1', 'board_reviewer'),
+  ('22000000-0000-0000-1000-000000000004', '22000000-0000-0000-0000-0000000000a2', 'patient'),
+  ('22000000-0000-0000-1000-000000000007', '22000000-0000-0000-0000-0000000000f1', 'sponsor_admin'),
+  ('22000000-0000-0000-1000-000000000008', '22000000-0000-0000-0000-0000000000e1', 'etc_user');
 
 insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, status) values
-  ('22000000-0000-0000-0000-00000000000S', '22000000-0000-0000-0000-00000000000E', 'ppa', 'active'),
-  ('22000000-0000-0000-0000-00000000000E', '22000000-0000-0000-0000-00000000000A', 'care_team', 'active'),
-  ('22000000-0000-0000-0000-00000000000E', '22000000-0000-0000-0000-00000000000C', 'care_team', 'active'),
-  ('22000000-0000-0000-0000-00000000000E', '22000000-0000-0000-0000-00000000000D', 'care_team', 'active'),
-  ('22000000-0000-0000-0000-00000000000B', '22000000-0000-0000-0000-00000000000E', 'board_review', 'active');
+  ('22000000-0000-0000-0000-0000000000a1', '22000000-0000-0000-0000-0000000000e1', 'ppa', 'active'),
+  ('22000000-0000-0000-0000-0000000000e1', '22000000-0000-0000-0000-0000000000a2', 'care_team', 'active'),
+  ('22000000-0000-0000-0000-0000000000e1', '22000000-0000-0000-0000-0000000000c1', 'care_team', 'active'),
+  ('22000000-0000-0000-0000-0000000000e1', '22000000-0000-0000-0000-0000000000d1', 'care_team', 'active'),
+  ('22000000-0000-0000-0000-0000000000b1', '22000000-0000-0000-0000-0000000000e1', 'board_review', 'active');
 
 -- US-MT jurisdiction is seeded by migration 0002. Look it up for FKs.
 do $$
@@ -91,16 +91,16 @@ begin
 
   -- Patient rows
   insert into patients (tenant_id, jurisdiction_id, primary_user_id, full_name) values
-    ('22000000-0000-0000-0000-00000000000A', v_jur, '22000000-0000-0000-1000-000000000004', 'Patient P'),
-    ('22000000-0000-0000-0000-00000000000C', v_jur, null, 'Patient C'),
-    ('22000000-0000-0000-0000-00000000000D', v_jur, null, 'Minor M');
+    ('22000000-0000-0000-0000-0000000000a2', v_jur, '22000000-0000-0000-1000-000000000004', 'Patient P'),
+    ('22000000-0000-0000-0000-0000000000c1', v_jur, null, 'Patient C'),
+    ('22000000-0000-0000-0000-0000000000d1', v_jur, null, 'Minor M');
 
   -- Active consent: Patient P → Sponsor S
   insert into patient_data_sharing_consents (
     patient_tenant_id, sponsor_tenant_id, jurisdiction_id, status, starts_at
   ) values (
-    '22000000-0000-0000-0000-00000000000A',
-    '22000000-0000-0000-0000-00000000000S',
+    '22000000-0000-0000-0000-0000000000a2',
+    '22000000-0000-0000-0000-0000000000a1',
     v_jur,
     'active',
     now() - interval '1 day'
@@ -110,7 +110,7 @@ begin
   insert into programs (
     sponsor_tenant_id, jurisdiction_id, name, treatment_form, status
   ) values (
-    '22000000-0000-0000-0000-00000000000S',
+    '22000000-0000-0000-0000-0000000000a1',
     v_jur,
     'Test Program',
     'outpatient',
@@ -118,11 +118,23 @@ begin
   );
 
   -- Patient representatives: P=self, C=caregiver (no signing), M=parent (signing, verified)
+  insert into file_storage_objects (
+    id, tenant_id, bucket, object_path, sha256, size_bytes, mime_type,
+    uploaded_by_user_id, immutable_ref
+  ) values (
+    '33000000-0000-0000-0000-000000000002',
+    '22000000-0000-0000-0000-0000000000d1',
+    'patient-files', 'authority/minor-m-parent.pdf',
+    repeat('b', 64), 100, 'application/pdf',
+    '22000000-0000-0000-1000-000000000002',
+    true
+  );
+
   insert into patient_representatives (
     patient_tenant_id, jurisdiction_id, user_id, relationship_type, authority_basis,
     access_scope, signing_permission, messaging_permission
   ) values (
-    '22000000-0000-0000-0000-00000000000A', v_jur,
+    '22000000-0000-0000-0000-0000000000a2', v_jur,
     '22000000-0000-0000-1000-000000000004', 'self', 'self_directed_adult',
     array['schedule:read','outcomes:read','documents:read','messages:read','records:read','consents:read','agreements:read'],
     true, true
@@ -131,7 +143,7 @@ begin
     patient_tenant_id, jurisdiction_id, user_id, relationship_type, authority_basis,
     access_scope, signing_permission, messaging_permission
   ) values (
-    '22000000-0000-0000-0000-00000000000C', v_jur,
+    '22000000-0000-0000-0000-0000000000c1', v_jur,
     '22000000-0000-0000-1000-000000000006', 'caregiver', 'designated_by_patient',
     array['schedule:read','outcomes:read'],
     false, false
@@ -142,9 +154,9 @@ begin
     access_scope, signing_permission, messaging_permission,
     verified_by_user_id, verified_at
   ) values (
-    '22000000-0000-0000-0000-00000000000D', v_jur,
+    '22000000-0000-0000-0000-0000000000d1', v_jur,
     '22000000-0000-0000-1000-000000000005', 'parent_guardian', 'parental_rights',
-    null,
+    '33000000-0000-0000-0000-000000000002',
     array['schedule:read','outcomes:read','documents:read','messages:read','records:read','consents:read','agreements:read'],
     true, true,
     '22000000-0000-0000-1000-000000000002', now() - interval '1 hour'
@@ -154,7 +166,7 @@ begin
   insert into minor_assents (
     patient_tenant_id, jurisdiction_id, assent_status, assented_at, recorded_by_user_id
   ) values (
-    '22000000-0000-0000-0000-00000000000D', v_jur,
+    '22000000-0000-0000-0000-0000000000d1', v_jur,
     'collected', now() - interval '30 minutes',
     '22000000-0000-0000-1000-000000000002'
   );
@@ -175,12 +187,14 @@ alter table minor_assents force row level security;
 alter table notifications force row level security;
 alter table feature_flags force row level security;
 
+set local role app_api;
+
 -- ---------------------------------------------------------------------------
 -- 1-4: Helper functions in isolation
 -- ---------------------------------------------------------------------------
 
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000004', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000A', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a2', true);
 
 -- 1. shares_tenant_with: patient P shares the patient tenant with themselves
 select ok(
@@ -197,8 +211,8 @@ select ok(
 -- 3. has_active_consent_for_sponsor: P has active consent with S
 select ok(
   app.has_active_consent_for_sponsor(
-    '22000000-0000-0000-0000-00000000000A'::uuid,
-    '22000000-0000-0000-0000-00000000000S'::uuid
+    '22000000-0000-0000-0000-0000000000a2'::uuid,
+    '22000000-0000-0000-0000-0000000000a1'::uuid
   ),
   'has_active_consent_for_sponsor: active consent returns true'
 );
@@ -206,8 +220,8 @@ select ok(
 -- 4. has_active_consent_for_sponsor: P has no consent with X
 select ok(
   not app.has_active_consent_for_sponsor(
-    '22000000-0000-0000-0000-00000000000A'::uuid,
-    '22000000-0000-0000-0000-00000000000F'::uuid
+    '22000000-0000-0000-0000-0000000000a2'::uuid,
+    '22000000-0000-0000-0000-0000000000f1'::uuid
   ),
   'has_active_consent_for_sponsor: no consent returns false'
 );
@@ -237,7 +251,7 @@ select ok(
 -- 8. can_write_for_tenant: patient P can write to their own patient tenant for patient:write
 select ok(
   app.can_write_for_tenant(
-    '22000000-0000-0000-0000-00000000000A'::uuid, 'patient:write'
+    '22000000-0000-0000-0000-0000000000a2'::uuid, 'patient:write'
   ),
   'can_write_for_tenant: patient self can patient:write own tenant'
 );
@@ -245,7 +259,7 @@ select ok(
 -- 9. can_write_for_tenant: patient P cannot write to ETC tenant
 select ok(
   not app.can_write_for_tenant(
-    '22000000-0000-0000-0000-00000000000E'::uuid, 'etc:write'
+    '22000000-0000-0000-0000-0000000000e1'::uuid, 'etc:write'
   ),
   'can_write_for_tenant: cross-tenant denied'
 );
@@ -273,13 +287,15 @@ select is(
 -- 12. write_audit pulled tenant from app.current_tenant_id()
 select is(
   (select tenant_id from audit_log where action = 'test.action'),
-  '22000000-0000-0000-0000-00000000000A'::uuid,
+  '22000000-0000-0000-0000-0000000000a2'::uuid,
   'write_audit pulled tenant from session'
 );
 
 -- ---------------------------------------------------------------------------
 -- 13-15: audit_log immutability (update/delete/truncate)
 -- ---------------------------------------------------------------------------
+
+reset role;
 
 select throws_ok(
   $$ update audit_log set action = 'tampered' where action = 'test.action' $$,
@@ -290,8 +306,8 @@ select throws_ok(
 
 select throws_ok(
   $$ delete from audit_log where action = 'test.action' $$,
-  'P0001',
-  'audit_log is append-only',
+  '23514',
+  null,
   '14. audit_log DELETE blocked'
 );
 
@@ -302,40 +318,42 @@ select throws_ok(
   '15. audit_log TRUNCATE blocked'
 );
 
+set local role app_api;
+
 -- ---------------------------------------------------------------------------
 -- 16-19: patients_self_read policy (rewritten in 0006)
 -- ---------------------------------------------------------------------------
 
 -- 16. Patient P sees their own row
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000004', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000A', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a2', true);
 select is(
-  (select count(*) from patients where tenant_id = '22000000-0000-0000-0000-00000000000A'),
+  (select count(*) from patients where tenant_id = '22000000-0000-0000-0000-0000000000a2'),
   1::bigint,
   '16. patients_self_read: patient self can read own row'
 );
 
 -- 17. ETC E (care_team) sees Patient P
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000002', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000E', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000e1', true);
 select is(
-  (select count(*) from patients where tenant_id = '22000000-0000-0000-0000-00000000000A'),
+  (select count(*) from patients where tenant_id = '22000000-0000-0000-0000-0000000000a2'),
   1::bigint,
   '17. patients_self_read: ETC care_team can read patient'
 );
 
 -- 18. Sponsor S (with active consent) sees Patient P
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000001', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000S', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a1', true);
 select is(
-  (select count(*) from patients where tenant_id = '22000000-0000-0000-0000-00000000000A'),
+  (select count(*) from patients where tenant_id = '22000000-0000-0000-0000-0000000000a2'),
   1::bigint,
   '18. patients_self_read: sponsor with active consent can read patient'
 );
 
 -- 19. Unrelated tenant X cannot see any patients
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000007', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000F', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000f1', true);
 select is(
   (select count(*) from patients),
   0::bigint,
@@ -348,25 +366,25 @@ select is(
 
 -- 20. Sponsor S sees their own program
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000001', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000S', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a1', true);
 select is(
-  (select count(*) from programs where sponsor_tenant_id = '22000000-0000-0000-0000-00000000000S'),
+  (select count(*) from programs where sponsor_tenant_id = '22000000-0000-0000-0000-0000000000a1'),
   1::bigint,
   '20. programs_sponsor_read: sponsor self can read own programs'
 );
 
 -- 21. ETC E (with PPA to S) sees S's programs
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000002', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000E', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000e1', true);
 select is(
-  (select count(*) from programs where sponsor_tenant_id = '22000000-0000-0000-0000-00000000000S'),
+  (select count(*) from programs where sponsor_tenant_id = '22000000-0000-0000-0000-0000000000a1'),
   1::bigint,
   '21. programs_sponsor_read: ETC with PPA can read sponsor programs'
 );
 
 -- 22. Unrelated tenant X cannot see programs
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000007', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000F', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000f1', true);
 select is(
   (select count(*) from programs),
   0::bigint,
@@ -379,7 +397,7 @@ select is(
 
 -- 23. Patient P sees their own user row
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000004', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000A', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a2', true);
 select is(
   (select count(*) from users where id = '22000000-0000-0000-1000-000000000004'),
   1::bigint,
@@ -399,17 +417,17 @@ select is(
 
 -- 25. Patient P sees their own representative row (self)
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000004', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000A', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a2', true);
 select is(
   (select count(*) from patient_representatives
-    where patient_tenant_id = '22000000-0000-0000-0000-00000000000A'),
+    where patient_tenant_id = '22000000-0000-0000-0000-0000000000a2'),
   1::bigint,
   '25. patient_representatives: patient self reads own row'
 );
 
 -- 26. ETC E (care_team) sees representatives for all 3 patients (P, C, M)
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000002', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000E', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000e1', true);
 select is(
   (select count(*) from patient_representatives),
   3::bigint,
@@ -418,7 +436,7 @@ select is(
 
 -- 27. Unrelated tenant X cannot see any representatives
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000007', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000F', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000f1', true);
 select is(
   (select count(*) from patient_representatives),
   0::bigint,
@@ -429,11 +447,8 @@ select is(
 -- 28-29: patient_representatives check constraints
 -- ---------------------------------------------------------------------------
 
--- 28. signing_permission=true with no verification on a non-self relationship → check fails
-do $$
-begin
-  set local row_security = off;
-end $$;
+-- 28. signing_permission=true with no verified authority document on a non-self relationship → check fails
+reset role;
 
 select throws_ok(
   $$
@@ -442,9 +457,9 @@ select throws_ok(
     access_scope, signing_permission
   )
   select
-    '22000000-0000-0000-0000-00000000000C',
+    '22000000-0000-0000-0000-0000000000c1',
     (select id from regulatory_jurisdictions where code = 'US-MT'),
-    '22000000-0000-0000-1000-000000000006',
+    '22000000-0000-0000-1000-000000000007',
     'legal_guardian',
     'court_order',
     array['records:read','consents:read'],
@@ -452,7 +467,7 @@ select throws_ok(
   $$,
   '23514',  -- check_violation
   null,
-  '28. patient_representatives: signing_permission requires verification for non-self'
+  '28. patient_representatives: signing_permission requires verified authority document for non-self'
 );
 
 -- 29. relationship_type outside allowed set → check fails
@@ -462,7 +477,7 @@ select throws_ok(
     patient_tenant_id, jurisdiction_id, user_id, relationship_type, authority_basis
   )
   select
-    '22000000-0000-0000-0000-00000000000A',
+    '22000000-0000-0000-0000-0000000000a2',
     (select id from regulatory_jurisdictions where code = 'US-MT'),
     '22000000-0000-0000-1000-000000000004',
     'invalid_role',
@@ -477,23 +492,20 @@ select throws_ok(
 -- 30-32: minor_assents
 -- ---------------------------------------------------------------------------
 
-do $$
-begin
-  set local row_security = on;
-end $$;
+set local role app_api;
 
 -- 30. ETC E (care_team) reads minor M's assent
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000002', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000E', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000e1', true);
 select is(
-  (select count(*) from minor_assents where patient_tenant_id = '22000000-0000-0000-0000-00000000000D'),
+  (select count(*) from minor_assents where patient_tenant_id = '22000000-0000-0000-0000-0000000000d1'),
   1::bigint,
   '30. minor_assents: ETC care_team reads minor patient assent'
 );
 
 -- 31. Unrelated tenant X denied
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000007', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000F', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000f1', true);
 select is(
   (select count(*) from minor_assents),
   0::bigint,
@@ -501,13 +513,15 @@ select is(
 );
 
 -- 32. assent_status='waived' without waiver_reason or medical_director → check fails
+reset role;
+
 select throws_ok(
   $$
   insert into minor_assents (
     patient_tenant_id, jurisdiction_id, assent_status
   )
   select
-    '22000000-0000-0000-0000-00000000000D',
+    '22000000-0000-0000-0000-0000000000d1',
     (select id from regulatory_jurisdictions where code = 'US-MT'),
     'waived'
   $$,
@@ -515,6 +529,8 @@ select throws_ok(
   null,
   '32. minor_assents: waived requires waiver_reason + medical_director'
 );
+
+set local role app_api;
 
 -- ---------------------------------------------------------------------------
 -- 33-35: retention triggers (audit_log + file_storage_objects)
@@ -529,7 +545,7 @@ select is(
 
 -- 34. file_storage_objects insert auto-populates retention_until + retention_category
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000002', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000E', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000e1', true);
 
 do $$
 declare v_jur uuid;
@@ -541,7 +557,7 @@ begin
     uploaded_by_user_id, immutable_ref
   ) values (
     '33000000-0000-0000-0000-000000000001',
-    '22000000-0000-0000-0000-00000000000E',
+    '22000000-0000-0000-0000-0000000000e1',
     'patient-files', 'test/path.pdf',
     repeat('a', 64), 100, 'application/pdf',
     '22000000-0000-0000-1000-000000000002',
@@ -568,12 +584,9 @@ select throws_ok(
 -- ---------------------------------------------------------------------------
 
 -- Insert a NULL-tenant notification + feature flag. RLS write policies require
--- can_write_for_tenant; for NULL-tenant rows we bypass via SECURITY DEFINER
--- by temporarily disabling RLS for the test setup (rolls back).
-do $$
-begin
-  set local row_security = off;
-end $$;
+-- can_write_for_tenant; for NULL-tenant rows we reset to the migration owner
+-- for setup, then return to app_api for semantic reads.
+reset role;
 
 insert into notifications (tenant_id, channel, template, recipient)
 values (null, 'email', 'system_broadcast', 'all');
@@ -581,22 +594,19 @@ values (null, 'email', 'system_broadcast', 'all');
 insert into feature_flags (tenant_id, flag_key, enabled)
 values (null, 'rls2_test_global_flag', true);
 
-do $$
-begin
-  set local row_security = on;
-end $$;
+set local role app_api;
 
 -- 36. Authenticated session sees the NULL-tenant notification
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000004', true);
-select set_config('app.active_tenant_id', '22000000-0000-0000-0000-00000000000A', true);
+select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a2', true);
 select ok(
   (select exists (select 1 from notifications where template = 'system_broadcast')),
   '36. notifications: NULL-tenant readable when session user is set'
 );
 
 -- 37. Unauthenticated session (no app.user_id) does NOT see NULL-tenant rows
-select set_config('app.user_id', '', true);
-select set_config('app.active_tenant_id', '', true);
+set local app.user_id = '';
+set local app.active_tenant_id = '';
 select ok(
   not exists (select 1 from notifications where template = 'system_broadcast'),
   '37. notifications: NULL-tenant blocked without authenticated session'
