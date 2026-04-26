@@ -24,7 +24,7 @@ Launches `apps/directory`, the public, anonymous, SEO-optimized patient director
 
 - **`mise.toml`, root `package.json`, `pnpm-workspace.yaml` glue.** New `dev:directory` task, `dev:all` now includes the directory app alongside app/patient/api/workers. [pnpm-workspace.yaml](pnpm-workspace.yaml) already covered `apps/*`.
 - **`eslint.config.js` browser-globals block.** New scoped block for `apps/app/**`, `apps/patient/**`, `apps/directory/**` adds `window`, `localStorage`, `setTimeout`, `crypto`, etc. so frontend code lints cleanly without polluting API/workers globals (where `localStorage` is still a hard error).
-- **`.claude/rules/frontend.md` adds `apps/directory/**` path.** Codifies the directory's bundle (<120 KB above-the-fold), API surface (`/v1/public/*` only), and Clerk-lazy-load rules so future edits stay within the pen-test posture.
+- **`.claude/rules/frontend.md` adds `apps/directory/**` path.** Codifies the directory's bundle (<120 KB above-the-fold), API surface (`/v1/public/\*` only), and Clerk-lazy-load rules so future edits stay within the pen-test posture.
 - **Public schemas re-exported from `@corridor/shared/api`.** [packages/shared/src/api/index.ts](packages/shared/src/api/index.ts) now re-exports `./public.js`.
 
 ### Notes
