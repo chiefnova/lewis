@@ -67,7 +67,7 @@ mise run db:down          # stop local Docker Postgres
 mise run db:reset         # wipe Docker volumes + re-migrate + seed
 mise run db:migrate
 mise run db:generate      # migration from schema diff
-mise run db:rls:test      # pgTAP — required for any new PHI table
+mise run db:rls:test      # semantic SQL RLS suite — required for any new PHI table
 mise run db:seed          # NEVER against staging or prod
 
 mise run ci               # full pre-merge gate (matches CI exactly)
@@ -98,14 +98,14 @@ mise run down             # stop Docker infra and local dev servers
 
 PHI is in scope from day one. Corridor is a Business Associate.
 
-1. **RLS is the tenant-isolation mechanism.** Every PHI-bearing table must have an RLS policy keyed off transaction-local application context (`app.user_id`, `app.active_tenant_id`, `app.role`, `app.request_id`, optional `app.support_ticket_id`) set by the Hono API after Clerk verification. IMPORTANT: never write a user-facing code path that uses a Supabase service-role or admin database role to bypass tenant RLS. Any new table with PHI requires a matching pgTAP test in `db:rls:test`.
+1. **RLS is the tenant-isolation mechanism.** Every PHI-bearing table must have an RLS policy keyed off transaction-local application context (`app.user_id`, `app.active_tenant_id`, `app.role`, `app.request_id`, optional `app.support_ticket_id`) set by the Hono API after Clerk verification. App runtimes connect as non-owner `app_api`/`app_worker` roles with `NOBYPASSRLS`; migrations and seed use `MIGRATION_DATABASE_URL`. IMPORTANT: never write a user-facing code path that uses a Supabase service-role, table owner, or admin database role to bypass tenant RLS. Any new RLS table must have `FORCE ROW LEVEL SECURITY`, policy coverage, and a matching semantic SQL test in `db:rls:test`.
 2. **Audit log is append-only.** Every state change writes to `audit_log` (tenant, actor, action, target, before, after, ip, ua, ts). A Postgres trigger blocks UPDATE/DELETE on `audit_log`. Do not add code paths that skip the audit write.
 3. **No PHI in logs, Sentry breadcrumbs, analytics events, error messages, or URLs.** PostHog events go through a redaction layer; patient identifiers are tokenized. API and worker runtime code must use the structured pino logger with redaction; `console.*` is banned outside scripts by ESLint/CI. If you need to log for debugging, use the tenant + object ID only.
 4. **No PHI to unapproved subprocessors.** The approved list is in [prd.md § 17.9](docs/prd.md). Adding a new third-party dependency that will see PHI requires a BAA before it reaches staging, let alone prod.
 5. **File uploads go to the HIPAA-eligible Supabase bucket** with SHA-256 on write. Regulated objects (patient agreements, informed consent recordings, ETRB approvals, AE reports) are immutable — replacement creates a new version, never overwrites.
 6. **Retention locks are enforced in the database**, not application code: patient files 5 years post-discharge (RULE 12(4)), ETRB records 5 years (RULE 16(6)(d)), QAPI minutes 3 years (RULE 15(5)), audit log 7 years. Do not add delete paths that bypass retention.
 7. **TLS 1.3 only.** Clerk MFA is required for sponsor and ETC users. Break-glass admin access requires a ticket reference and is audit-logged.
-8. **Secrets management:** local + CI secrets go through [fnox.toml](fnox.toml) (age-encrypted in-repo, recipient-gated by profile: `api_dev`, `workers_dev`, `frontend_app_dev`, `frontend_patient_dev`, `ci`). Each app's package.json `dev` script wraps in `fnox run <profile> -- <cmd>` so secrets land in env at startup. **Production and staging secrets live in Vercel/Railway env vars only — never in fnox, never in the repo, never in CLAUDE.md, never in test fixtures.** Onboarding a dev: generate an age key, hand the pubkey to an existing recipient, they append it under `[[recipients]]` and `fnox rekey`. Revocation: remove the pubkey, re-encrypt, rotate values that the revoked party held. Plaintext `.env*` is gitignored — prefer fnox for anything beyond well-known local defaults.
+8. **Secrets management:** local + CI secrets go through [fnox.toml](fnox.toml) (age-encrypted in-repo, recipient-gated by profile: `api_dev`, `workers_dev`, `workers_elevated_dev`, `frontend_app_dev`, `frontend_patient_dev`, `ci`). Each app's package.json `dev` script wraps in `fnox run -P <profile> -- <cmd>` so secrets land in env at startup. `SUPABASE_SERVICE_ROLE_KEY` is allowed only in `workers_elevated_dev`; it must never be present in `api_dev`, `workers_dev`, frontend, or `ci` profiles. **Production and staging secrets live in Vercel/Railway env vars only — never in fnox, never in the repo, never in CLAUDE.md, never in test fixtures.** Onboarding a dev: generate an age key, hand the pubkey to an existing recipient, who appends it to the `recipients` array under `[providers.age]` and runs `fnox reencrypt`. Revocation: remove the pubkey, re-encrypt, rotate values that the revoked party held. Plaintext `.env*` is gitignored — prefer fnox for anything beyond well-known local defaults.
 
 ## Product principles (resolve trade-offs with these)
 
@@ -120,7 +120,7 @@ PHI is in scope from day one. Corridor is a Business Associate.
 
 - Unit tests for business logic colocated as `*.test.ts`.
 - Integration tests for API handlers hit real local Docker Postgres. Do not mock the database.
-- RLS policies are tested via pgTAP — a new RLS policy without a test is not complete.
+- RLS policies are tested via the semantic SQL suite in `packages/db/test/rls` — a new RLS policy without a test is not complete.
 - E2E tests cover the full patient intake flow (Stage 1 → Stage 8 in [prd.md § 10.5](docs/prd.md)), AE 5-day workflow, and ETRB protocol review.
 - A11y: patient portal targets WCAG 2.1 AA. `pnpm test:a11y` gates patient-portal PRs.
 
@@ -142,7 +142,7 @@ PHI is in scope from day one. Corridor is a Business Associate.
 - Provisional ETC status gate: an ETC without an associated ETRB with RULE 16(6)(f) determinations cannot enroll patients into treatment. Enforce in both API and UI.
 - H&P older than 12 months blocks treatment (RULE 12(2)(b)(iii)). Validate at treatment-schedule time, not just upload time.
 - Puppeteer PDF rendering runs in a worker, not the API request path — patient agreement generation is async.
-- Running any `dev:*` task without an age private key whose public key is in `fnox.toml` `[[recipients]]` will fail at decryption. Get added as a recipient first.
+- Running any `dev:*` task without an age private key whose public key is in `fnox.toml` `[providers.age].recipients` will fail at decryption. Get added as a recipient first.
 
 ## References
 
