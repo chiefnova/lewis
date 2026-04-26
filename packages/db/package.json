@@ -15,9 +15,11 @@
     "test:watch": "vitest",
     "migrate": "drizzle-kit migrate",
     "migrate:sql": "tsx scripts/run-psql-files.ts migrations",
+    "migrate:local": "pnpm run migrate:sql && pnpm run setup:local-roles",
     "generate": "drizzle-kit generate",
-    "rls:test": "pnpm run migrate:sql && tsx scripts/run-psql-files.ts test/rls",
+    "rls:test": "pnpm run migrate:local && tsx scripts/run-psql-files.ts test/rls",
     "rls:coverage": "tsx scripts/check-rls-coverage.ts",
+    "setup:local-roles": "tsx scripts/setup-local-runtime-roles.ts",
     "seed": "tsx scripts/seed-dev.ts"
   },
   "dependencies": {

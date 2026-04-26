@@ -1,43 +1,10 @@
 import { Pool } from "pg";
 
-import { databaseUrlFromConfig, resolveDatabaseConnectionConfig } from "../src/config.js";
-
-const ALLOWED_NODE_ENVS = new Set(["development", "test"]);
-const ALLOWED_HOST_LITERALS = new Set([
-  "127.0.0.1",
-  "::1",
-  "localhost",
-  "host.docker.internal",
-  "postgres",
-]);
+import { databaseUrlFromConfig, resolveMigrationDatabaseConnectionConfig } from "../src/config.js";
+import { assertLocalDatabaseSafe } from "./_local-safety.js";
 
 function assertSeedSafeOrExit(connectionString: string): void {
-  const nodeEnv = process.env.NODE_ENV ?? "development";
-  if (!ALLOWED_NODE_ENVS.has(nodeEnv)) {
-    throw new Error(
-      `seed-dev.ts refuses to run with NODE_ENV=${nodeEnv}. Only 'development' and 'test' are allowed. ` +
-        `If you really need to seed a non-dev database, do it by hand with parameterized queries.`,
-    );
-  }
-
-  let host: string;
-  try {
-    host = new URL(connectionString).hostname;
-  } catch {
-    throw new Error(
-      "seed-dev.ts could not parse DATABASE_URL host. Refusing to run rather than risk seeding the wrong database.",
-    );
-  }
-
-  const isLocalLiteral = ALLOWED_HOST_LITERALS.has(host);
-  const isLocalSuffix = host.endsWith(".local") || host.endsWith(".localhost");
-  if (!isLocalLiteral && !isLocalSuffix) {
-    throw new Error(
-      `seed-dev.ts refuses to run against host '${host}'. ` +
-        `Allowed: 127.0.0.1, ::1, localhost, host.docker.internal, postgres, *.local, *.localhost. ` +
-        `This guard exists because synthetic seed data in staging or production poisons audit logs and tenant_memberships.`,
-    );
-  }
+  assertLocalDatabaseSafe({ connectionString, scriptName: "seed-dev.ts" });
 
   if (process.env.CORRIDOR_SEED_ALLOW_NON_LOCAL === "true") {
     throw new Error(
@@ -75,7 +42,7 @@ const ids = {
 };
 
 async function main(): Promise<void> {
-  const connectionString = databaseUrlFromConfig(resolveDatabaseConnectionConfig());
+  const connectionString = databaseUrlFromConfig(resolveMigrationDatabaseConnectionConfig());
   assertSeedSafeOrExit(connectionString);
 
   const pool = new Pool({ connectionString });
