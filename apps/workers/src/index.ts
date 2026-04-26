@@ -1,6 +1,12 @@
-import { closeDatabasePool, initializeDatabase } from "@corridor/db";
+import {
+  assertRuntimeRole,
+  closeDatabasePool,
+  getDatabasePool,
+  initializeDatabase,
+} from "@corridor/db";
 import { QueueEvents, Worker, type Job } from "bullmq";
 
+import { resolveWorkerDatabaseEnv } from "./database-env.js";
 import { logger } from "./logger.js";
 import { workerDefinitions, type WorkerDefinition } from "./registry.js";
 import { closeRedisConnections, createRedisConnection } from "./redis.js";
@@ -93,6 +99,32 @@ async function registerWorker(definition: WorkerDefinition): Promise<void> {
   );
 }
 
+// Defense-in-depth: workers must connect as a non-superuser NOBYPASSRLS role
+// so the runtime role split actually gates RLS evaluation. The regular worker
+// uses app_worker; the elevated worker uses app_worker_elevated. Tests can opt
+// out with WORKER_RUNTIME_ROLE_OPT_OUT=true.
+async function assertWorkerRuntimeRole(): Promise<void> {
+  if (process.env.WORKER_RUNTIME_ROLE_OPT_OUT === "true") {
+    logger.warn(
+      "WORKER_RUNTIME_ROLE_OPT_OUT=true — skipping runtime DB role assertion. This must never be set in staging/prod.",
+    );
+    return;
+  }
+
+  const expectedRoles =
+    process.env.WORKER_ELEVATED === "true" ? ["app_worker_elevated"] : ["app_worker"];
+  const pool = getDatabasePool(resolveWorkerDatabaseEnv());
+  const row = await assertRuntimeRole(pool, { expectedRoles });
+  logger.info(
+    {
+      dbUser: row.current_user,
+      bypassRls: row.rolbypassrls,
+      elevated: process.env.WORKER_ELEVATED === "true",
+    },
+    "worker runtime DB role verified",
+  );
+}
+
 async function startup(): Promise<void> {
   if (!stubWorkersEnabled()) {
     throw new Error(
@@ -100,7 +132,8 @@ async function startup(): Promise<void> {
     );
   }
 
-  await initializeDatabase();
+  await initializeDatabase(resolveWorkerDatabaseEnv());
+  await assertWorkerRuntimeRole();
 
   const startupRedis = createRedisConnection("worker:startup");
   const redisPing = await startupRedis.ping();

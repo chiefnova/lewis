@@ -1,5 +1,10 @@
 import { serve } from "@hono/node-server";
-import { closeDatabasePool, initializeDatabase } from "@corridor/db";
+import {
+  assertRuntimeRole,
+  closeDatabasePool,
+  getDatabasePool,
+  initializeDatabase,
+} from "@corridor/db";
 
 import { logger } from "./logger.js";
 import { closeRedisClient, initializeRedis } from "./redis.js";
@@ -9,8 +14,30 @@ const port = Number(process.env.PORT ?? 13001);
 
 type Server = ReturnType<typeof serve>;
 
+// Defense-in-depth: the API process must connect as a non-superuser
+// NOBYPASSRLS role so the RLS hardening in migrations 0011-0017 actually
+// fires. Tests can opt out with API_RUNTIME_ROLE_OPT_OUT=true (see
+// packages/db/src/runtime-role.ts). NODE_ENV=test alone does not opt out
+// because integration tests still need the role contract enforced.
+async function assertApiRuntimeRole(): Promise<void> {
+  if (process.env.API_RUNTIME_ROLE_OPT_OUT === "true") {
+    logger.warn(
+      "API_RUNTIME_ROLE_OPT_OUT=true — skipping runtime DB role assertion. This must never be set in staging/prod.",
+    );
+    return;
+  }
+
+  const pool = getDatabasePool();
+  const row = await assertRuntimeRole(pool, { expectedRoles: ["app_api"] });
+  logger.info(
+    { dbUser: row.current_user, bypassRls: row.rolbypassrls },
+    "API runtime DB role verified",
+  );
+}
+
 async function startup(): Promise<void> {
   await initializeDatabase();
+  await assertApiRuntimeRole();
   await initializeRedis();
   logger.info("corridor API dependencies ready: postgres, redis");
 }
