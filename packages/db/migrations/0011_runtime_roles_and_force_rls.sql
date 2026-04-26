@@ -9,7 +9,7 @@
 --   app.is_tenant_member, app.has_tenant_relationship,
 --   app.has_active_support_grant, app.can_write_for_tenant,
 --   app.current_tenant_member_grants_action — relies on the function owner
---   bypassing RLS to perform its lookup. Today the owner is the corridor
+--   bypassing RLS to perform its lookup. Today the owner is the lewis
 --   superuser (Docker bootstrap), which has BYPASSRLS implicitly. If function
 --   ownership is ever transferred to app_migrator (NOINHERIT NOBYPASSRLS) or
 --   any other NOBYPASSRLS role, FORCE RLS will apply to those reads and the
@@ -46,11 +46,11 @@ begin
 end $$;
 
 comment on role app_api is
-  'Corridor API runtime role. LOGIN allowed; NOBYPASSRLS required; must not own application tables.';
+  'Lewis API runtime role. LOGIN allowed; NOBYPASSRLS required; must not own application tables.';
 comment on role app_worker is
-  'Corridor regular worker runtime role. LOGIN allowed; NOBYPASSRLS required; must not own application tables.';
+  'Lewis regular worker runtime role. LOGIN allowed; NOBYPASSRLS required; must not own application tables.';
 comment on role app_migrator is
-  'Corridor migration/DDL ownership role. Never available to API or worker runtimes.';
+  'Lewis migration/DDL ownership role. Never available to API or worker runtimes.';
 
 grant usage on schema public, app to app_api, app_worker;
 grant select, insert, update, delete on all tables in schema public to app_api, app_worker;

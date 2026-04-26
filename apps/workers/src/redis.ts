@@ -1,4 +1,4 @@
-import { resolveRedisConnectionConfig } from "@corridor/shared";
+import { resolveRedisConnectionConfig } from "@lewis/shared";
 import Redis, { type RedisOptions } from "ioredis";
 
 const redisConnections = new Set<Redis>();

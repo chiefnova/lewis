@@ -48,7 +48,7 @@ describe("RequireStaffPortal", () => {
   it("renders children when user has the requested portal", () => {
     mockUseUser = () => ({
       isLoaded: true,
-      user: { publicMetadata: { corridorPortals: ["sponsor", "etc"] } },
+      user: { publicMetadata: { lewisPortals: ["sponsor", "etc"] } },
     });
     render(
       <MemoryRouter initialEntries={["/sponsor"]}>
@@ -66,8 +66,8 @@ describe("RequireStaffPortal", () => {
       isLoaded: true,
       user: {
         publicMetadata: {
-          corridorPortals: ["etc"],
-          corridorDefaultPortal: "etc",
+          lewisPortals: ["etc"],
+          lewisDefaultPortal: "etc",
         },
       },
     });
@@ -95,8 +95,8 @@ describe("RequireStaffPortal", () => {
       isLoaded: true,
       user: {
         publicMetadata: {
-          corridorPortals: ["etc"],
-          corridorDefaultPortal: "sponsor",
+          lewisPortals: ["etc"],
+          lewisDefaultPortal: "sponsor",
         },
       },
     });
@@ -114,7 +114,7 @@ describe("RequireStaffPortal", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByText(/no corridor portal is assigned/i)).toBeTruthy();
+    expect(screen.getByText(/no lewis portal is assigned/i)).toBeTruthy();
   });
 
   it("renders NoAssignedPortal when user has no portals at all", () => {
@@ -126,15 +126,15 @@ describe("RequireStaffPortal", () => {
         </RequireStaffPortal>
       </MemoryRouter>,
     );
-    expect(screen.getByText(/no corridor portal is assigned/i)).toBeTruthy();
+    expect(screen.getByText(/no lewis portal is assigned/i)).toBeTruthy();
   });
 
-  it("filters invalid corridorPortals values defensively", () => {
+  it("filters invalid lewisPortals values defensively", () => {
     mockUseUser = () => ({
       isLoaded: true,
       user: {
         publicMetadata: {
-          corridorPortals: ["evil", "sponsor", "stillEvil"],
+          lewisPortals: ["evil", "sponsor", "stillEvil"],
         },
       },
     });

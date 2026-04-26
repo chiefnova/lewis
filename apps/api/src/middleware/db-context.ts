@@ -1,4 +1,4 @@
-import { getDatabasePool, setAppContext, type PoolClient } from "@corridor/db";
+import { getDatabasePool, setAppContext, type PoolClient } from "@lewis/db";
 import type { MiddlewareHandler } from "hono";
 
 import { ApiError } from "./errors.js";

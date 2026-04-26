@@ -1,4 +1,4 @@
-import { requiredEnv } from "@corridor/shared";
+import { requiredEnv } from "@lewis/shared";
 import { Webhook as Svix } from "svix";
 
 import { ApiError } from "../middleware/errors.js";

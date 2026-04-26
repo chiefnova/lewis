@@ -1,7 +1,7 @@
-import { resolveRedisConnectionConfig } from "@corridor/shared";
+import { resolveRedisConnectionConfig } from "@lewis/shared";
 import Redis, { type RedisOptions } from "ioredis";
 
-import type { ReadinessCheck } from "@corridor/db";
+import type { ReadinessCheck } from "@lewis/db";
 
 let redisClient: Redis | undefined;
 

@@ -1,3 +1,3 @@
-export const corridorQueueNames = ["notifications", "pdf", "compliance"] as const;
+export const lewisQueueNames = ["notifications", "pdf", "compliance"] as const;
 
-export type CorridorQueueName = (typeof corridorQueueNames)[number];
+export type LewisQueueName = (typeof lewisQueueNames)[number];

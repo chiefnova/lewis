@@ -22,8 +22,8 @@ export function EligibilityPage() {
 
   useSeo({
     title: program
-      ? `Eligibility self-screen — ${program.name} — Corridor Health`
-      : "Eligibility self-screen — Corridor Health",
+      ? `Eligibility self-screen — ${program.name} — Lewis Health`
+      : "Eligibility self-screen — Lewis Health",
     description:
       "Anonymous eligibility self-screen. Your answers are an informational starting point. Final eligibility is determined by the ETC clinical team.",
     canonical: siteUrl(`/eligibility/${programSlug}`),

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-# CodeRabbit configuration for Corridor.
-# Corridor is a HIPAA-regulated, multi-tenant operating platform for Montana ETCs.
+# CodeRabbit configuration for Lewis.
+# Lewis is a HIPAA-regulated, multi-tenant operating platform for Montana ETCs.
 
 language: en-US
 tone_instructions: >
@@ -335,7 +335,7 @@ reviews:
 
     - path: "apps/app/src/**/*.{ts,tsx}"
       instructions: |
-        - This is app.corridor.health, the staff/business console. Verify route
+        - This is app.lewis.health, the staff/business console. Verify route
           protection, Clerk session use, active tenant selection, role checks, and
           least-privilege data fetching before rendering sensitive UI.
         - Keep sponsor, ETC, and admin modules under apps/app/src/portals/*.
@@ -373,7 +373,7 @@ reviews:
 
     - path: "apps/patient/src/**/*.{ts,tsx}"
       instructions: |
-        - This is patient.corridor.health. Preserve calm, plain-language,
+        - This is patient.lewis.health. Preserve calm, plain-language,
           mobile-first, WCAG 2.1 AA UX. No marketing pressure, gamification, or
           urgency manipulation.
         - Do not store PHI in URLs, browser storage, analytics, logs, or Sentry.
@@ -431,7 +431,7 @@ reviews:
 
     - path: "apps/api/src/domains/internal-admin/**/*.{ts,tsx}"
       instructions: |
-        - Internal admin APIs must require Corridor internal tenant membership plus
+        - Internal admin APIs must require Lewis internal tenant membership plus
           explicit support-access grants for tenant PHI. No broad service-role or
           silent bypass path is acceptable.
 
@@ -486,7 +486,7 @@ reviews:
     - path: "packages/rbac/src/**/*.{ts,tsx}"
       instructions: |
         - RBAC must be least-privilege and tenant-scoped. Sponsor, ETC, patient,
-          representative, board, support, and corridor_internal roles should map
+          representative, board, support, and lewis_internal roles should map
           cleanly to PRD permissions and RLS tests.
         - Frontend RBAC is advisory only; backend and RLS remain authoritative.
 
@@ -612,7 +612,7 @@ reviews:
     - path: ".coderabbit.yaml"
       instructions: |
         - Keep this file valid against the current CodeRabbit schema, specific to
-          Corridor, and maintainable. Prefer high-signal rules over stale copied
+          Lewis, and maintainable. Prefer high-signal rules over stale copied
           path instructions.
 
 chat:

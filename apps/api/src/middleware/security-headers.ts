@@ -51,7 +51,7 @@ export function buildCorsMiddleware(): MiddlewareHandler {
   if (!raw && process.env.NODE_ENV !== "test") {
     throw new Error(
       "CORS_ALLOWED_ORIGINS env var is required (csv of allowed origins). " +
-        "Example: 'https://app.corridor.health,https://patient.corridor.health,http://localhost:5173'",
+        "Example: 'https://app.lewis.health,https://patient.lewis.health,http://localhost:5173'",
     );
   }
   const allowed = (raw ?? "*")
@@ -72,7 +72,7 @@ export function buildCorsMiddleware(): MiddlewareHandler {
       "Content-Type",
       "Idempotency-Key",
       "x-request-id",
-      "x-corridor-tenant-id",
+      "x-lewis-tenant-id",
       "x-support-ticket-id",
     ],
     exposeHeaders: ["x-request-id"],

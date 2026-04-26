@@ -21,7 +21,7 @@ export function AnnouncementStrip() {
         <div style={{ flex: 1, textAlign: "center", fontSize: 13.5, color: "var(--ink)" }}>
           <FormattedMessage
             id="directory.announcement"
-            defaultMessage="Corridor is just getting started. New programs and ETCs are added as Montana licenses them."
+            defaultMessage="Lewis is just getting started. New programs and ETCs are added as Montana licenses them."
           />
         </div>
         <button

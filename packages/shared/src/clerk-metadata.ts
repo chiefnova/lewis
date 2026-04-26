@@ -1,7 +1,7 @@
 /**
- * Clerk publicMetadata contract for Corridor staff and patient routing.
+ * Clerk publicMetadata contract for Lewis staff and patient routing.
  *
- * publicMetadata is set by Corridor admins via Clerk's server-side API; it is
+ * publicMetadata is set by Lewis admins via Clerk's server-side API; it is
  * server-trusted but client-readable. The frontends use it for UX routing
  * (e.g. send a sponsor_user to /sponsor by default), and the API will use it
  * as a hint when resolving the active tenant + membership before setting
@@ -15,8 +15,8 @@ export type StaffPortal = (typeof STAFF_PORTAL_VALUES)[number];
 
 export const STAFF_PORTALS: ReadonlySet<StaffPortal> = new Set<StaffPortal>(STAFF_PORTAL_VALUES);
 
-export const CORRIDOR_PORTALS_KEY = "corridorPortals";
-export const CORRIDOR_DEFAULT_PORTAL_KEY = "corridorDefaultPortal";
+export const LEWIS_PORTALS_KEY = "lewisPortals";
+export const LEWIS_DEFAULT_PORTAL_KEY = "lewisDefaultPortal";
 
 export function isStaffPortal(value: unknown): value is StaffPortal {
   return typeof value === "string" && STAFF_PORTALS.has(value as StaffPortal);
@@ -24,8 +24,8 @@ export function isStaffPortal(value: unknown): value is StaffPortal {
 
 /**
  * Read the user's allowed staff portals from publicMetadata.
- *   - corridorPortals (StaffPortal[]) is the primary source
- *   - corridorDefaultPortal (StaffPortal) is a fallback when corridorPortals
+ *   - lewisPortals (StaffPortal[]) is the primary source
+ *   - lewisDefaultPortal (StaffPortal) is a fallback when lewisPortals
  *     is absent — useful when the admin only wants to assign one portal
  *   - unknown values are filtered out (never trust string from JSON)
  */
@@ -34,12 +34,12 @@ export function readStaffPortals(
 ): StaffPortal[] {
   if (!metadata) return [];
 
-  const portals = metadata[CORRIDOR_PORTALS_KEY];
+  const portals = metadata[LEWIS_PORTALS_KEY];
   if (Array.isArray(portals)) {
     return portals.filter(isStaffPortal);
   }
 
-  const defaultPortal = metadata[CORRIDOR_DEFAULT_PORTAL_KEY];
+  const defaultPortal = metadata[LEWIS_DEFAULT_PORTAL_KEY];
   if (isStaffPortal(defaultPortal)) {
     return [defaultPortal];
   }
@@ -49,15 +49,15 @@ export function readStaffPortals(
 
 /**
  * Resolve the path the user should land on after sign-in. Honors
- * corridorDefaultPortal first, then falls through to the first valid entry
- * in corridorPortals. Returns null when no portal is assigned.
+ * lewisDefaultPortal first, then falls through to the first valid entry
+ * in lewisPortals. Returns null when no portal is assigned.
  */
 export function defaultStaffPath(
   metadata: Record<string, unknown> | null | undefined,
 ): string | null {
   if (!metadata) return null;
 
-  const defaultPortal = metadata[CORRIDOR_DEFAULT_PORTAL_KEY];
+  const defaultPortal = metadata[LEWIS_DEFAULT_PORTAL_KEY];
   if (isStaffPortal(defaultPortal)) {
     return `/${defaultPortal}`;
   }

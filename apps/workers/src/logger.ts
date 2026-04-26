@@ -1,4 +1,4 @@
-import { redactPhi } from "@corridor/shared";
+import { redactPhi } from "@lewis/shared";
 import pino, { type Logger } from "pino";
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -7,7 +7,7 @@ const isTest = process.env.NODE_ENV === "test";
 export const logger: Logger = pino({
   level: process.env.LOG_LEVEL ?? (isProduction ? "info" : "debug"),
   base: {
-    service: "corridor-workers",
+    service: "lewis-workers",
     pid: process.pid,
   },
   timestamp: pino.stdTimeFunctions.isoTime,

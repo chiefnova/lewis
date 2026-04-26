@@ -1,31 +1,31 @@
-# Corridor
+# Lewis
 
-Operating platform for Montana's Experimental Treatment Center (ETC) regime under SB 535 + MAR 2026-427.1. Serves sponsors/biotech manufacturers, ETCs, patients, boards, and Corridor internal users through two deployable frontend products over one RLS'd data layer. See [prd.md](docs/prd.md) for the canonical spec — **every feature must trace to a section of SB 535 or a RULE in MAR 2026-427.1**.
+Operating platform for Montana's Experimental Treatment Center (ETC) regime under SB 535 + MAR 2026-427.1. Serves sponsors/biotech manufacturers, ETCs, patients, boards, and Lewis internal users through two deployable frontend products over one RLS'd data layer. See [prd.md](docs/prd.md) for the canonical spec — **every feature must trace to a section of SB 535 or a RULE in MAR 2026-427.1**.
 
 ## Architecture
 
-- `app.corridor.health` — sponsor + ETC + internal admin portal (Vite/React)
-- `patient.corridor.health` — patient portal (Vite/React, mobile-first)
+- `app.lewis.health` — sponsor + ETC + internal admin portal (Vite/React)
+- `patient.lewis.health` — patient portal (Vite/React, mobile-first)
 - API — Node + Hono, Dockerized on Railway
 - Workers — BullMQ on Redis, Dockerized on Railway
 - Data — Supabase Postgres 15+ with RLS; Supabase Storage (HIPAA-eligible bucket)
-- Auth — Clerk authenticates identity; Corridor tenant memberships and relationships live in Postgres. The API sets transaction-local `app.*` variables for RLS.
+- Auth — Clerk authenticates identity; Lewis tenant memberships and relationships live in Postgres. The API sets transaction-local `app.*` variables for RLS.
 
 Frontend deployment boundaries are intentionally asymmetric:
 
 ```mermaid
 flowchart LR
-  AppHost[app.corridor.health] --> App[apps/app]
+  AppHost[app.lewis.health] --> App[apps/app]
   App --> Sponsor[apps/app/src/portals/sponsor]
   App --> ETC[apps/app/src/portals/etc]
   App --> Admin[apps/app/src/portals/admin]
-  PatientHost[patient.corridor.health] --> Patient[apps/patient]
+  PatientHost[patient.lewis.health] --> Patient[apps/patient]
   Patient --> PatientPortal[apps/patient/src/portal]
   App --> API[apps/api]
   Patient --> API
 ```
 
-`apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Corridor internal admin workflows. `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
+`apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Lewis internal admin workflows. `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
 
 Monorepo layout: `apps/app`, `apps/patient`, `apps/api`, `apps/workers`, `packages/shared` (zod schemas, types), `packages/db` (migrations, RLS policies).
 
@@ -35,7 +35,7 @@ React 18 · TypeScript · Vite · Tailwind · shadcn/ui · React Router · TanSt
 
 ## Commands
 
-Toolchain and tasks are managed by [mise](https://mise.jdx.dev). After clone, `mise install` provisions Node 20 and pnpm 9 per [mise.toml](mise.toml). Postgres is intentionally NOT installed by mise (the postgres plugin compiles from source and broke every CI workflow on the first try). Local devs run Postgres + Redis via Docker Compose (`mise run db:up`); CI uses a Postgres service container per workflow. If you need `psql` locally for ad-hoc queries: `brew install libpq` (macOS) or `docker exec -it corridor-postgres psql -U corridor corridor_dev`. Run `mise tasks` to list everything.
+Toolchain and tasks are managed by [mise](https://mise.jdx.dev). After clone, `mise install` provisions Node 20 and pnpm 9 per [mise.toml](mise.toml). Postgres is intentionally NOT installed by mise (the postgres plugin compiles from source and broke every CI workflow on the first try). Local devs run Postgres + Redis via Docker Compose (`mise run db:up`); CI uses a Postgres service container per workflow. If you need `psql` locally for ad-hoc queries: `brew install libpq` (macOS) or `docker exec -it lewis-postgres psql -U lewis lewis_dev`. Run `mise tasks` to list everything.
 
 ```
 mise install              # provision pinned toolchain
@@ -96,7 +96,7 @@ mise run down             # stop Docker infra and local dev servers
 
 ## Security and HIPAA — YOU MUST follow these
 
-PHI is in scope from day one. Corridor is a Business Associate.
+PHI is in scope from day one. Lewis is a Business Associate.
 
 1. **RLS is the tenant-isolation mechanism.** Every PHI-bearing table must have an RLS policy keyed off transaction-local application context (`app.user_id`, `app.active_tenant_id`, `app.role`, `app.request_id`, optional `app.support_ticket_id`) set by the Hono API after Clerk verification. App runtimes connect as non-owner `app_api`/`app_worker` roles with `NOBYPASSRLS`; migrations and seed use `MIGRATION_DATABASE_URL`. IMPORTANT: never write a user-facing code path that uses a Supabase service-role, table owner, or admin database role to bypass tenant RLS. Any new RLS table must have `FORCE ROW LEVEL SECURITY`, policy coverage, and a matching semantic SQL test in `db:rls:test`.
 2. **Audit log is append-only.** Every state change writes to `audit_log` (tenant, actor, action, target, before, after, ip, ua, ts). A Postgres trigger blocks UPDATE/DELETE on `audit_log`. Do not add code paths that skip the audit write.
@@ -136,7 +136,7 @@ PHI is in scope from day one. Corridor is a Business Associate.
 
 ## Gotchas
 
-- API requests must resolve an active Corridor tenant through the narrow `app.resolve_authenticated_membership(...)` bootstrap helper before setting transaction-local RLS context; missing or invalid tenant context is a 401/403, never a silent service-role fallback.
+- API requests must resolve an active Lewis tenant through the narrow `app.resolve_authenticated_membership(...)` bootstrap helper before setting transaction-local RLS context; missing or invalid tenant context is a 401/403, never a silent service-role fallback.
 - Stripe and Plaid webhooks require signature verification before any state change — a missing/invalid signature is a 400 with no DB write.
 - Montana deadlines (`Jan 31`, `Feb 1`, 5-day AE clock) are `America/Denver`, not UTC. Off-by-a-day here is a compliance miss.
 - Provisional ETC status gate: an ETC without an associated ETRB with RULE 16(6)(f) determinations cannot enroll patients into treatment. Enforce in both API and UI.

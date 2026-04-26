@@ -3,7 +3,7 @@ import {
   closeDatabasePool,
   getDatabasePool,
   initializeDatabase,
-} from "@corridor/db";
+} from "@lewis/db";
 import { QueueEvents, Worker, type Job } from "bullmq";
 
 import { resolveWorkerDatabaseEnv } from "./database-env.js";
@@ -146,11 +146,11 @@ async function startup(): Promise<void> {
     await registerWorker(definition);
   }
 
-  logger.info({ queues: workerDefinitions.map((d) => d.queueName) }, "corridor workers ready");
+  logger.info({ queues: workerDefinitions.map((d) => d.queueName) }, "lewis workers ready");
 }
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
-  logger.info({ signal }, "corridor workers shutting down");
+  logger.info({ signal }, "lewis workers shutting down");
   await Promise.allSettled(runtime.workers.map((worker) => worker.close()));
   await Promise.allSettled(runtime.queueEvents.map((queueEvent) => queueEvent.close()));
   await Promise.allSettled([closeRedisConnections(), closeDatabasePool()]);

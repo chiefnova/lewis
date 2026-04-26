@@ -59,18 +59,18 @@ importers:
       '@clerk/backend':
         specifier: ^3.4.1
         version: 3.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@corridor/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@corridor/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@hono/node-server':
         specifier: ^1.14.1
         version: 1.19.14(hono@4.12.15)
       '@hono/zod-validator':
         specifier: ^0.7.6
         version: 0.7.6(hono@4.12.15)(zod@3.25.76)
+      '@lewis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@lewis/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@scalar/hono-api-reference':
         specifier: ^0.5.0
         version: 0.5.184(hono@4.12.15)
@@ -111,10 +111,10 @@ importers:
       '@clerk/react':
         specifier: ^6.4.5
         version: 6.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@corridor/shared':
+      '@lewis/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@corridor/ui':
+      '@lewis/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@vitejs/plugin-react':
@@ -148,10 +148,10 @@ importers:
       '@clerk/react':
         specifier: ^6.4.5
         version: 6.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@corridor/shared':
+      '@lewis/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@corridor/ui':
+      '@lewis/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@vitejs/plugin-react':
@@ -188,10 +188,10 @@ importers:
       '@clerk/react':
         specifier: ^6.4.5
         version: 6.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@corridor/shared':
+      '@lewis/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@corridor/ui':
+      '@lewis/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@vitejs/plugin-react':
@@ -222,16 +222,16 @@ importers:
 
   apps/workers:
     dependencies:
-      '@corridor/db':
+      '@lewis/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@corridor/notifications':
+      '@lewis/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
-      '@corridor/pdf':
+      '@lewis/pdf':
         specifier: workspace:*
         version: link:../../packages/pdf
-      '@corridor/shared':
+      '@lewis/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       bullmq:
@@ -253,7 +253,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@corridor/shared':
+      '@lewis/shared':
         specifier: workspace:*
         version: link:../shared
       '@supabase/supabase-js':

@@ -36,7 +36,7 @@ create table patient_representatives (
   -- Required for any regulated-table per .claude/rules/database.md rule 4.
   jurisdiction_id uuid not null references regulatory_jurisdictions(id),
 
-  -- The representative's Corridor user identity. For a self-directed adult
+  -- The representative's Lewis user identity. For a self-directed adult
   -- patient, this is the patient's own user_id (relationship_type='self').
   user_id uuid not null references users(id),
 
@@ -84,7 +84,7 @@ create table patient_representatives (
   expires_at timestamptz,
   revoked_at timestamptz,
 
-  -- Verification trail. verified_by_user_id is the Corridor staff user who
+  -- Verification trail. verified_by_user_id is the Lewis staff user who
   -- inspected the authority document. NULL means unverified — no signing.
   verified_by_user_id uuid references users(id),
   verified_at timestamptz,
@@ -168,7 +168,7 @@ alter table minor_assents enable row level security;
 --   - The representative themselves can see their own row (user_id match)
 --   - The patient tenant can see all their representative rows (tenant match)
 --   - An ETC with care_team relationship can see them (care coordination)
---   - Corridor support with patient:read grant can see them
+--   - Lewis support with patient:read grant can see them
 create policy patient_representatives_read on patient_representatives
   for select
   using (
@@ -181,7 +181,7 @@ create policy patient_representatives_read on patient_representatives
 -- minor_assents reads:
 --   - The patient tenant can see their own assents
 --   - ETC care_team can see (clinical context)
---   - Corridor support with patient:read grant can see
+--   - Lewis support with patient:read grant can see
 create policy minor_assents_read on minor_assents
   for select
   using (
@@ -196,9 +196,9 @@ create policy minor_assents_read on minor_assents
 --
 -- Two new write actions:
 --   representative:write — manage patient_representatives rows.
---     Allowed for: patient self, ETC care-team roles (clinician/admin), corridor_admin.
+--     Allowed for: patient self, ETC care-team roles (clinician/admin), lewis_admin.
 --   minor_assent:write — record minor assent / waiver decisions.
---     Allowed for: ETC care-team roles, corridor_admin (medical director gate
+--     Allowed for: ETC care-team roles, lewis_admin (medical director gate
 --     enforced by waiver constraint).
 --
 -- We replace the helper to add the new entries. The existing CASE arms remain
@@ -210,31 +210,31 @@ language sql
 immutable
 as $$
   select case action
-    when 'tenant:write'              then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'user:write'                then role_name in ('corridor_admin')
-    when 'membership:write'          then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'relationship:write'        then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'support_grant:write'       then role_name in ('corridor_admin')
+    when 'tenant:write'              then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'user:write'                then role_name in ('lewis_admin')
+    when 'membership:write'          then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'relationship:write'        then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'support_grant:write'       then role_name in ('lewis_admin')
     when 'audit:write'               then true
-    when 'file:write'                then role_name in ('sponsor_admin', 'sponsor_user', 'etc_admin', 'etc_user', 'etc_clinician', 'patient', 'corridor_admin')
-    when 'notification:write'        then role_name in ('corridor_admin')
-    when 'feature_flag:write'        then role_name in ('corridor_admin')
-    when 'regulatory:write'          then role_name in ('corridor_admin')
-    when 'sponsor:write'             then role_name in ('sponsor_admin', 'corridor_admin')
-    when 'etc:write'                 then role_name in ('etc_admin', 'corridor_admin')
-    when 'patient:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'corridor_admin')
-    when 'program:write'             then role_name in ('sponsor_admin', 'corridor_admin')
-    when 'device:write'              then role_name in ('sponsor_admin', 'corridor_admin')
-    when 'facility:write'            then role_name in ('etc_admin', 'corridor_admin')
-    when 'payment_rail:write'        then role_name in ('corridor_admin')
-    when 'payment_obligation:write'  then role_name in ('sponsor_admin', 'etc_admin', 'corridor_admin')
-    when 'payment_transaction:write' then role_name in ('corridor_admin')
-    when 'hfar:write'                then role_name in ('etc_admin', 'corridor_admin')
-    when 'consent:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'corridor_admin')
-    when 'device_registry:write'     then role_name in ('patient', 'etc_admin', 'etc_clinician', 'corridor_admin')
-    when 'search_index:write'        then role_name in ('corridor_admin')
-    when 'representative:write'      then role_name in ('patient', 'etc_admin', 'etc_clinician', 'corridor_admin')
-    when 'minor_assent:write'        then role_name in ('etc_admin', 'etc_clinician', 'corridor_admin')
+    when 'file:write'                then role_name in ('sponsor_admin', 'sponsor_user', 'etc_admin', 'etc_user', 'etc_clinician', 'patient', 'lewis_admin')
+    when 'notification:write'        then role_name in ('lewis_admin')
+    when 'feature_flag:write'        then role_name in ('lewis_admin')
+    when 'regulatory:write'          then role_name in ('lewis_admin')
+    when 'sponsor:write'             then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'etc:write'                 then role_name in ('etc_admin', 'lewis_admin')
+    when 'patient:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
+    when 'program:write'             then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'device:write'              then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'facility:write'            then role_name in ('etc_admin', 'lewis_admin')
+    when 'payment_rail:write'        then role_name in ('lewis_admin')
+    when 'payment_obligation:write'  then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'payment_transaction:write' then role_name in ('lewis_admin')
+    when 'hfar:write'                then role_name in ('etc_admin', 'lewis_admin')
+    when 'consent:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
+    when 'device_registry:write'     then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
+    when 'search_index:write'        then role_name in ('lewis_admin')
+    when 'representative:write'      then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
+    when 'minor_assent:write'        then role_name in ('etc_admin', 'etc_clinician', 'lewis_admin')
     else false
   end
 $$;

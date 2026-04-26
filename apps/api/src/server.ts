@@ -1,12 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { checkDatabaseReady } from "@corridor/db";
-import {
-  buildErrorResponse,
-  HTTP_STATUS_BY_CODE,
-  redactPhi,
-  type ErrorCode,
-} from "@corridor/shared";
+import { checkDatabaseReady } from "@lewis/db";
+import { buildErrorResponse, HTTP_STATUS_BY_CODE, redactPhi, type ErrorCode } from "@lewis/shared";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { logger as honoLogger } from "hono/logger";
@@ -139,7 +134,7 @@ app.onError((error, c) => {
 // (deeper readiness, hits DB+Redis). Versioned /v1/health was removed —
 // uptime checks and Railway probes hit the unversioned paths.
 // ---------------------------------------------------------------------------
-app.get("/healthz", (c) => c.json({ ok: true, service: "corridor-api" }));
+app.get("/healthz", (c) => c.json({ ok: true, service: "lewis-api" }));
 
 // /readyz fans out to dependencies and is the most common abuse target on
 // the public surface; tighten the bucket.
@@ -169,7 +164,7 @@ const v1Public = new Hono<{ Variables: ApiVariables }>();
 let cachedOpenApiDoc: ReturnType<typeof buildOpenApiDocument> | undefined;
 v1Public.get("/openapi.json", (c) => {
   cachedOpenApiDoc ??= buildOpenApiDocument(
-    process.env.PUBLIC_API_BASE_URL ?? "https://api.corridor.health",
+    process.env.PUBLIC_API_BASE_URL ?? "https://api.lewis.health",
   );
   return c.json(cachedOpenApiDoc);
 });
@@ -178,7 +173,7 @@ v1Public.get(
   "/docs",
   apiReference({
     spec: { url: "/v1/openapi.json" },
-    pageTitle: "Corridor API Reference",
+    pageTitle: "Lewis API Reference",
   }),
 );
 

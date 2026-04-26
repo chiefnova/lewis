@@ -15,7 +15,7 @@ const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 function MissingClerkConfig() {
   return (
     <div className="patient-shell auth-shell">
-      <h1>Corridor Patient</h1>
+      <h1>Lewis Patient</h1>
       <p>Missing VITE_CLERK_PUBLISHABLE_KEY.</p>
     </div>
   );

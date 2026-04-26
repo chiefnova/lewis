@@ -8,7 +8,7 @@ interface SeoOptions {
   ogImage?: string | undefined;
 }
 
-const JSON_LD_ID = "corridor-jsonld";
+const JSON_LD_ID = "lewis-jsonld";
 
 function setMeta(name: string, content: string, attr: "name" | "property" = "name") {
   const selector = `meta[${attr}="${name}"]`;
@@ -49,7 +49,7 @@ export function useSeo({ title, description, canonical, jsonLd, ogImage }: SeoOp
     setMeta("og:title", title, "property");
     setMeta("twitter:title", title);
     setMeta("twitter:card", "summary_large_image");
-    setMeta("og:site_name", "Corridor Health", "property");
+    setMeta("og:site_name", "Lewis Health", "property");
     setMeta("og:locale", "en_US", "property");
     if (canonical) setLink("canonical", canonical);
     if (canonical) setMeta("og:url", canonical, "property");
@@ -74,7 +74,7 @@ export function useSeo({ title, description, canonical, jsonLd, ogImage }: SeoOp
   }, [title, description, canonical, jsonLd, ogImage]);
 }
 
-export const SITE_URL = "https://corridor.health";
+export const SITE_URL = "https://lewis.health";
 
 export function siteUrl(path: string) {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;

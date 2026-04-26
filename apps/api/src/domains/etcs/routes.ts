@@ -1,4 +1,4 @@
-import { CursorPageQuery, EtcPathParams } from "@corridor/shared";
+import { CursorPageQuery, EtcPathParams } from "@lewis/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 

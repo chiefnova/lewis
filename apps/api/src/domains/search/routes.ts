@@ -1,4 +1,4 @@
-import { SearchQueryParams, type SearchResponse } from "@corridor/shared";
+import { SearchQueryParams, type SearchResponse } from "@lewis/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 

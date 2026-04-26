@@ -1,4 +1,4 @@
-import { AppContextSchema, type AppContext } from "@corridor/shared";
+import { AppContextSchema, type AppContext } from "@lewis/shared";
 import type { PoolClient } from "pg";
 
 export type TransactionHandler<T> = (client: PoolClient) => Promise<T>;

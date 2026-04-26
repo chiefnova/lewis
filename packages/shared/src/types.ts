@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { RequestId, SupportTicketId, TenantId, UserId } from "./api/ids.js";
 
-export type TenantKind = "sponsor" | "etc" | "patient" | "board" | "corridor_internal";
+export type TenantKind = "sponsor" | "etc" | "patient" | "board" | "lewis_internal";
 
 export const TenantRole = z.enum([
   "sponsor_admin",
@@ -12,8 +12,8 @@ export const TenantRole = z.enum([
   "etc_clinician",
   "patient",
   "board_reviewer",
-  "corridor_admin",
-  "corridor_support",
+  "lewis_admin",
+  "lewis_support",
 ]);
 export type TenantRole = z.infer<typeof TenantRole>;
 

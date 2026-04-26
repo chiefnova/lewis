@@ -1,4 +1,4 @@
-# Corridor — MVP 1 Implementation Plan
+# Lewis — MVP 1 Implementation Plan
 
 | | |
 |---|---|
@@ -8,7 +8,7 @@
 | **Last updated** | 2026-04-24 |
 | **Companion to** | [prd.md](prd.md) v1.0 |
 
-This document operationalizes [prd.md](prd.md). It does not duplicate the PRD — it **commits to the order, dependencies, and acceptance criteria** that take Corridor from empty repo to first-patient-dosed at WinSanTor's launch ETC, then through the first 90 days post-launch.
+This document operationalizes [prd.md](prd.md). It does not duplicate the PRD — it **commits to the order, dependencies, and acceptance criteria** that take Lewis from empty repo to first-patient-dosed at WinSanTor's launch ETC, then through the first 90 days post-launch.
 
 The PRD's existing sprint plan (§ 22.2) is the skeleton. This plan is the meat: every PRD section is covered, every feature traces to a rule (per Principle 2), every cross-cutting concern is sequenced into the right phase rather than dumped on Sprint 6, and every phase has hard acceptance criteria that gate the next.
 
@@ -98,7 +98,7 @@ Open questions from PRD § 23 must lock by these dates or the dependent phase sl
 |---|---|---|---|
 | 5 | Video provider | Phase 3 end (before Sprint 4) | **Daily.co** — HIPAA BAA available, signed-URL recording exports, idiomatic React SDK |
 | 6 | E-signature provider | Phase 1 end (before Sprint 2) | **Documenso self-hosted** — keeps signed-document data inside our HIPAA boundary; alternative HelloSign acceptable but adds a subprocessor |
-| 7 | Public ETC slug strategy | Phase 1 end | **Subdomain** (`etc-name.corridor.health`) on Cloudflare wildcard cert; cheaper than per-ETC certs, cleaner UX |
+| 7 | Public ETC slug strategy | Phase 1 end | **Subdomain** (`etc-name.lewis.health`) on Cloudflare wildcard cert; cheaper than per-ETC certs, cleaner UX |
 | 1 | Net annual profits definition | DPHHS or counsel; MVP 1 ships dual-interpretation | Both GAAP and tax-basis; ETC chooses, choice logged |
 | 4 | Sponsor data sharing default | Resolved before Sprint 1 | Aggregate + de-identified line-level safety only; no identified sponsor PHI in MVP 1 |
 | 8 | Search index | Sprint 1 schema; Sprint 3 feature | Postgres FTS for MVP 1; OpenSearch/Algolia only if Phase 2 metrics require it |
@@ -185,7 +185,7 @@ These items close the remaining PRD/implementation gaps. They are not optional p
 - Classify threads as clinical, scheduling, billing, or support.
 - Persist emergency/urgent disclaimer acceptance or display event where required by design.
 - Enforce representative messaging scope through RLS and application validation.
-- Route clinical/safety messages to ETC staff only; Corridor support sees clinical threads only through support-access grants.
+- Route clinical/safety messages to ETC staff only; Lewis support sees clinical threads only through support-access grants.
 - Link message threads to enrollment/patient file when they contain care, scheduling, safety, payment, or grievance context.
 - Define retention: clinical messages follow patient-file retention; support-only messages follow support retention unless escalated into the patient file.
 
@@ -465,20 +465,20 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
 
 ### 3.2 Provider account provisioning
 
-- Cloudflare: register `corridor.health`, create wildcard cert (`*.corridor.health`), set up zone, provision subdomains: `app`, `patient`, `api`, `status`, `www` (placeholder), and reserve the `*.corridor.health` pattern for per-ETC public pages.
-- Clerk: create production application, configure MFA, session lifetime, and webhooks. Clerk authenticates identity only; Corridor tenant memberships live in Postgres and are the source of truth for RLS. Clerk orgs may be used for UX later, but are never authoritative for database authorization.
+- Cloudflare: register `lewis.health`, create wildcard cert (`*.lewis.health`), set up zone, provision subdomains: `app`, `patient`, `api`, `status`, `www` (placeholder), and reserve the `*.lewis.health` pattern for per-ETC public pages.
+- Clerk: create production application, configure MFA, session lifetime, and webhooks. Clerk authenticates identity only; Lewis tenant memberships live in Postgres and are the source of truth for RLS. Clerk orgs may be used for UX later, but are never authoritative for database authorization.
 - Supabase: create three projects (dev, staging, prod), enable HIPAA-eligible config (Team plan), create the HIPAA bucket, enable extensions: `pgcrypto`, `uuid-ossp`, `pg_trgm`, `pgaudit` (where supported).
 - Railway: three projects (dev, staging, prod), Redis service per env, API service per env, workers service per env.
 - Vercel: two projects per env (`app` and `patient`), connect to Cloudflare DNS, configure env vars. Preview deploys per PR.
 - Stripe: healthcare-eligible account, two API keys (test + live), webhook endpoint configured (signature secret stored in fnox).
 - Plaid: production keys, webhook URL configured.
-- Resend: domain SPF/DKIM verification on `corridor.health`, sandbox + production API keys.
+- Resend: domain SPF/DKIM verification on `lewis.health`, sandbox + production API keys.
 - Sentry: three projects per environment × frontend/backend split.
 - PostHog (preferred for self-host privacy): production instance, project per env.
 
 ### 3.3 Repository and toolchain
 
-- Initialize repo at `github.com/<org>/corridor`. Branch protection on `main` requires CI green + 1 approval + signed commits.
+- Initialize repo at `github.com/<org>/lewis`. Branch protection on `main` requires CI green + 1 approval + signed commits.
 - Monorepo skeleton:
   ```
   apps/
@@ -487,7 +487,7 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
         portals/
           sponsor/  # sponsor / biotech manufacturer persona
           etc/      # ETC operator persona
-          admin/    # Corridor internal admin persona
+          admin/    # Lewis internal admin persona
           shared/   # shared staff/business shell primitives
     patient/        # patient-facing portal — Vite/React
       src/
@@ -568,7 +568,7 @@ This is the most leveraged sprint. Time spent here saves 5x time later. Do not u
 These items track the local development foundation added before continuing deeper Sprint 1 product work. They do not replace the Sprint 1 acceptance criteria below; they close the local Docker/API/worker gaps discovered during implementation review.
 
 - [x] Docker Compose local infrastructure exists for Postgres and Redis with named volumes and health checks.
-- [x] Corridor local ports are isolated from Navwise Broker and common defaults: staff app `13000`, API `13001`, patient app `13002`, Postgres `15432`, Redis `16379`.
+- [x] Lewis local ports are isolated from Navwise Broker and common defaults: staff app `13000`, API `13001`, patient app `13002`, Postgres `15432`, Redis `16379`.
 - [x] Root and mise scripts expose `dev:infra`, `dev:api`, `dev:workers`, `dev:app`, `dev:patient`, `dev:all`, `dev:down`, `db:migrate`, and `db:seed`.
 - [x] Database runtime config supports `DATABASE_URL` first, then `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`.
 - [x] Migration/seed config is split from runtime config through `MIGRATION_DATABASE_URL` / `MIGRATION_DB_*`, so app runtimes never need the migration-owner connection string.
@@ -580,7 +580,7 @@ These items track the local development foundation added before continuing deepe
 - [x] Migration 0011 creates `app_api`, `app_worker`, and `app_migrator`; grants app schemas to runtime roles; and applies `FORCE ROW LEVEL SECURITY` to every RLS-enabled table.
 - [x] `db:seed` inserts synthetic local tenants, users, relationships, and a draft program without real PHI.
 - [x] `env/.env.local.example`, app env examples, README, developer onboarding, and local-development runbook document the canonical local path.
-- [x] Local smoke test passed on the dedicated Corridor ports: Docker Postgres/Redis up, migrations applied, seed applied, API `/healthz` and `/readyz` passed, and workers registered all three queues.
+- [x] Local smoke test passed on the dedicated Lewis ports: Docker Postgres/Redis up, migrations applied, seed applied, API `/healthz` and `/readyz` passed, and workers registered all three queues.
 - [x] Verification passed: `pnpm -r typecheck`, `pnpm -r lint`, `pnpm format:check`, `pnpm -r test`, and `pnpm -r build`.
 - [x] Clerk JWT auth, tenant resolution, request-scoped DB transactions, and transaction-local RLS context are mounted before authenticated domain routes.
 - [x] `AppContext` now includes tenant role and is zod-validated before setting Postgres session variables.
@@ -590,12 +590,12 @@ These items track the local development foundation added before continuing deepe
 - [x] Webhook signature-verification scaffolds exist for Clerk, Stripe, Plaid, and Resend; state-changing handlers remain in their feature phases.
 - [x] Domain route shells now call service-layer functions instead of embedding future business logic directly in route files.
 - [x] Shared API contract primitives exist for branded IDs, canonical error envelopes, cursor pagination, and per-domain response shapes.
-- [x] Internal admin routes are role-gated to `corridor_admin`, require a support-ticket context, and write access audit rows through the DB audit helper.
+- [x] Internal admin routes are role-gated to `lewis_admin`, require a support-ticket context, and write access audit rows through the DB audit helper.
 - [x] Regular API, worker, and CI fnox profiles exclude `SUPABASE_SERVICE_ROLE_KEY`; `workers_elevated_dev` is the only local profile allowed to receive it, enforced by `pnpm run secrets:profiles:check` in PR/API CI.
 - [x] RLS coverage is now part of the local/CI gate via `packages/db/scripts/check-rls-coverage.ts` and `mise run db:rls:coverage`; the static gate now requires `FORCE ROW LEVEL SECURITY`, SELECT policy coverage, and write policy coverage for every RLS-enabled table.
 - [x] Semantic runtime-role coverage asserts `app_api` and `app_worker` are login-capable `NOBYPASSRLS` roles and that `app_api` cannot read tenant rows without transaction-local app context.
 - [x] Representative/minor-assent semantic RLS coverage proves care-team relationships are not enough to write unless the ETC user also has the required tenant role grant; non-self signing authority requires a verified authority document.
-- [x] Latest RLS hardening verification passed: API/DB/workers typecheck + lint, `pnpm --filter @corridor/db rls:coverage`, fresh-DB `migrate:local`, semantic runtime-role RLS checks, `pnpm format:check`, and `git diff --check`.
+- [x] Latest RLS hardening verification passed: API/DB/workers typecheck + lint, `pnpm --filter @lewis/db rls:coverage`, fresh-DB `migrate:local`, semantic runtime-role RLS checks, `pnpm format:check`, and `git diff --check`.
 
 ### 4.1 Database foundation (PRD §§ 13.1, 13.3, 14.1, 14.10, 14.11, 18.4)
 
@@ -603,7 +603,7 @@ In `packages/db`:
 
 - Drizzle config with split schema files per domain (tenancy, regulatory, sponsor, etc, etrb, patient, ae, qapi, grievance, compliance, inventory, payments, search, audit_infra).
 - Migration 0001 — create the security primitives:
-  - `tenants` (security boundary; kind enum: `sponsor` | `etc` | `patient` | `board` | `corridor_internal`; status; display_name)
+  - `tenants` (security boundary; kind enum: `sponsor` | `etc` | `patient` | `board` | `lewis_internal`; status; display_name)
   - `users` (Clerk identity, email, name, phone)
   - `tenant_memberships` (user × tenant × role; multi-membership supported per PRD § 8.1; includes status, starts_at, ends_at)
   - `tenant_relationships` (from_tenant_id, to_tenant_id, kind, scope_json, status; used for PPA access, board-to-ETC access, caregiver/guardian access, and future cross-tenant grants)
@@ -682,16 +682,16 @@ In `packages/db`:
   - Relationship read paths through `tenant_relationships`.
   - Patient self-read and representative/caregiver relationships through patient tenant relationships.
   - Board reviewer reads through board tenant membership and explicit review assignment tables as those tables land.
-  - Corridor support reads only through active ticket-scoped grants.
+  - Lewis support reads only through active ticket-scoped grants.
 - Database roles:
   - `app_api` and `app_worker` have no `BYPASSRLS`; all app and worker queries run under forced RLS.
-  - Local app runtime uses `DATABASE_URL=postgres://app_api:...`; local worker runtime uses `WORKER_DATABASE_URL=postgres://app_worker:...`; migrations and seed use `MIGRATION_DATABASE_URL=postgres://corridor:...`.
-  - `app_migrator` is the managed-environment DDL role placeholder and is never available to app or worker runtimes. In local Docker, `corridor` remains the bootstrap owner only for migrations/seed.
+  - Local app runtime uses `DATABASE_URL=postgres://app_api:...`; local worker runtime uses `WORKER_DATABASE_URL=postgres://app_worker:...`; migrations and seed use `MIGRATION_DATABASE_URL=postgres://lewis:...`.
+  - `app_migrator` is the managed-environment DDL role placeholder and is never available to app or worker runtimes. In local Docker, `lewis` remains the bootstrap owner only for migrations/seed.
 - `packages/db` exports context helpers that validate `AppContext` before running `set local app.user_id`, `app.active_tenant_id`, `app.role`, `app.request_id`, and optional `app.support_ticket_id`. The DB-side `app.write_audit(...)` helper is the authoritative same-transaction audit primitive for mutations.
 
 ### 4.2 Storage bucket (PRD § 13.3)
 
-- Create HIPAA-eligible bucket `corridor-storage-prod` (and dev/staging counterparts).
+- Create HIPAA-eligible bucket `lewis-storage-prod` (and dev/staging counterparts).
 - Bucket policy: only the backend storage adapter can mint signed URLs (5-min TTL) for client downloads; frontend never receives Supabase database credentials. No Supabase service-role key is used for Postgres queries in app or worker runtimes.
 - `packages/db/storage.ts` exports `uploadFile()` that:
   - Computes SHA-256 client-side and server-side (verify match).
@@ -737,16 +737,16 @@ In `packages/db`:
 - Deployment boundary:
   ```mermaid
   flowchart LR
-    AppHost[app.corridor.health] --> App[apps/app]
+    AppHost[app.lewis.health] --> App[apps/app]
     App --> Sponsor[apps/app/src/portals/sponsor]
     App --> ETC[apps/app/src/portals/etc]
     App --> Admin[apps/app/src/portals/admin]
-    PatientHost[patient.corridor.health] --> Patient[apps/patient]
+    PatientHost[patient.lewis.health] --> Patient[apps/patient]
     Patient --> PatientPortal[apps/patient/src/portal]
     App --> API[apps/api]
     Patient --> API
   ```
-- `apps/app` is one deployable staff/business console. Sponsor/biotech manufacturer, ETC, and Corridor internal admin are role-routed modules inside `apps/app/src/portals/*`, not separate frontend applications.
+- `apps/app` is one deployable staff/business console. Sponsor/biotech manufacturer, ETC, and Lewis internal admin are role-routed modules inside `apps/app/src/portals/*`, not separate frontend applications.
 - `apps/patient` is a separate deployable patient product because it has distinct auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
 - API domain modules live under `apps/api/src/domains/{sponsors,etcs,patients,boards,internal-admin}` so backend ownership mirrors the PRD domains without creating extra deployables.
 - React Router with role-based route trees:
@@ -780,12 +780,12 @@ In `packages/db`:
 - Sentry frontend + backend + workers wired; PHI scrubber tested with synthetic fixtures.
 - Log aggregation: Better Stack (or Axiom) connected; service tags per app; log retention 30 days dev, 365 days prod.
 - Uptime monitoring: BetterStack synthetic checks on `app`, `patient`, `api`, `status` every 60s.
-- Status page placeholder at `status.corridor.health` (BetterStack-hosted; full template in Sprint 6).
+- Status page placeholder at `status.lewis.health` (BetterStack-hosted; full template in Sprint 6).
 
 ### 4.8 Sprint 1 acceptance criteria
 
 - [ ] `mise run ci` green from a clean clone.
-- [ ] Semantic RLS suite proves: sponsor, ETC, patient, board reviewer, patient representative, and Corridor support policies allow only their explicitly scoped rows.
+- [ ] Semantic RLS suite proves: sponsor, ETC, patient, board reviewer, patient representative, and Lewis support policies allow only their explicitly scoped rows.
 - [ ] Semantic RLS suite proves cross-tenant denial for unrelated tenants across every PHI-bearing table.
 - [x] Runtime DB roles are separate from the migration owner: `app_api`/`app_worker` are `NOBYPASSRLS`, every RLS table is forced, and tests prove app-role reads fail without app context.
 - [x] Architecture-preserved stubs exist for device registry, inpatient profile, payment rails/obligations/transactions, HFAR Path A, and future sponsor patient-data-sharing consents.
@@ -811,7 +811,7 @@ In `packages/db`:
 - Internal admin tooling (very minimal): a Next.js-style script `provision-tenant.ts` that creates a sponsor `tenant`, creates the linked `sponsor_organizations` legal profile, and sends a Clerk invite. (Full admin UI lands Sprint 6.)
 - Onboarding wizard at `/sponsor/onboarding` — captures every field in PRD § 9.1 data block.
 - Tax ID column uses pgcrypto application-layer encryption (`pgp_sym_encrypt`) with a key from KMS-equivalent secret.
-- BAA + MSA "signed_at" tracked but PDFs uploaded out-of-band initially (no signing-flow integration for these — they're contracts with Corridor, not regulatory artifacts).
+- BAA + MSA "signed_at" tracked but PDFs uploaded out-of-band initially (no signing-flow integration for these — they're contracts with Lewis, not regulatory artifacts).
 
 ### 5.2 Sponsor program configuration (PRD § 9.2)
 
@@ -865,7 +865,7 @@ Implementation pattern:
 - Puppeteer worker renders a single PDF from `packages/pdf/templates/license-application.tsx`.
 - All 13 sections + all uploaded attachments compiled into one document.
 - p95 generation < 15s (PRD § 20.1).
-- ETC admin downloads; Corridor does not file with DPHHS (PRD explicit choice).
+- ETC admin downloads; Lewis does not file with DPHHS (PRD explicit choice).
 - After submission, ETC admin enters `dphhs_submitted_at`; tenant transitions to `Application Submitted`.
 - 90-day approval clock starts (computed as `dphhs_submitted_at + 90 days`, displayed in America/Denver).
 
@@ -929,7 +929,7 @@ Implementation pattern:
 - Status state machine per section: Draft → Under Review → Approved → (revisions) → Under Review.
 - Approval workflow requires both administrator AND medical director sign-off; tracked in `pp_manual_section_versions`.
 - Biennial review timer: `next_review_due_at = approved_at + 2 years` (RULE 6(4)).
-- Public viewing surface at `etc-name.corridor.health/manual` — read-only, no auth, renders current approved version. **No PHI** (defense in depth: a content scanner on commit blocks PHI patterns).
+- Public viewing surface at `etc-name.lewis.health/manual` — read-only, no auth, renders current approved version. **No PHI** (defense in depth: a content scanner on commit blocks PHI patterns).
 - Slug strategy decision (PRD § 23 #7) implemented via Cloudflare wildcard.
 
 ### 6.2 Staff (PRD § 10.4)
@@ -1073,7 +1073,7 @@ Migrations: `boards`, `board_etc_associations` (M:M), `board_members`, `board_me
 ### 6.11 Sprint 3 acceptance criteria
 
 - [ ] ETC creates a P&P manual; all 20 sections render from templates; admin + MD approve a section; biennial review date computed.
-- [ ] Public manual page accessible at `etc-name.corridor.health/manual`; no PHI; readable; passes a11y audit.
+- [ ] Public manual page accessible at `etc-name.lewis.health/manual`; no PHI; readable; passes a11y audit.
 - [ ] Staff onboarding flow captures all RULE 10(2) artifacts; license expiration alerts queued at 90/60/30/7 days.
 - [ ] Infection control officer assigned with qualifying staff/training evidence; guideline adoption documented.
 - [ ] Cleaning logs, equipment disinfection logs, safety reports, medication-error/fall injury reports, and expiring product tracking work end-to-end.
@@ -1103,7 +1103,7 @@ This is the riskiest sprint — most LOC, most integrations, first PHI in flight
 ### 7.1 Public program page (PRD § 15.7)
 
 - `GET /v1/public/programs/:slug` returns patient-facing description + structured eligibility criteria preview.
-- Renders at `patient.corridor.health/programs/:slug`.
+- Renders at `patient.lewis.health/programs/:slug`.
 - No auth; no PHI; cached at edge.
 
 ### 7.2 Stage 1 — Discovery + self-screen (PRD § 10.5 Stage 1)
@@ -1262,7 +1262,7 @@ Build the entire patient surface in this sprint. This is what patients actually 
 - Representative participation is allowed only when `patient_representatives.can_message` and scope permit.
 - Attachments go through immutable file storage.
 - Read receipts tracked.
-- Clinical/support visibility enforced: Corridor support needs support-access grant for clinical threads.
+- Clinical/support visibility enforced: Lewis support needs support-access grant for clinical threads.
 - Banner: "For emergencies, call 911. For urgent medical concerns, call your treating physician or [ETC's after-hours line]."
 - ETC's after-hours line is a per-ETC setting (PRD § 10.16).
 
@@ -1284,7 +1284,7 @@ Build the entire patient surface in this sprint. This is what patients actually 
 
 - FAQ (markdown, per-ETC overrides allowed).
 - Contact ETC.
-- Contact Corridor support (platform issues only).
+- Contact Lewis support (platform issues only).
 - Grievance filing form.
 
 ### 7.11 PDF worker activation (PRD § 13.4)
@@ -1412,9 +1412,9 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
 
 #### 8.3.6 DPHHS submission
 
-- Corridor generates DPHHS-formatted PDF (Puppeteer template).
+- Lewis generates DPHHS-formatted PDF (Puppeteer template).
 - ETC files via DPHHS electronic system (out of platform).
-- ETC records `dphhs_submitted_at` + reference number in Corridor.
+- ETC records `dphhs_submitted_at` + reference number in Lewis.
 - If `dphhs_submitted_at > dphhs_deadline` → flag in compliance dashboard.
 
 #### 8.3.7 Routing
@@ -1483,7 +1483,7 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
 - Wire/ACH instructions displayed; ETC sends from their bank.
 - ETC confirms transfer with reference number.
 - Receipt generated + archived in compliance archive.
-- HFAR PDF filed to DPHHS by Feb 1 (analog to AE — Corridor produces, ETC files).
+- HFAR PDF filed to DPHHS by Feb 1 (analog to AE — Lewis produces, ETC files).
 
 ### 8.7 Grievances (PRD § 10.14)
 
@@ -1679,7 +1679,7 @@ The PRD's existing sprint plan defers the entire admin portal to Sprint 6, which
 
 ### 9.10 Status page (PRD § 20.2)
 
-- BetterStack status page at `status.corridor.health`.
+- BetterStack status page at `status.lewis.health`.
 - Components: app, patient, api, workers, db, storage.
 - Public; uptime history; incident posts.
 
@@ -1724,7 +1724,7 @@ The PRD's existing sprint plan defers the entire admin portal to Sprint 6, which
 - Weekly retro for the first 4 weeks.
 - Bi-weekly thereafter.
 - WinSanTor + ETC weekly check-in.
-- Patient feedback channel: post-treatment survey + the existing Help → Contact Corridor support flow.
+- Patient feedback channel: post-treatment survey + the existing Help → Contact Lewis support flow.
 
 ### 10.2 Patient flow improvements
 
@@ -1762,7 +1762,7 @@ Driven by data, not assumption. Likely candidates:
 
 - [ ] First-cohort patients (≥5) complete treatment without compliance gaps.
 - [ ] Second sponsor onboarded and creating programs.
-- [ ] Second ETC licensed and operating on Corridor.
+- [ ] Second ETC licensed and operating on Lewis.
 - [ ] Compliance Watch shows healthy scores across tenants.
 - [ ] SOC 2 evidence pipeline running.
 - [ ] Phase 8 backlog prioritized with WinSanTor + leadership input.
@@ -1784,7 +1784,7 @@ The 10 PRD § 7 deferred items, with activation triggers:
 | 7.7 | SMS notifications | Patient demand or operational need (urgent AE notifications) |
 | 7.8 | Spanish localization | Patient population demand |
 | 7.9 | Multi-state expansion | Sprint 1 jurisdiction model already exists; activate when another state passes RTT regime modeled on SB 535 |
-| 7.10 | Public ETC directory | ≥3 ETCs operating on Corridor |
+| 7.10 | Public ETC directory | ≥3 ETCs operating on Lewis |
 | — | Live captions for consent sessions | Accessibility upgrade after MVP post-session transcript is stable |
 | — | Direct DPHHS API integration | DPHHS exposes API |
 | — | OpenSearch/Algolia | Postgres FTS pageload metrics suffer |

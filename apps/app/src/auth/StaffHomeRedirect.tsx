@@ -1,4 +1,4 @@
-import { defaultStaffPath } from "@corridor/shared";
+import { defaultStaffPath } from "@lewis/shared";
 import { useUser } from "@clerk/react";
 import { Navigate } from "react-router-dom";
 

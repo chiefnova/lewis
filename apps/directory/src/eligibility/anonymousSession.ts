@@ -6,7 +6,7 @@
 // POST /v1/patient/account/link-anonymous-screen, which is the only
 // semi-authenticated endpoint the directory calls.
 
-const PREFIX = "corridor:eligibility:";
+const PREFIX = "lewis:eligibility:";
 
 function key(programSlug: string) {
   return `${PREFIX}${programSlug}`;

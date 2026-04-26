@@ -14,7 +14,7 @@ export function AdminPortal() {
   return (
     <PortalShell
       title="Internal Admin Portal"
-      description="Corridor operations, compliance watch, support access, legal content, and audit shell."
+      description="Lewis operations, compliance watch, support access, legal content, and audit shell."
       navItems={adminNavItems}
     />
   );

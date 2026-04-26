@@ -15,9 +15,9 @@
  * scripts/check-local-defaults.mjs for the drift gate.
  */
 
-export const LOCAL_DB_BOOTSTRAP_USER = "corridor";
-export const LOCAL_DB_BOOTSTRAP_PASSWORD = "corridor";
-export const LOCAL_DB_NAME = "corridor_dev";
+export const LOCAL_DB_BOOTSTRAP_USER = "lewis";
+export const LOCAL_DB_BOOTSTRAP_PASSWORD = "lewis";
+export const LOCAL_DB_NAME = "lewis_dev";
 
 export const LOCAL_POSTGRES_HOST_DEFAULT = "127.0.0.1";
 export const LOCAL_POSTGRES_PORT_DEFAULT = 15432;
@@ -25,10 +25,10 @@ export const LOCAL_REDIS_HOST_DEFAULT = "127.0.0.1";
 export const LOCAL_REDIS_PORT_DEFAULT = 16379;
 
 export const LOCAL_APP_API_DB_USER = "app_api";
-export const LOCAL_APP_API_DB_PASSWORD_DEFAULT = "corridor_app_api";
+export const LOCAL_APP_API_DB_PASSWORD_DEFAULT = "lewis_app_api";
 
 export const LOCAL_APP_WORKER_DB_USER = "app_worker";
-export const LOCAL_APP_WORKER_DB_PASSWORD_DEFAULT = "corridor_app_worker";
+export const LOCAL_APP_WORKER_DB_PASSWORD_DEFAULT = "lewis_app_worker";
 
 export function localApiDatabaseUrl(
   host: string = LOCAL_POSTGRES_HOST_DEFAULT,

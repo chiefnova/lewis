@@ -54,13 +54,13 @@ jobs:
         run: mise run install
 
       - name: Frontend lint
-        run: pnpm --filter app --filter patient --filter @corridor/ui --filter @corridor/shared --filter @corridor/rbac lint
+        run: pnpm --filter app --filter patient --filter @lewis/ui --filter @lewis/shared --filter @lewis/rbac lint
 
       - name: Frontend TypeScript check
-        run: pnpm --filter app --filter patient --filter @corridor/ui --filter @corridor/shared --filter @corridor/rbac typecheck
+        run: pnpm --filter app --filter patient --filter @lewis/ui --filter @lewis/shared --filter @lewis/rbac typecheck
 
       - name: Unit tests
-        run: pnpm --filter app --filter patient --filter @corridor/ui --filter @corridor/shared --filter @corridor/rbac test
+        run: pnpm --filter app --filter patient --filter @lewis/ui --filter @lewis/shared --filter @lewis/rbac test
 
       # Accessibility tests — CLAUDE.md requires axe to gate patient PRs
       # (patient portal targets WCAG 2.1 AA). Currently the package.json

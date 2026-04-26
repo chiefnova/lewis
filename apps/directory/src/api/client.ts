@@ -1,7 +1,7 @@
 // Public-API client for the directory app. Hits only /v1/public/* and the
 // two narrowly-scoped semi-authenticated patient-account endpoints. Never
 // reads from Supabase directly. Validates every response with the public
-// Zod schemas in @corridor/shared.
+// Zod schemas in @lewis/shared.
 
 import {
   type ConnectRequestPayload,
@@ -14,7 +14,7 @@ import {
   PublicEtcDetail,
   PublicProgramDetail,
   PublicProgramListResponse,
-} from "@corridor/shared/api/public";
+} from "@lewis/shared/api/public";
 import type { ZodType } from "zod";
 
 // Distinct error types let callers tell network failures apart from server
@@ -44,7 +44,7 @@ export class ApiSchemaError extends Error {
 // Vercel project env vars.
 const DEFAULT_BASE_URL = import.meta.env.DEV
   ? "http://localhost:13001"
-  : "https://api.corridor.health";
+  : "https://api.lewis.health";
 
 function getBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL ?? DEFAULT_BASE_URL;
@@ -105,7 +105,7 @@ export const publicApi = {
   },
 };
 
-// Semi-authenticated endpoint: requires a Clerk session via the .corridor.health
+// Semi-authenticated endpoint: requires a Clerk session via the .lewis.health
 // cookie. Called once, immediately after Clerk SignUp completes, to attach the
 // anonymous screen result to the new patient user record.
 export async function linkAnonymousScreen(

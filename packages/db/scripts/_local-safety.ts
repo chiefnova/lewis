@@ -1,5 +1,5 @@
 /**
- * Shared local-development safety guards for the @corridor/db scripts.
+ * Shared local-development safety guards for the @lewis/db scripts.
  *
  * Both seed-dev.ts and setup-local-runtime-roles.ts make destructive changes
  * to a Postgres database (insert synthetic data, alter role passwords). They
@@ -16,7 +16,7 @@ export const ALLOWED_HOST_LITERALS: ReadonlySet<string> = new Set([
   "[::1]",
   "localhost",
   "host.docker.internal",
-  // docker-compose service hostname inside the corridor compose network.
+  // docker-compose service hostname inside the lewis compose network.
   "postgres",
 ]);
 

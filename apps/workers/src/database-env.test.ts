@@ -53,17 +53,17 @@ describe("resolveWorkerDatabaseEnv", () => {
     const result = resolveWorkerDatabaseEnv({
       DB_HOST: "127.0.0.1",
       DB_PORT: "15432",
-      DB_DATABASE: "corridor_dev",
+      DB_DATABASE: "lewis_dev",
       DB_USERNAME: "app_api",
-      DB_PASSWORD: "corridor_app_api",
+      DB_PASSWORD: "lewis_app_api",
       WORKER_DB_USERNAME: "app_worker",
-      WORKER_DB_PASSWORD: "corridor_app_worker",
+      WORKER_DB_PASSWORD: "lewis_app_worker",
     });
     expect(result.DB_HOST).toBe("127.0.0.1");
     expect(result.DB_PORT).toBe("15432");
-    expect(result.DB_DATABASE).toBe("corridor_dev");
+    expect(result.DB_DATABASE).toBe("lewis_dev");
     expect(result.DB_USERNAME).toBe("app_worker");
-    expect(result.DB_PASSWORD).toBe("corridor_app_worker");
+    expect(result.DB_PASSWORD).toBe("lewis_app_worker");
   });
 
   it("WORKER_DATABASE_URL alone does NOT override DB_HOST", () => {

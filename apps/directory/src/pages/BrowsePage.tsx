@@ -57,7 +57,7 @@ export function BrowsePage() {
   const [sort, setSort] = useState("Recently added");
 
   useSeo({
-    title: "Browse experimental treatments — Corridor Health",
+    title: "Browse experimental treatments — Lewis Health",
     description:
       "Browse investigational treatments available at Montana Experimental Treatment Centers. Filter by condition, ETC location, treatment form, trial phase, or manufacturer.",
     canonical: siteUrl("/browse"),

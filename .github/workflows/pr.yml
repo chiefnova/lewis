@@ -18,8 +18,8 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgres://app_api:corridor_app_api@127.0.0.1:15432/corridor_dev
-      MIGRATION_DATABASE_URL: postgres://corridor:corridor@127.0.0.1:15432/corridor_dev
+      DATABASE_URL: postgres://app_api:lewis_app_api@127.0.0.1:15432/lewis_dev
+      MIGRATION_DATABASE_URL: postgres://lewis:lewis@127.0.0.1:15432/lewis_dev
       REDIS_URL: redis://127.0.0.1:16379
     steps:
       - uses: actions/checkout@v4

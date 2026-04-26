@@ -78,6 +78,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/e2e-post-deploy.yml
     with:
-      app_url: ${{ vars.PROD_APP_URL || 'https://app.corridor.health' }}
-      patient_url: ${{ vars.PROD_PATIENT_URL || 'https://patient.corridor.health' }}
-      api_origin_url: ${{ vars.PROD_API_ORIGIN_URL || 'https://api.corridor.health' }}
+      app_url: ${{ vars.PROD_APP_URL || 'https://app.lewis.health' }}
+      patient_url: ${{ vars.PROD_PATIENT_URL || 'https://patient.lewis.health' }}
+      api_origin_url: ${{ vars.PROD_API_ORIGIN_URL || 'https://api.lewis.health' }}

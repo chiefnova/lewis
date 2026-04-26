@@ -1,4 +1,4 @@
-import { CursorPageQuery, SupportTicketId } from "@corridor/shared";
+import { CursorPageQuery, SupportTicketId } from "@lewis/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
@@ -10,8 +10,8 @@ import { getComplianceWatchlist, listAuditLog, listTenants } from "./service.js"
 /**
  * Internal-admin sub-router. Two enforced gates:
  *
- *   1. requireRole("corridor_admin") — only Corridor staff with the
- *      corridor_admin tenant_membership role reach these routes. The role
+ *   1. requireRole("lewis_admin") — only Lewis staff with the
+ *      lewis_admin tenant_membership role reach these routes. The role
  *      lives on the AppContext built by resolveTenant.
  *
  *   2. X-Support-Ticket-Id header — break-glass marker. Validated against
@@ -29,7 +29,7 @@ const SUPPORT_TICKET_HEADER = "x-support-ticket-id";
 
 export const internalAdminRoutes = new Hono<{ Variables: AuthenticatedDbVariables }>();
 
-internalAdminRoutes.use("*", requireRole("corridor_admin"));
+internalAdminRoutes.use("*", requireRole("lewis_admin"));
 
 internalAdminRoutes.use("*", async (c, next) => {
   const rawTicket = c.req.header(SUPPORT_TICKET_HEADER);

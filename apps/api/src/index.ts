@@ -4,7 +4,7 @@ import {
   closeDatabasePool,
   getDatabasePool,
   initializeDatabase,
-} from "@corridor/db";
+} from "@lewis/db";
 
 import { logger } from "./logger.js";
 import { closeRedisClient, initializeRedis } from "./redis.js";
@@ -39,11 +39,11 @@ async function startup(): Promise<void> {
   await initializeDatabase();
   await assertApiRuntimeRole();
   await initializeRedis();
-  logger.info("corridor API dependencies ready: postgres, redis");
+  logger.info("lewis API dependencies ready: postgres, redis");
 }
 
 async function shutdown(signal: NodeJS.Signals, server: Server): Promise<void> {
-  logger.info({ signal }, "corridor API shutting down");
+  logger.info({ signal }, "lewis API shutting down");
   server.close();
   await Promise.allSettled([closeRedisClient(), closeDatabasePool()]);
 }
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   await startup();
 
   const server = serve({ fetch: app.fetch, port }, (info) => {
-    logger.info({ port: info.port }, "corridor API listening");
+    logger.info({ port: info.port }, "lewis API listening");
   });
 
   process.once("SIGINT", (signal) => {

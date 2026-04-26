@@ -4,7 +4,7 @@ create extension if not exists pg_trgm;
 
 create schema if not exists app;
 
-create type tenant_kind as enum ('sponsor', 'etc', 'patient', 'board', 'corridor_internal');
+create type tenant_kind as enum ('sponsor', 'etc', 'patient', 'board', 'lewis_internal');
 create type tenant_status as enum ('active', 'inactive', 'pending', 'suspended', 'provisional');
 create type notification_channel as enum ('email');
 

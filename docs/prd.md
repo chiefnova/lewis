@@ -1,4 +1,4 @@
-# Corridor — Product Requirements Document
+# Lewis — Product Requirements Document
 
 **MVP 1: Montana Experimental Treatment Center Operating Platform**
 
@@ -42,11 +42,11 @@
 
 ## 1. Executive Summary
 
-Corridor is the operating platform for Montana's new Experimental Treatment Center (ETC) regime, established by Senate Bill 535 (signed May 13, 2025) and operationalized by MAR Notice 2026-427.1. Corridor serves sponsor/biotech manufacturer, ETC, patient, board reviewer, and Corridor internal users with one platform and one shared data layer. The frontend has two deployable products: `apps/app` for the authenticated staff/business console and `apps/patient` for the patient-facing portal.
+Lewis is the operating platform for Montana's new Experimental Treatment Center (ETC) regime, established by Senate Bill 535 (signed May 13, 2025) and operationalized by MAR Notice 2026-427.1. Lewis serves sponsor/biotech manufacturer, ETC, patient, board reviewer, and Lewis internal users with one platform and one shared data layer. The frontend has two deployable products: `apps/app` for the authenticated staff/business console and `apps/patient` for the patient-facing portal.
 
 MVP 1 launches with WinSanTor as the design-partner sponsor, WST-057 as the launch program, and Montana as the launch geography. The product makes WinSanTor the first Phase 3 biotech to commercially deliver an investigational drug under a state Right-to-Try framework, and gives the ETC operating it a turnkey compliance-and-operations spine that satisfies every requirement in the 25 ETC rules.
 
-The product's strategic intent is twofold. First, to be the system of record for the regulatory regime — meaning every protocol, patient agreement, informed consent recording, adverse event report, ETRB review, QAPI minute, and DPHHS submission flows through Corridor. Second, to position Corridor's operator (us) for vertical integration into ETC ownership in Phase 3+ by accumulating privileged operational data on what works, what scales, and where unit economics break.
+The product's strategic intent is twofold. First, to be the system of record for the regulatory regime — meaning every protocol, patient agreement, informed consent recording, adverse event report, ETRB review, QAPI minute, and DPHHS submission flows through Lewis. Second, to position Lewis's operator (us) for vertical integration into ETC ownership in Phase 3+ by accumulating privileged operational data on what works, what scales, and where unit economics break.
 
 Sponsors are the primary buyers. ETCs are the primary operators. Patients are users — they pay only for the drug, never for the platform.
 
@@ -87,7 +87,7 @@ There is no software that operates the SB 535 regime end-to-end. There is no sof
 
 SB 535 was signed May 13, 2025. MAR 2026-427.1 entered public comment April 10, 2026, with comments closing May 8, 2026. Final rules are expected mid-2026. The first ETCs will license in late 2026. WinSanTor's launch ETC for WST-057 is targeting first-patient milestone in this window.
 
-Building Corridor in parallel with rule finalization means MVP 1 ships with the first ETC's first patient. There is no second mover on this — by the time a competitor sees the opportunity, Corridor is the system of record for the first commercial RTT program in the country.
+Building Lewis in parallel with rule finalization means MVP 1 ships with the first ETC's first patient. There is no second mover on this — by the time a competitor sees the opportunity, Lewis is the system of record for the first commercial RTT program in the country.
 
 ### 3.2 The vertical integration thesis
 
@@ -99,7 +99,7 @@ This sequencing matters for MVP 1 architecture in one specific way: we model boa
 
 ### 3.3 The competitive intelligence wall
 
-When we eventually operate our own ETCs while continuing to serve other ETCs as a software vendor, we face a structural conflict. ETCs running on Corridor will not want their data visible to a competing operator. The MVP 1 architecture must support strict tenant isolation via Postgres Row-Level Security so that, when this conflict materializes in Phase 3+, the answer is a clean data-governance commitment backed by enforceable technical controls, not a promise.
+When we eventually operate our own ETCs while continuing to serve other ETCs as a software vendor, we face a structural conflict. ETCs running on Lewis will not want their data visible to a competing operator. The MVP 1 architecture must support strict tenant isolation via Postgres Row-Level Security so that, when this conflict materializes in Phase 3+, the answer is a clean data-governance commitment backed by enforceable technical controls, not a promise.
 
 ---
 
@@ -174,7 +174,7 @@ When we eventually operate our own ETCs while continuing to serve other ETCs as 
 - **Patient with legal guardian** — guardian signs per Title 72 Ch 5; patient may co-sign.
 - **Minor patient** — parent or legal guardian signs; pediatric flows.
 
-Representative access is a first-class compliance object, not a UI flag. Corridor must record the representative's authority basis, supporting document when applicable, access scope, signing authority, start/end dates, revocation, and every use of that authority. Caregivers default to read-only schedule/outcome visibility. Legal guardians and parents of minors may sign only after authority is verified and attached to the patient file. Minor patients may have a documented assent/co-sign flow when clinically appropriate.
+Representative access is a first-class compliance object, not a UI flag. Lewis must record the representative's authority basis, supporting document when applicable, access scope, signing authority, start/end dates, revocation, and every use of that authority. Caregivers default to read-only schedule/outcome visibility. Legal guardians and parents of minors may sign only after authority is verified and attached to the patient file. Minor patients may have a documented assent/co-sign flow when clinically appropriate.
 
 **Jobs to be done:**
 
@@ -210,13 +210,13 @@ Every regulatory artifact (P&P manual, ETRB approval, AE report, annual filing, 
 Every feature in MVP 1 maps to a specific section of SB 535 or a specific RULE in MAR 2026-427.1. Section 19 of this PRD is the explicit mapping. If a feature cannot trace to a rule, it does not ship in MVP 1.
 
 **Principle 3 — Patient dignity is non-negotiable.**
-Patients in this system have serious illnesses. The product never uses gamification, urgency tactics, or growth-hacking patterns on patient flows. Tone is plain, honest, and respectful. Patients are never billed by Corridor.
+Patients in this system have serious illnesses. The product never uses gamification, urgency tactics, or growth-hacking patterns on patient flows. Tone is plain, honest, and respectful. Patients are never billed by Lewis.
 
 **Principle 4 — Audit-ready by default.**
 Every state change — every patient file edit, every protocol approval, every consent recording, every payment — is immutably logged with actor, timestamp, before/after, and IP. A DPHHS or FDA inspector should be able to receive a read-only export covering any time window in under five minutes.
 
 **Principle 5 — Multi-tenant from line one.**
-The data model uses Postgres Row-Level Security with Clerk JWT-based tenant scoping. There is no admin path that bypasses RLS. ETCs cannot see other ETCs' patient data. Sponsors cannot see other sponsors' programs. Corridor staff have explicit, audited access only.
+The data model uses Postgres Row-Level Security with Clerk JWT-based tenant scoping. There is no admin path that bypasses RLS. ETCs cannot see other ETCs' patient data. Sponsors cannot see other sponsors' programs. Lewis staff have explicit, audited access only.
 
 **Principle 6 — Boring tech, careful integrations.**
 Stack choices favor maturity over novelty. Where we integrate (Stripe, Plaid, Clerk, Resend, Sentry), we follow the platform's idiomatic patterns. We do not build what we can buy at this stage.
@@ -261,7 +261,7 @@ The MVP 1 release covers, end-to-end, the operations required for an outpatient 
 
 ### 6.2 Sponsor scope clarification
 
-The launch sponsor is WinSanTor. The launch program is WST-057 for peripheral neuropathy. The launch ETC is the WinSanTor-affiliated outpatient ETC in Montana. Corridor is multi-tenant and multi-program-capable on day one, but this PRD's flows, data examples, and worked cases use WinSanTor / WST-057 throughout.
+The launch sponsor is WinSanTor. The launch program is WST-057 for peripheral neuropathy. The launch ETC is the WinSanTor-affiliated outpatient ETC in Montana. Lewis is multi-tenant and multi-program-capable on day one, but this PRD's flows, data examples, and worked cases use WinSanTor / WST-057 throughout.
 
 ---
 
@@ -287,7 +287,7 @@ These are deliberately deferred. The PRD acknowledges them so that engineering d
 
 **7.9 Multi-state expansion.** Montana-only in MVP 1. Schema supports state as a first-class field on every regulated object.
 
-**7.10 Public ETC directory / patient marketplace.** Patient discovery in MVP 1 is sponsor-driven (you find Corridor through WinSanTor, your treating physician, or direct outreach). A public-facing directory of all licensed ETCs and the programs they offer is Phase 2 once there are more than two or three ETCs operating.
+**7.10 Public ETC directory / patient marketplace.** Patient discovery in MVP 1 is sponsor-driven (you find Lewis through WinSanTor, your treating physician, or direct outreach). A public-facing directory of all licensed ETCs and the programs they offer is Phase 2 once there are more than two or three ETCs operating.
 
 ---
 
@@ -295,9 +295,9 @@ These are deliberately deferred. The PRD acknowledges them so that engineering d
 
 ### 8.1 Four portals, one data layer
 
-- **app.corridor.health** — the primary application. Routes by role to Sponsor, ETC, or Internal Admin views post-login.
-- **patient.corridor.health** — patient-only, simplified UX, mobile-first responsive.
-- **www.corridor.health** — marketing site. Out of PRD scope, mentioned for completeness.
+- **app.lewis.health** — the primary application. Routes by role to Sponsor, ETC, or Internal Admin views post-login.
+- **patient.lewis.health** — patient-only, simplified UX, mobile-first responsive.
+- **www.lewis.health** — marketing site. Out of PRD scope, mentioned for completeness.
 
 The two app domains share one Postgres database with RLS. Clerk handles authentication for all of them with a unified user identity that can hold multiple role memberships (a person could be both a sponsor admin at WinSanTor and a clinical staff member at an ETC, though this is uncommon).
 
@@ -309,7 +309,7 @@ Five tenant kinds form the platform's security boundary:
 - **ETC** — owns operations, has many users with ETC roles
 - **Patient** — tenant scoped to one human, plus explicitly authorized representatives
 - **Board** — Experimental Treatment Review Board with reviewer users and cross-ETC associations
-- **Corridor Internal** — internal support/admin tenant, access only through ticket-scoped support grants
+- **Lewis Internal** — internal support/admin tenant, access only through ticket-scoped support grants
 
 Legal/business entities are separate from the security boundary. Sponsor and ETC organization records store legal names, tax IDs, addresses, licensure details, and billing data, but RLS policies key off tenants and explicit tenant relationships, not a generic organization type.
 
@@ -330,7 +330,7 @@ Programs are owned by sponsors. ETCs participate in programs via Program Partici
 
 ### 9.1 Sponsor onboarding
 
-**Trigger:** A Corridor sales conversation closes with a signed Master Services Agreement and BAA. Internal admin provisions the sponsor tenant and creates the first sponsor admin user via Clerk invite.
+**Trigger:** A Lewis sales conversation closes with a signed Master Services Agreement and BAA. Internal admin provisions the sponsor tenant and creates the first sponsor admin user via Clerk invite.
 
 **Flow:**
 
@@ -369,9 +369,9 @@ Programs are owned by sponsors. ETCs participate in programs via Program Partici
 
 **Key product behaviors:**
 
-- The program protocol PDF is the artifact ETRBs review under RULE 16(6)(a). Corridor stores it in Supabase Storage with an immutable SHA-256 hash, version history, and audit log entries on every replacement.
+- The program protocol PDF is the artifact ETRBs review under RULE 16(6)(a). Lewis stores it in Supabase Storage with an immutable SHA-256 hash, version history, and audit log entries on every replacement.
 - Eligibility criteria are structured (not free text) so that the patient eligibility self-screen can run them programmatically.
-- The "what patients see during discovery" field is the only patient-facing surface from the sponsor; Corridor does not allow sponsor-direct patient marketing per Principle 3.
+- The "what patients see during discovery" field is the only patient-facing surface from the sponsor; Lewis does not allow sponsor-direct patient marketing per Principle 3.
 
 ### 9.3 ETC Network
 
@@ -379,8 +379,8 @@ Programs are owned by sponsors. ETCs participate in programs via Program Partici
 
 **Sub-flows:**
 
-- **Invite ETC to participate.** Sponsor admin enters ETC legal name and primary contact email. Corridor checks if the ETC tenant exists; if yes, sends an in-app invitation; if no, sends a Clerk-style email invitation that creates a new ETC tenant on acceptance. The invitation references the program.
-- **Program Participation Agreement (PPA).** When an ETC accepts, Corridor generates a PPA PDF (template per program, populated with sponsor and ETC details). The PPA covers: scope of program, supply chain logistics, pricing terms, AE flow-down obligations to sponsor pharmacovigilance, data sharing, term, and termination. Both sides sign in-platform via embedded signature flow (HelloSign or Stripe Identity equivalent — picked in implementation; treated as a black-box signing primitive in this PRD).
+- **Invite ETC to participate.** Sponsor admin enters ETC legal name and primary contact email. Lewis checks if the ETC tenant exists; if yes, sends an in-app invitation; if no, sends a Clerk-style email invitation that creates a new ETC tenant on acceptance. The invitation references the program.
+- **Program Participation Agreement (PPA).** When an ETC accepts, Lewis generates a PPA PDF (template per program, populated with sponsor and ETC details). The PPA covers: scope of program, supply chain logistics, pricing terms, AE flow-down obligations to sponsor pharmacovigilance, data sharing, term, and termination. Both sides sign in-platform via embedded signature flow (HelloSign or Stripe Identity equivalent — picked in implementation; treated as a black-box signing primitive in this PRD).
 - **ETC Network table view.** For each participating ETC: legal name, primary contact, status (Invited / PPA Pending / Active / Paused / Terminated), date of first patient dosed, total patients dosed, active patients in treatment, AE count (last 30 days), last AE date.
 - **Per-ETC drill-down.** Same fields plus de-identified outcome aggregates, billing reconciliation, drug-accountability status, and supply chain status (Phase 2: integration with sponsor's manufacturing/distribution).
 
@@ -402,7 +402,7 @@ MVP 1 PPAs may choose either `aggregate_only` or `deidentified_line_level_safety
 
 **Drilldown:** Read-only AE detail with de-identified RULE 17(3) fields appropriate for sponsor pharmacovigilance. Sponsor users can add internal notes visible only to the sponsor tenant. Every sponsor line-level safety view/export writes `sponsor_data_access_events` and patient disclosure-accounting events where applicable.
 
-**Flow-down:** When an ETC submits an AE under RULE 17, Corridor immediately notifies the sponsor's regulatory contact via email per the PPA configuration, with a deep link to the AE detail.
+**Flow-down:** When an ETC submits an AE under RULE 17, Lewis immediately notifies the sponsor's regulatory contact via email per the PPA configuration, with a deep link to the AE detail.
 
 ### 9.6 Reports
 
@@ -417,13 +417,13 @@ Each report supports a date range, JSON export for sponsor's BI pipelines, and P
 
 ### 9.7 Billing
 
-The sponsor is the payer of Corridor's platform fee. MVP 1 supports:
+The sponsor is the payer of Lewis's platform fee. MVP 1 supports:
 
 - Per-program flat monthly fee (configurable per sponsor in admin tooling)
 - Per-treatment-delivered variable fee
 - Combination
 
-Stripe Billing handles invoicing. Sponsor sees their invoice history, payment methods, and upcoming invoice. Billing is a sponsor-only surface; ETCs and patients do not see Corridor's financial relationship with the sponsor.
+Stripe Billing handles invoicing. Sponsor sees their invoice history, payment methods, and upcoming invoice. Billing is a sponsor-only surface; ETCs and patients do not see Lewis's financial relationship with the sponsor.
 
 ### 9.8 Settings
 
@@ -443,7 +443,7 @@ This is the largest portal in MVP 1 by surface area. Forty percent of engineerin
 
 **Step 1 — Tenant creation.** Standard Clerk invite flow. ETC admin creates account, provides legal entity name, primary location address, federal tax ID, primary contact information.
 
-**Step 2 — Licensure wizard.** This is the differentiator. Corridor walks the prospective ETC through the RULE 5 application, generating a DPHHS-ready package on completion. Sections:
+**Step 2 — Licensure wizard.** This is the differentiator. Lewis walks the prospective ETC through the RULE 5 application, generating a DPHHS-ready package on completion. Sections:
 
 - Applicant identity (RULE 5(1) reference per 50-5-203)
 - Medical director identity and qualifications (RULE 5(1)(a), (b)) with credential upload
@@ -459,15 +459,15 @@ This is the largest portal in MVP 1 by surface area. Forty percent of engineerin
 - Fire marshal inspection upload (RULES 23(2), 24(2))
 - Transfer agreement upload (RULE 13(2))
 
-**Step 3 — Generate application package.** On submission, Corridor produces a single PDF containing all RULE 5 elements plus all required attachments, formatted to DPHHS expectations. Corridor does not file the application with DPHHS on behalf of the ETC (this is a regulated act we choose not to perform in MVP 1); the ETC downloads and files via DPHHS's electronic licensing system.
+**Step 3 — Generate application package.** On submission, Lewis produces a single PDF containing all RULE 5 elements plus all required attachments, formatted to DPHHS expectations. Lewis does not file the application with DPHHS on behalf of the ETC (this is a regulated act we choose not to perform in MVP 1); the ETC downloads and files via DPHHS's electronic licensing system.
 
-**Step 4 — License tracking.** The ETC tenant enters "Application Submitted" status. ETC admin updates with DPHHS submission date. Corridor tracks the 90-day approval clock per SB 535 § 1(1)(b) and surfaces it on the dashboard. When license is granted, ETC admin uploads the license, and tenant transitions to "Licensed."
+**Step 4 — License tracking.** The ETC tenant enters "Application Submitted" status. ETC admin updates with DPHHS submission date. Lewis tracks the 90-day approval clock per SB 535 § 1(1)(b) and surfaces it on the dashboard. When license is granted, ETC admin uploads the license, and tenant transitions to "Licensed."
 
 **Key product behaviors:**
 
 - The wizard is the most complex onboarding flow in MVP 1. It is designed as a save-as-you-go experience; an ETC operator may take days or weeks to complete it.
 - The wizard's structured outputs become the seed data for the live tenant: medical director becomes the MD user, P&P attestations become the seed P&P manual entries, staff roster populates staff files.
-- $10K application fee and $5K annual renewal fee per SB 535 § 1(3) are tracked but not collected through Corridor — the ETC pays DPHHS directly.
+- $10K application fee and $5K annual renewal fee per SB 535 § 1(3) are tracked but not collected through Lewis — the ETC pays DPHHS directly.
 
 ### 10.2 Dashboard
 
@@ -490,7 +490,7 @@ This is the largest portal in MVP 1 by surface area. Forty percent of engineerin
 
 **Purpose:** RULE 6 requires a P&P manual covering 20 enumerated categories, available to patients/visitors/public, with biennial review.
 
-**Structure:** A versioned document with a section for each RULE 6(2) category. Corridor ships templates for each section, Montana-tailored and ETRB-aware, that the ETC's medical director and administrator review and customize.
+**Structure:** A versioned document with a section for each RULE 6(2) category. Lewis ships templates for each section, Montana-tailored and ETRB-aware, that the ETC's medical director and administrator review and customize.
 
 **Categories (RULE 6(2)(a)–(t)):**
 
@@ -524,7 +524,7 @@ This is the largest portal in MVP 1 by surface area. Forty percent of engineerin
 - Version history immutable
 - Biennial review reminder fires automatically; lapse marked on compliance health score
 
-**Public viewing surface:** `etc-name.corridor.health/manual` is a read-only public page rendering the manual's current approved version. No PHI on this page.
+**Public viewing surface:** `etc-name.lewis.health/manual` is a read-only public page rendering the manual's current approved version. No PHI on this page.
 
 ### 10.4 Staff
 
@@ -550,7 +550,7 @@ This is the largest portal in MVP 1 by surface area. Forty percent of engineerin
 
 This is the longest single flow in MVP 1. It implements 50-12-104, 50-12-105, RULE 11, RULE 12, and parts of RULES 6, 13.
 
-**Stage 1 — Patient discovery and self-screen** (typically on patient.corridor.health, but ETC staff can also start from the ETC portal on a patient's behalf).
+**Stage 1 — Patient discovery and self-screen** (typically on patient.lewis.health, but ETC staff can also start from the ETC portal on a patient's behalf).
 
 A prospective patient lands on the program page, sees the patient-facing description, and clicks "Check eligibility." The self-screen runs the program's structured eligibility criteria:
 
@@ -590,7 +590,7 @@ ETC clinical staff reviews the submitted package. Decisions:
 
 This implements 50-12-105 with the enhanced digital recorded path under § 105(3)(b).
 
-The patient and a treating health care provider from the ETC join a synchronous video session (built on Daily.co or similar — treated as a black-box video primitive in this PRD; chosen in implementation). Corridor records the session with patient's pre-session consent to record. The session must cover all elements of 50-12-105(2)(a)–(h):
+The patient and a treating health care provider from the ETC join a synchronous video session (built on Daily.co or similar — treated as a black-box video primitive in this PRD; chosen in implementation). Lewis records the session with patient's pre-session consent to record. The session must cover all elements of 50-12-105(2)(a)–(h):
 
 (a) Currently approved products, treatments, and services for the disease, condition, or desired health outcomes
 (b) Patient's attestation that they concur with the provider that approved treatments are unlikely to achieve their desired outcomes or are otherwise impractically available
@@ -601,15 +601,15 @@ The patient and a treating health care provider from the ETC join a synchronous 
 (g) Patient's liability for expenses, extending to estate unless the patient agreement states otherwise
 (h) Acknowledgment that the experimental treatment cannot be used to assist with ending the patient's natural life
 
-Corridor's UI guides the provider through a checklist during the session, marking each topic as covered. The session recording is stored in Supabase Storage (HIPAA-eligible bucket) with the topic-coverage timestamps. A post-session transcript is generated, stored, and linked to the consent record for patient access and audit review. Provider attests at session end that all required topics were covered. Patient verbally consents on recording.
+Lewis's UI guides the provider through a checklist during the session, marking each topic as covered. The session recording is stored in Supabase Storage (HIPAA-eligible bucket) with the topic-coverage timestamps. A post-session transcript is generated, stored, and linked to the consent record for patient access and audit review. Provider attests at session end that all required topics were covered. Patient verbally consents on recording.
 
 The recorded session, the timestamped topic checklist, and the provider's attestation together constitute "verified comprehension and consent through interactive discussions… recorded using audio, video, or any other digital platform" under 50-12-105(3)(b).
 
-For patients who prefer the traditional path under § 105(3)(a), Corridor also generates a written informed consent document populated with all required elements; patient e-signs, treating provider attests, witness e-signs.
+For patients who prefer the traditional path under § 105(3)(a), Lewis also generates a written informed consent document populated with all required elements; patient e-signs, treating provider attests, witness e-signs.
 
 **Stage 6 — Patient agreement.**
 
-RULE 11. Corridor generates the Patient Agreement PDF including all RULE 11(2) elements:
+RULE 11. Lewis generates the Patient Agreement PDF including all RULE 11(2) elements:
 
 (a) Treatment consent
 (b) Admit and discharge criteria
@@ -633,7 +633,7 @@ ETC clinical staff schedules the patient's visits. Patient sees schedule in pati
 
 **Central treatment authorization gate.**
 
-No treatment visit may be scheduled, checked in, or documented unless Corridor has a current `treatment_authorization` pass for the enrollment. The gate is evaluated by the API immediately before visit creation, check-in, and treatment documentation. It checks, at minimum:
+No treatment visit may be scheduled, checked in, or documented unless Lewis has a current `treatment_authorization` pass for the enrollment. The gate is evaluated by the API immediately before visit creation, check-in, and treatment documentation. It checks, at minimum:
 
 - ETC license is active or otherwise permitted for the action being taken
 - Active Program Participation Agreement for sponsor ↔ ETC ↔ program
@@ -686,7 +686,7 @@ The authorization result is stored with pass/fail status, evaluated version, tim
 
 - ETC clinical staff initiates "Emergency Transfer" from a patient's record
 - Workflow:
-  - Notify receiving hospital (per RULE 13(3)(a)) — Corridor surfaces the hospital's contact per the active transfer agreement; ETC staff calls and confirms in app
+  - Notify receiving hospital (per RULE 13(3)(a)) — Lewis surfaces the hospital's contact per the active transfer agreement; ETC staff calls and confirms in app
   - Document confirmation that hospital can provide necessary services
   - Document medically appropriate life support measures used to stabilize and sustain (RULE 13(3)(b))
   - Generate transfer record packet (RULE 13(3)(c)) — patient summary, current treatment, vitals, AE if applicable, allergies — as a printable PDF and an electronic transfer to the receiving hospital's preferred intake channel (email/fax with secure link in MVP 1; FHIR Phase 2)
@@ -695,7 +695,7 @@ The authorization result is stored with pass/fail status, evaluated version, tim
 
 ### 10.8 ETRB workflow (RULE 16)
 
-**Concept:** The ETRB is a first-class entity in Corridor. An ETC has zero-or-one active board association at any time (boards can be replaced). A board can serve many ETCs (RULE 16(2)(b), (4)).
+**Concept:** The ETRB is a first-class entity in Lewis. An ETC has zero-or-one active board association at any time (boards can be replaced). A board can serve many ETCs (RULE 16(2)(b), (4)).
 
 **Board setup:**
 
@@ -730,7 +730,7 @@ The authorization result is stored with pass/fail status, evaluated version, tim
   - Aggregate safety outcomes (de-identified per RULE 16(6)(c)(ii))
   - General approval timeframes
   - Recommended system-wide quality improvements (board adds narrative)
-- Published to the ETC's public page (`etc-name.corridor.health/etrb-report`)
+- Published to the ETC's public page (`etc-name.lewis.health/etrb-report`)
 
 **Adverse event review (RULE 16(6)(e)):**
 
@@ -743,9 +743,9 @@ The authorization result is stored with pass/fail status, evaluated version, tim
 - This determination is the gating event for RULE 25 (Phase 2)
 - Determination recorded with rationale, board vote, date
 
-**Records retention:** RULE 16(6)(d) requires 5-year retention of all protocol reviews, approvals, safety evaluations, and reports. Corridor enforces this retention with deletion locks on ETRB records < 5 years old.
+**Records retention:** RULE 16(6)(d) requires 5-year retention of all protocol reviews, approvals, safety evaluations, and reports. Lewis enforces this retention with deletion locks on ETRB records < 5 years old.
 
-**Provisional licensure path:** RULE 16(7) allows an ETC to be licensed without a board, but no treatments may be delivered until the board is established and has issued the RULE 16(6)(f) evaluations for each treatment. Corridor's gate logic enforces this: an ETC in "Provisional" status can configure programs but cannot enroll patients into treatment until the board is associated and approvals exist.
+**Provisional licensure path:** RULE 16(7) allows an ETC to be licensed without a board, but no treatments may be delivered until the board is established and has issued the RULE 16(6)(f) evaluations for each treatment. Lewis's gate logic enforces this: an ETC in "Provisional" status can configure programs but cannot enroll patients into treatment until the board is associated and approvals exist.
 
 ### 10.9 QAPI program (RULE 15)
 
@@ -779,11 +779,11 @@ The authorization result is stored with pass/fail status, evaluated version, tim
   - Nature and severity (RULE 17(3)(b))
   - Date of occurrence (RULE 17(3)(c))
   - Patient medical condition (RULE 17(3)(e))
-- Timestamp capture includes occurrence, detection, ETC awareness, and report creation times. Counsel selects the formal clock basis; until resolved, Corridor warns from the earliest known timestamp and stores the selected `clock_basis` when finalized. Visible countdown appears on the dashboard, on the AE record, and in daily admin/MD digest emails.
+- Timestamp capture includes occurrence, detection, ETC awareness, and report creation times. Counsel selects the formal clock basis; until resolved, Lewis warns from the earliest known timestamp and stores the selected `clock_basis` when finalized. Visible countdown appears on the dashboard, on the AE record, and in daily admin/MD digest emails.
 - Medical director assigned for review and severity classification
 - Corrective actions taken documented (RULE 17(3)(d))
 - Submission to DPHHS:
-  - **MVP 1:** Corridor generates a DPHHS-formatted AE report PDF; ETC submits via DPHHS's electronic system; ETC records submission timestamp in Corridor
+  - **MVP 1:** Lewis generates a DPHHS-formatted AE report PDF; ETC submits via DPHHS's electronic system; ETC records submission timestamp in Lewis
   - **Phase 2:** Direct API integration with DPHHS's electronic system if/when available
 - AE record routed to:
   - Sponsor's regulatory contact per program's PPA (immediate notification)
@@ -823,16 +823,16 @@ Each item shows: due date, days remaining, status (On track / At risk / Overdue)
 
 - December: ETC admin receives reminder to begin year-end HFAR process
 - ETC admin enters or imports net annual profits figure (CSV upload from accounting system; manual entry; QuickBooks integration Phase 2)
-- Corridor calculates 2% contribution
-- Corridor generates DPHHS HFAR documentation form with all required fields per SB 535 § 2(1)
+- Lewis calculates 2% contribution
+- Lewis generates DPHHS HFAR documentation form with all required fields per SB 535 § 2(1)
 - ETC admin reviews, approves, signs
 - ETC initiates contribution to Insurance Premium Support Account per SB 535 § 3(2):
-  - **MVP 1:** Corridor displays the wire / ACH instructions; ETC sends from their bank; ETC confirms transfer with reference number in Corridor
+  - **MVP 1:** Lewis displays the wire / ACH instructions; ETC sends from their bank; ETC confirms transfer with reference number in Lewis
   - **Phase 2:** Direct ACH via Plaid if DPHHS supports
-- Corridor generates contribution receipt and stores in compliance archive
-- Submission of HFAR form to DPHHS by Feb 1 (analogous to AE — Corridor produces the PDF; ETC files via DPHHS system in MVP 1)
+- Lewis generates contribution receipt and stores in compliance archive
+- Submission of HFAR form to DPHHS by Feb 1 (analogous to AE — Lewis produces the PDF; ETC files via DPHHS system in MVP 1)
 
-**Net annual profits ambiguity:** SB 535 does not define "net annual profits." Until DPHHS publishes guidance, Corridor presents two interpretations side-by-side (GAAP net income; tax-basis profits) and lets the ETC choose, with a note flagging the policy uncertainty. The chosen interpretation is logged.
+**Net annual profits ambiguity:** SB 535 does not define "net annual profits." Until DPHHS publishes guidance, Lewis presents two interpretations side-by-side (GAAP net income; tax-basis profits) and lets the ETC choose, with a note flagging the policy uncertainty. The chosen interpretation is logged.
 
 ### 10.13 DPHHS annual report (RULE 22)
 
@@ -840,12 +840,12 @@ Each item shows: due date, days remaining, status (On track / At risk / Overdue)
 
 **Workflow:**
 
-- December: Corridor begins assembling the annual report data automatically — pulling from treatment documentation, AE archive, ETRB archive, QAPI archive, patient files
+- December: Lewis begins assembling the annual report data automatically — pulling from treatment documentation, AE archive, ETRB archive, QAPI archive, patient files
 - ETC admin and medical director review the assembled data
-- Corridor generates the report in DPHHS's required format (RULE 22(1))
+- Lewis generates the report in DPHHS's required format (RULE 22(1))
 - ETC admin reviews, signs, files via DPHHS's electronic licensing system
 
-If filing is missed, RULE 22(2)(b) allows DPHHS to reduce the ETC to a provisional license. Corridor surfaces this consequence prominently to drive timely filing.
+If filing is missed, RULE 22(2)(b) allows DPHHS to reduce the ETC to a provisional license. Lewis surfaces this consequence prominently to drive timely filing.
 
 ### 10.14 Grievances
 
@@ -904,7 +904,7 @@ The P&P manual provides policy language; this module records execution evidence.
 
 ### 11.1 Design ethos
 
-The patient portal must feel calm. Every screen is plain language, large text, generous spacing, no marketing copy, no urgency manipulation. Color palette is warm and quiet (a pre-existing aesthetic decision aligned with Faro's amber direction is appropriate here too — though the brand for Corridor's patient surface is its own).
+The patient portal must feel calm. Every screen is plain language, large text, generous spacing, no marketing copy, no urgency manipulation. Color palette is warm and quiet (a pre-existing aesthetic decision aligned with Faro's amber direction is appropriate here too — though the brand for Lewis's patient surface is its own).
 
 ### 11.2 Discovery and self-screen
 
@@ -942,7 +942,7 @@ All patient-facing documents in one place, downloadable as PDFs:
 
 Asynchronous messaging with ETC clinical staff. Used for non-urgent questions, scheduling adjustments, and follow-ups. Important: the patient portal explicitly says "For emergencies, call 911. For urgent medical concerns, call your treating physician or [ETC's after-hours line]."
 
-Messaging is part of the patient file when it contains care, scheduling, safety, payment, or grievance context. Message threads have explicit participants, clinical visibility classification, attachment support, read receipts, retention, and audit events. Representatives can participate only if their representative access scope permits messaging. Internal Corridor support cannot view clinical message threads except through a ticket-scoped support-access grant.
+Messaging is part of the patient file when it contains care, scheduling, safety, payment, or grievance context. Message threads have explicit participants, clinical visibility classification, attachment support, read receipts, retention, and audit events. Representatives can participate only if their representative access scope permits messaging. Internal Lewis support cannot view clinical message threads except through a ticket-scoped support-access grant.
 
 ### 11.7 Payments
 
@@ -959,14 +959,14 @@ A prominent, always-visible CTA. Single-page form: what happened, when, severity
 
 - FAQ
 - Contact ETC
-- Contact Corridor support (limited to platform issues, not medical questions)
+- Contact Lewis support (limited to platform issues, not medical questions)
 - Grievance filing
 
 ---
 
 ## 12. Admin Portal — Detailed Specification
 
-For Corridor's internal team only.
+For Lewis's internal team only.
 
 ### 12.1 Tenants
 
@@ -1038,7 +1038,7 @@ All timestamps stored as UTC. All deadlines per Montana statute (5-day AE clock,
 
 Regulated text is versioned content, not hard-coded copy. P&P templates, informed consent text, patient agreement templates, 50-12-110 statutory text, grievance policy text, PPA data-sharing language, AE/DPHHS submission attestations, and patient-rights notices must be stored as immutable `legal_content_template_versions` with counsel approval metadata before use in production.
 
-Every rendered regulated document stores the exact template version ids, input data hash, rendering timestamp, signer identities, and file hash. If counsel changes a template, Corridor creates a new version; previously rendered documents remain linked to the old version for audit.
+Every rendered regulated document stores the exact template version ids, input data hash, rendering timestamp, signer identities, and file hash. If counsel changes a template, Lewis creates a new version; previously rendered documents remain linked to the old version for audit.
 
 ---
 
@@ -1048,11 +1048,11 @@ The following is a logical data model. Postgres-specific column types and constr
 
 ### 14.1 Tenancy
 
-- `tenants` — security boundary. Kind enum: sponsor, etc, patient, board, corridor_internal.
+- `tenants` — security boundary. Kind enum: sponsor, etc, patient, board, lewis_internal.
 - `users` — Clerk identity, email, name, phone (optional)
 - `tenant_memberships` — user ↔ tenant with role, status, starts_at, ends_at
 - `tenant_relationships` — cross-tenant grants and relationships (PPA, board-to-ETC, caregiver/guardian, future partner grants), with scope_json and status
-- `support_access_grants` — ticket-scoped Corridor support access; staff_user_id, target_tenant_id, scopes, starts_at, expires_at, approved_by_user_id, revoked_at
+- `support_access_grants` — ticket-scoped Lewis support access; staff_user_id, target_tenant_id, scopes, starts_at, expires_at, approved_by_user_id, revoked_at
 - `regulatory_jurisdictions` — state/country jurisdiction registry; launch seed is Montana, with timezone, effective date, and status
 - `regulatory_rule_versions` — immutable rule/source snapshots per jurisdiction with source citations, effective dates, supersession, and counsel review
 
@@ -1204,7 +1204,7 @@ Every PHI-containing table has RLS policies keyed off transaction-local applicat
 - Patient users see only their own patient tenant records.
 - Board reviewers see only records assigned to their board tenant and associated ETC relationships.
 - Patient representatives see only the records granted through caregiver, guardian, or minor-representative tenant relationships.
-- Corridor support users have access only through explicit, time-boxed support grants with ticket references and PHI access logging.
+- Lewis support users have access only through explicit, time-boxed support grants with ticket references and PHI access logging.
 
 The API opens a transaction and sets `app.user_id`, `app.active_tenant_id`, `app.request_id`, and optional `app.support_ticket_id` via `set local`. RLS helper functions read those settings and never read raw Clerk JWT claims.
 
@@ -1365,16 +1365,16 @@ BullMQ queues backed by Redis on Railway. Job classes:
 - Frontend product boundaries:
   ```mermaid
   flowchart LR
-    AppHost[app.corridor.health] --> App[apps/app]
+    AppHost[app.lewis.health] --> App[apps/app]
     App --> Sponsor[apps/app/src/portals/sponsor]
     App --> ETC[apps/app/src/portals/etc]
     App --> Admin[apps/app/src/portals/admin]
-    PatientHost[patient.corridor.health] --> Patient[apps/patient]
+    PatientHost[patient.lewis.health] --> Patient[apps/patient]
     Patient --> PatientPortal[apps/patient/src/portal]
     App --> API[apps/api]
     Patient --> API
   ```
-- `apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Corridor internal admin workflows.
+- `apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Lewis internal admin workflows.
 - `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
 - Tailwind CSS for styling
 - shadcn/ui for component primitives
@@ -1408,7 +1408,7 @@ BullMQ queues backed by Redis on Railway. Job classes:
 
 ### 17.4 Infrastructure
 
-- **Vercel** — frontend hosting (both app.corridor.health and patient.corridor.health), preview deployments per PR, edge CDN
+- **Vercel** — frontend hosting (both app.lewis.health and patient.lewis.health), preview deployments per PR, edge CDN
 - **Railway** — API server, BullMQ workers, Redis, Dockerized; one project per environment (dev, staging, prod)
 - **Supabase** — managed Postgres + Storage; HIPAA-eligible Team plan with signed BAA
 - **Cloudflare** — DNS, WAF, DDoS, custom domain certificates
@@ -1416,7 +1416,7 @@ BullMQ queues backed by Redis on Railway. Job classes:
 ### 17.5 Auth and identity
 
 - **Clerk** — identity, MFA, session management, and webhooks for user lifecycle. Clerk organizations may support UX but are not authoritative for database authorization.
-- **RLS pattern:** Hono verifies Clerk identity, resolves the active Corridor tenant from Postgres, sets transaction-local `app.*` variables, and Postgres RLS policies authorize via `tenant_memberships`, `tenant_relationships`, and support grants.
+- **RLS pattern:** Hono verifies Clerk identity, resolves the active Lewis tenant from Postgres, sets transaction-local `app.*` variables, and Postgres RLS policies authorize via `tenant_memberships`, `tenant_relationships`, and support grants.
 
 ### 17.6 Observability
 
@@ -1479,7 +1479,7 @@ The choice of mise (over plain pnpm scripts or Make) is motivated by reproducibi
 
 ### 18.1 PHI scope
 
-PHI is in scope from MVP 1 day one. Corridor is a Business Associate to ETCs (which are Covered Entities) and to sponsors when sponsors receive identifiable patient data.
+PHI is in scope from MVP 1 day one. Lewis is a Business Associate to ETCs (which are Covered Entities) and to sponsors when sponsors receive identifiable patient data.
 
 ### 18.2 Encryption
 
@@ -1495,7 +1495,7 @@ PHI is in scope from MVP 1 day one. Corridor is a Business Associate to ETCs (wh
 - Patient MFA optional (encouraged during onboarding)
 - RLS as the primary tenant-isolation enforcement
 - Role-based access within tenants (admin, MD, clinical, ops, reviewer, etc.)
-- Break-glass access for Corridor support uses explicit support-access grants, not user impersonation. Grants require a ticket reference, scope, expiration, PHI access logging, and tenant-admin notification.
+- Break-glass access for Lewis support uses explicit support-access grants, not user impersonation. Grants require a ticket reference, scope, expiration, PHI access logging, and tenant-admin notification.
 
 ### 18.4 Audit logging
 
@@ -1621,7 +1621,7 @@ This section explicitly maps every regulatory requirement to a feature in MVP 1.
 
 - 99.9% monthly uptime SLA (43.8 min downtime / month allowed)
 - Maintenance windows announced 7 days in advance, off-hours Mountain Time
-- Status page at status.corridor.health
+- Status page at status.lewis.health
 
 ### 20.3 Scalability
 
@@ -1696,7 +1696,7 @@ Events follow `domain.subject.verb` (e.g., `etc.patient.enrolled`, `sponsor.prog
 ### 22.1 Pre-development
 
 - Subprocessor BAA execution (P0 blocker)
-- Final domain decisions (corridor.health DNS, subdomains)
+- Final domain decisions (lewis.health DNS, subdomains)
 - Clerk application setup, Supabase project, Railway project, Vercel project
 - Stripe account setup with healthcare-eligible configuration
 - Toolchain bootstrap via `mise install` (Node 20, pnpm 9, Postgres 15 client tools per `mise.toml`) and Docker Compose local Postgres/Redis; CI runs `mise run ci` as the consolidated pre-merge gate (§ 17.10)
@@ -1792,11 +1792,11 @@ These are either resolved MVP guardrails or remaining decisions that do not bloc
 4. **Sponsor data sharing default.** Resolved for MVP 1: sponsor sees aggregate data and, if the PPA allows it, de-identified line-level safety/AE records only. Identified sponsor PHI access is Phase 2/8 and requires explicit patient data-sharing consent, revocation, disclosure accounting, and new RLS tests.
 5. **Video provider final selection.** Daily.co vs. alternatives. Decision in Sprint 4 implementation.
 6. **E-signature provider final selection.** HelloSign vs. Stripe Identity vs. Documenso. Decision in Sprint 2 implementation.
-7. **Public ETC slug strategy.** Per-ETC subdomain (`etc-name.corridor.health`) vs path-based (`corridor.health/etcs/etc-name`). Subdomain is cleaner; pricing on Cloudflare for wildcard + per-ETC certs needs validation.
+7. **Public ETC slug strategy.** Per-ETC subdomain (`etc-name.lewis.health`) vs path-based (`lewis.health/etcs/etc-name`). Subdomain is cleaner; pricing on Cloudflare for wildcard + per-ETC certs needs validation.
 8. **Search engine upgrade trigger.** Resolved for MVP 1: Postgres FTS. OpenSearch or Algolia is Phase 2 only if pageload/search metrics suffer and a HIPAA/subprocessor review clears the vendor.
 9. **Payment installments.** Default off for MVP 1 unless WinSanTor explicitly requests it before Sprint 4. Schema can support Stripe Subscriptions, but the baseline payment flow is one-time USD card/ACH.
 10. **Brand and aesthetic system.** Out of this PRD. Brand work runs in parallel with engineering.
-11. **RULE 17 adverse-event clock basis.** Counsel must decide whether the 5-day report clock runs from occurrence, detection, ETC awareness, formal report creation, or another legally defensible basis. Until resolved, Corridor computes warning clocks from the earliest known timestamp and stores the formal selected `clock_basis` once counsel decides.
+11. **RULE 17 adverse-event clock basis.** Counsel must decide whether the 5-day report clock runs from occurrence, detection, ETC awareness, formal report creation, or another legally defensible basis. Until resolved, Lewis computes warning clocks from the earliest known timestamp and stores the formal selected `clock_basis` once counsel decides.
 
 ---
 
@@ -1809,7 +1809,7 @@ These are either resolved MVP guardrails or remaining decisions that do not bloc
 - **HFAR** — Health Freedom and Access Requirement, SB 535 § 2's 2%-of-net-profits obligation
 - **QAPI** — Quality Assurance and Performance Improvement program, RULE 15
 - **PPA** — Program Participation Agreement, the contract between a sponsor and an ETC to deliver a program
-- **MSA** — Master Services Agreement, the contract between Corridor and a sponsor or ETC tenant
+- **MSA** — Master Services Agreement, the contract between Lewis and a sponsor or ETC tenant
 - **BAA** — Business Associate Agreement, HIPAA-required contract between a CE and BA
 - **DPHHS** — Montana Department of Public Health and Human Services
 - **PHI** — Protected Health Information per HIPAA

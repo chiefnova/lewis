@@ -1,6 +1,6 @@
 # Local Development Runbook
 
-Corridor local development uses Docker for infrastructure and host-run Node processes for the API, workers, and frontends.
+Lewis local development uses Docker for infrastructure and host-run Node processes for the API, workers, and frontends.
 
 ## Prerequisites
 
@@ -24,9 +24,9 @@ Corridor local development uses Docker for infrastructure and host-run Node proc
 
 Host-run processes use split DB roles so local development exercises the same RLS boundary as production:
 
-- API runtime: `DATABASE_URL=postgres://app_api:corridor_app_api@127.0.0.1:15432/corridor_dev`
-- Worker runtime: `WORKER_DATABASE_URL=postgres://app_worker:corridor_app_worker@127.0.0.1:15432/corridor_dev`
-- Migration and seed: `MIGRATION_DATABASE_URL=postgres://corridor:corridor@127.0.0.1:15432/corridor_dev`
+- API runtime: `DATABASE_URL=postgres://app_api:lewis_app_api@127.0.0.1:15432/lewis_dev`
+- Worker runtime: `WORKER_DATABASE_URL=postgres://app_worker:lewis_app_worker@127.0.0.1:15432/lewis_dev`
+- Migration and seed: `MIGRATION_DATABASE_URL=postgres://lewis:lewis@127.0.0.1:15432/lewis_dev`
 - Redis: `REDIS_URL=redis://127.0.0.1:16379`
 
 `app_api` and `app_worker` are non-owner `NOBYPASSRLS` roles. `mise run db:migrate` applies SQL migrations as the local migration owner and then provisions local-only passwords for the runtime roles. If a future containerized API or worker is added, use Docker service hostnames through `DB_HOST=postgres` and `REDIS_HOST=redis`.
