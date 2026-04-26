@@ -46,8 +46,12 @@ reviews:
     enabled: true
     label: "ai-slop"
 
+  # path_filters is denylist-only. Adding ANY positive (non-`!`) pattern flips
+  # the list into allowlist mode, where files not matching an include pattern
+  # are silently dropped from review (CodeRabbit reports them as "excluded by
+  # none and included by none"). Supply-chain review on pnpm-lock.yaml is
+  # already covered by osvScanner / trufflehog / gitleaks under `tools:`.
   path_filters:
-    - "pnpm-lock.yaml"
     - "!**/node_modules/**"
     - "!**/dist/**"
     - "!**/.vite-temp/**"
