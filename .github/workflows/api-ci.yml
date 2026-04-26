@@ -17,6 +17,9 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "mise.toml"
+      - "fnox.toml"
+      - "scripts/check-fnox-secret-boundaries.mjs"
+      - "scripts/check-openapi-route-drift.mjs"
       - ".github/workflows/api-ci.yml"
   pull_request:
     branches:
@@ -34,6 +37,9 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "mise.toml"
+      - "fnox.toml"
+      - "scripts/check-fnox-secret-boundaries.mjs"
+      - "scripts/check-openapi-route-drift.mjs"
       - ".github/workflows/api-ci.yml"
 
 permissions:
@@ -48,7 +54,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      DATABASE_URL: postgres://app_api:corridor_app_api@127.0.0.1:15432/corridor_dev
+      MIGRATION_DATABASE_URL: postgres://corridor:corridor@127.0.0.1:15432/corridor_dev
+      REDIS_URL: redis://127.0.0.1:16379
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
@@ -147,6 +155,22 @@ jobs:
             exit 1
           fi
 
+      - name: fnox service-role boundary
+        run: mise run secrets:profiles:check
+
+      - name: OpenAPI route drift check
+        run: mise run contracts:openapi:check
+
+      - name: Local-defaults drift check
+        run: mise run config:local-defaults:check
+
+      - name: RLS semantic tests
+        # Inherits DATABASE_URL + MIGRATION_DATABASE_URL from the job env
+        # block at the top of this file. mise run db:rls:test depends on
+        # db:up (idempotent docker compose up), so no docker compose down
+        # is needed on a fresh runner.
+        run: mise run db:rls:test
+
       - name: ban console.* in apps/api + apps/workers source
         # Belt-and-suspenders for the ESLint rule. ESLint config bans
         # console.* in apps/api/src and apps/workers/src; this CI step is
@@ -168,12 +192,3 @@ jobs:
 
       - name: API and worker build
         run: pnpm --filter api --filter workers build
-
-      # pgTAP semantic RLS tests are NOT run in CI yet. The static
-      # `rls:coverage` check above catches missing-policy regressions; the
-      # pgTAP semantic tests require a Postgres image with the pgtap
-      # extension preinstalled, which we haven't built yet. Local devs run
-      # them via `mise run db:rls:test` against Docker Compose (which has
-      # pgtap available). Tracking in TODOS.md as a follow-up.
-      # - name: RLS pgTAP tests
-      #   run: mise run db:rls:test

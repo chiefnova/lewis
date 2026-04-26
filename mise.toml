@@ -78,6 +78,18 @@ run = "pnpm prettier --write ."
 description = "prettier --check (CI)"
 run = "pnpm prettier --check ."
 
+[tasks."secrets:profiles:check"]
+description = "Ensure service-role secrets are absent from regular runtime fnox profiles"
+run = "pnpm run secrets:profiles:check"
+
+[tasks."contracts:openapi:check"]
+description = "Ensure hand-authored OpenAPI paths match Hono route paths"
+run = "pnpm run contracts:openapi:check"
+
+[tasks."config:local-defaults:check"]
+description = "Ensure docker-compose, env examples, and CI workflows match packages/db/src/local-defaults.ts"
+run = "pnpm run config:local-defaults:check"
+
 # ----- tests -----
 
 [tasks.test]
@@ -133,12 +145,12 @@ description = "Generate migration from schema diff"
 run = "pnpm --filter db generate"
 
 [tasks."db:rls:test"]
-description = "pgTAP — every PHI table must have RLS coverage"
+description = "Semantic SQL RLS suite — every PHI table must have runtime-role coverage"
 depends = ["db:up"]
 run = "pnpm --filter @corridor/db rls:test"
 
 [tasks."db:rls:coverage"]
-description = "Static check — every RLS-enabled table has SELECT + write policies"
+description = "Static check — every RLS-enabled table has FORCE RLS + SELECT + write policies"
 run = "pnpm --filter @corridor/db rls:coverage"
 
 [tasks."db:seed"]
@@ -150,7 +162,18 @@ run = "pnpm run db:seed"
 
 [tasks.ci]
 description = "Pre-merge gate — matches CI exactly"
-depends = ["typecheck", "lint", "format:check", "test", "test:a11y", "db:rls:coverage", "db:rls:test"]
+depends = [
+  "typecheck",
+  "lint",
+  "format:check",
+  "secrets:profiles:check",
+  "contracts:openapi:check",
+  "config:local-defaults:check",
+  "test",
+  "test:a11y",
+  "db:rls:coverage",
+  "db:rls:test",
+]
 
 [tasks.down]
 description = "Shut everything down — Docker infra and local dev servers"
