@@ -1,6 +1,7 @@
 import { Show, SignInButton, UserButton } from "@clerk/react";
 import { Button } from "@lewis/ui";
 import React from "react";
+import { FormattedMessage } from "react-intl";
 
 /**
  * Gates patient-portal routes behind a Clerk session. The patient portal
@@ -19,9 +20,13 @@ export function RequirePatientSession({ children }: { children: React.ReactNode 
       </Show>
       <Show when="signed-out">
         <div className="patient-shell auth-shell">
-          <h1>Lewis Patient</h1>
+          <h1>
+            <FormattedMessage id="patient.portalTitle" defaultMessage="Lewis Patient" />
+          </h1>
           <SignInButton mode="modal">
-            <Button>Sign in</Button>
+            <Button>
+              <FormattedMessage id="auth.signIn" defaultMessage="Sign in" />
+            </Button>
           </SignInButton>
         </div>
       </Show>

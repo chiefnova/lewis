@@ -2,7 +2,7 @@ import { ClerkProvider, Show, SignInButton } from "@clerk/react";
 import { Button } from "@lewis/ui";
 import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { IntlProvider } from "react-intl";
+import { FormattedMessage, IntlProvider } from "react-intl";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { RequireStaffPortal } from "./auth/RequireStaffPortal";
@@ -31,7 +31,9 @@ function RequireSignedIn({ children }: { children: React.ReactNode }) {
         <div className="auth-shell">
           <h1>Lewis</h1>
           <SignInButton mode="modal">
-            <Button>Sign in</Button>
+            <Button>
+              <FormattedMessage id="auth.signIn" defaultMessage="Sign in" />
+            </Button>
           </SignInButton>
         </div>
       </Show>

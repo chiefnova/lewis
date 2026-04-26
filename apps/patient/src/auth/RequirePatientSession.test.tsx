@@ -1,7 +1,19 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import React from "react";
+import { IntlProvider } from "react-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+// Empty `messages` is intentional — every <FormattedMessage> in this tree
+// has a `defaultMessage` so the fallback covers the test render. This keeps
+// assertions decoupled from the real locale catalog.
+function renderWithIntl(ui: React.ReactElement) {
+  return render(
+    <IntlProvider locale="en" messages={{}}>
+      {ui}
+    </IntlProvider>,
+  );
+}
 
 // Hoisted state for the Clerk mock so each test can flip the auth state
 // before rendering. The hoisting matters because vi.mock is hoisted above
@@ -31,7 +43,7 @@ afterEach(() => {
 describe("RequirePatientSession", () => {
   it("does NOT render children when the user is signed out", () => {
     authState.signedIn = false;
-    render(
+    renderWithIntl(
       <RequirePatientSession>
         <div data-testid="phi">Patient PHI content</div>
       </RequirePatientSession>,
@@ -45,7 +57,7 @@ describe("RequirePatientSession", () => {
 
   it("renders children when the user is signed in", () => {
     authState.signedIn = true;
-    render(
+    renderWithIntl(
       <RequirePatientSession>
         <div data-testid="phi">Patient PHI content</div>
       </RequirePatientSession>,
@@ -59,7 +71,7 @@ describe("RequirePatientSession", () => {
 
   it("does NOT leak the sign-in fallback when the user is signed in", () => {
     authState.signedIn = true;
-    render(
+    renderWithIntl(
       <RequirePatientSession>
         <div>Inner</div>
       </RequirePatientSession>,
@@ -69,7 +81,7 @@ describe("RequirePatientSession", () => {
 
   it("does NOT leak the user button when the user is signed out", () => {
     authState.signedIn = false;
-    render(
+    renderWithIntl(
       <RequirePatientSession>
         <div>Inner</div>
       </RequirePatientSession>,
