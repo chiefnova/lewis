@@ -6,11 +6,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const authState = { signedIn: false };
 
-vi.mock("@clerk/clerk-react", () => ({
-  SignedIn: ({ children }: { children: React.ReactNode }) =>
-    authState.signedIn ? <>{children}</> : null,
-  SignedOut: ({ children }: { children: React.ReactNode }) =>
-    authState.signedIn ? null : <>{children}</>,
+vi.mock("@clerk/react", () => ({
+  Show: ({ when, children }: { when: "signed-in" | "signed-out"; children: React.ReactNode }) => {
+    const shouldRender =
+      (when === "signed-in" && authState.signedIn) ||
+      (when === "signed-out" && !authState.signedIn);
+    return shouldRender ? <>{children}</> : null;
+  },
   SignInButton: ({ children }: { children?: React.ReactNode }) => (
     <span data-testid="sign-in-button">{children ?? <button type="button">Sign in</button>}</span>
   ),

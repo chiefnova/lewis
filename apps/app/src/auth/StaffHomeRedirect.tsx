@@ -1,5 +1,5 @@
 import { defaultStaffPath } from "@corridor/shared";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { Navigate } from "react-router-dom";
 
 import { NoAssignedPortal } from "./NoAssignedPortal";

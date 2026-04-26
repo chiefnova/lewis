@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/clerk-react";
+import { ClerkProvider } from "@clerk/react";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { IntlProvider } from "react-intl";
@@ -37,7 +37,7 @@ createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <IntlProvider locale="en" messages={messages}>
       {publishableKey ? (
-        <ClerkProvider publishableKey={publishableKey}>
+        <ClerkProvider publishableKey={publishableKey} afterSignOutUrl="/">
           <RouterProvider router={router} />
         </ClerkProvider>
       ) : (
