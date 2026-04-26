@@ -6,6 +6,7 @@ export function Footer() {
       <div className="container">
         <div className="rule" style={{ marginBottom: 32 }} />
         <div
+          className="footer-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr auto 1fr",
@@ -17,9 +18,9 @@ export function Footer() {
             color: "var(--ink-soft)",
           }}
         >
-          <div>Designed in Bozeman by Lewis Health</div>
+          <div className="footer-attribution">Designed in Bozeman by Lewis Health</div>
           <div
-            className="serif"
+            className="footer-wordmark serif"
             style={{ fontSize: 16, letterSpacing: "-0.01em", textTransform: "none" }}
           >
             Lewis
@@ -29,6 +30,7 @@ export function Footer() {
             </span>
           </div>
           <div
+            className="footer-links"
             style={{
               display: "flex",
               gap: 22,

@@ -7,7 +7,9 @@ export function PublicHome() {
     <main className="patient-shell">
       <h1>Lewis Patient Portal</h1>
       <p>{messages["patient.public.placeholder"]}</p>
-      <Link to="/me">Go to my treatment</Link>
+      <Link to="/me" className="pill pill-primary">
+        Go to my treatment
+      </Link>
     </main>
   );
 }

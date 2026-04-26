@@ -1,4 +1,5 @@
 import { Show, SignInButton, UserButton } from "@clerk/react";
+import { Button } from "@lewis/ui";
 import React from "react";
 
 /**
@@ -20,7 +21,7 @@ export function RequirePatientSession({ children }: { children: React.ReactNode 
         <div className="patient-shell auth-shell">
           <h1>Lewis Patient</h1>
           <SignInButton mode="modal">
-            <button type="button">Sign in</button>
+            <Button>Sign in</Button>
           </SignInButton>
         </div>
       </Show>

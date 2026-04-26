@@ -1,0 +1,93 @@
+/* ==============================================================
+   @lewis/ui — inputs
+   .search-pill: hero search component used on directory + (future)
+   patient portal. Single-input Lewis-brand pill.
+   Other input primitives go here too as they're added.
+   ============================================================== */
+
+.search-pill {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-input);
+  padding: 8px 8px 8px 28px;
+  box-shadow: var(--shadow-soft);
+  transition:
+    box-shadow var(--duration-slow) var(--ease-out),
+    border-color var(--duration-slow) var(--ease-out);
+}
+
+.search-pill:hover {
+  box-shadow: var(--shadow-soft-hover);
+}
+
+.search-pill:focus-within {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--accent-ring),
+    var(--shadow-soft-hover);
+}
+
+.search-pill .icon {
+  color: var(--ink);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.search-pill input {
+  flex: 1;
+  /* Default min-width on flex children is `auto`, which floors the input
+   * at its placeholder's intrinsic width (~250px for the directory hero
+   * placeholder). On a 375px phone that pushes the submit button off the
+   * right edge. min-width: 0 lets flex actually shrink the input so the
+   * button stays inside the pill. */
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  letter-spacing: -0.005em;
+  padding: 0;
+}
+
+.search-pill input::placeholder {
+  color: var(--ink-soft);
+  /* Truncate cleanly when the input is narrower than the placeholder
+   * instead of clipping the text mid-character. */
+  text-overflow: ellipsis;
+}
+
+/* When the input wrapper styles focus, the inner input shouldn't
+   re-trigger the global :focus-visible outline. */
+.search-pill input:focus,
+.search-pill input:focus-visible {
+  outline: none;
+}
+
+/* Mobile — tighten the chrome so a long placeholder + a text submit button
+ * both fit comfortably in the pill on a phone. The button keeps its real
+ * label (no icon-only swap) but drops to .pill-sm-equivalent dimensions
+ * via class composition; here we just shave the surrounding gaps. */
+@media (max-width: 480px) {
+  .search-pill {
+    gap: 10px;
+    padding: 6px 6px 6px 16px;
+  }
+  .search-pill input {
+    /* iOS zooms in on focus when font-size < 16px, so keep 16px. */
+    font-size: 16px;
+  }
+  /* Scale the inline submit button down to .pill-sm dimensions on phones
+   * so it visually balances with the slimmer pill chrome and reclaims a
+   * few extra pixels for the input. The label stays full ("Browse") —
+   * we're only trimming padding, not switching to an icon-only button. */
+  .search-pill .pill {
+    padding: 9px 16px;
+    font-size: 13px;
+    border-radius: var(--radius-button-sm);
+  }
+}

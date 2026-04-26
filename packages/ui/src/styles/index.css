@@ -1,0 +1,34 @@
+/* ==============================================================
+   @lewis/ui — main stylesheet
+   Single import wires the whole shared design system into an app.
+
+   Cascade order is governed by Tailwind v4's @layer system:
+     theme → base → components → utilities
+
+   That means:
+     - Tokens (in @theme) define the design language
+     - Base resets + Lewis defaults run after Tailwind Preflight
+     - Component classes (.pill, .search-pill) run before utilities
+     - Tailwind utility classes (bg-paper, rounded-button) win last,
+       so devs can override component defaults inline when needed.
+
+   Each app's main.tsx imports this file once.
+   ============================================================== */
+
+@import "tailwindcss";
+
+/* Tell Tailwind v4 which files to scan for utility classes. Without this
+ * Tailwind would only scan files reachable from this CSS file's directory
+ * (packages/ui/src/styles/), which excludes every consuming app. Paths are
+ * relative to this file and walk up to the repo root. Add a new app here
+ * the same day you add it to apps/. */
+@source "../../../../apps/app/src/**/*.{ts,tsx,html}";
+@source "../../../../apps/patient/src/**/*.{ts,tsx,html}";
+@source "../../../../apps/directory/src/**/*.{ts,tsx,html}";
+@source "../../components/**/*.{ts,tsx}";
+
+@import "./fonts.css";
+@import "./tokens.css";
+@import "./base.css" layer(base);
+@import "./buttons.css" layer(components);
+@import "./inputs.css" layer(components);

@@ -8,6 +8,7 @@ import { RequirePatientSession } from "./auth/RequirePatientSession";
 import messages from "./messages/en.json";
 import { PatientHome } from "./portal/PatientHome";
 import { PublicHome } from "./portal/PublicHome";
+import "@lewis/ui/styles.css";
 import "./styles.css";
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;

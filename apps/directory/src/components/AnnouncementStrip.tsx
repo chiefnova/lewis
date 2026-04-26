@@ -4,39 +4,26 @@ import { MontanaIcon } from "./icons";
 export function AnnouncementStrip() {
   return (
     <div style={{ background: "var(--paper-deep)", borderBottom: "1px solid rgba(40,30,20,0.04)" }}>
-      <div
-        style={{
-          maxWidth: 1400,
-          margin: "0 auto",
-          padding: "0 24px",
-          height: 50,
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-        }}
-      >
-        <div style={{ color: "var(--ink)", display: "flex", alignItems: "center" }}>
+      <div className="announce-strip">
+        <span className="announce-strip__flag">
           <MontanaIcon size={20} />
+        </span>
+        <div className="announce-strip__group">
+          <span className="announce-strip__text">
+            <FormattedMessage
+              id="directory.announcement"
+              defaultMessage="Lewis Health is just getting started. New programs and ETCs are added as Montana licenses them."
+            />
+          </span>
+          <button
+            type="button"
+            disabled
+            aria-describedby="announcement-cta-pending"
+            className="announce-strip__cta pill pill-outline pill-sm"
+          >
+            <FormattedMessage id="directory.announcement.cta" defaultMessage="Get notified" />
+          </button>
         </div>
-        <div style={{ flex: 1, textAlign: "center", fontSize: 13.5, color: "var(--ink)" }}>
-          <FormattedMessage
-            id="directory.announcement"
-            defaultMessage="Lewis is just getting started. New programs and ETCs are added as Montana licenses them."
-          />
-        </div>
-        <button
-          type="button"
-          disabled
-          aria-describedby="announcement-cta-pending"
-          className="pill pill-outline pill-sm"
-          style={{
-            borderColor: "rgba(27,24,20,0.35)",
-            opacity: 0.55,
-            cursor: "not-allowed",
-          }}
-        >
-          <FormattedMessage id="directory.announcement.cta" defaultMessage="Get notified" />
-        </button>
         <span id="announcement-cta-pending" className="visually-hidden">
           Email signup endpoint is not yet wired
         </span>

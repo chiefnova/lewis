@@ -1,0 +1,98 @@
+/* ==============================================================
+   @lewis/ui — design tokens
+   Single source of truth for colors, radii, shadows, type, motion.
+
+   Tokens are declared inside Tailwind v4's @theme block so they're
+   simultaneously:
+     1. Available as CSS custom properties on :root (Tailwind v4 auto-emits)
+     2. Used to generate Tailwind utility classes (bg-paper, text-ink,
+        rounded-button, font-serif, etc.)
+
+   Below the @theme block, we re-export each Tailwind-prefixed token as
+   a Lewis-named alias (--paper, --ink, ...) for ergonomic direct CSS
+   use without remembering the --color-* prefix.
+
+   To change a value globally, edit it once here.
+   ============================================================== */
+
+@theme {
+  /* ---- Color: Big Sky · Mineral paper palette ---------------- */
+  --color-paper: #e6e5dd;
+  --color-paper-deep: #dcdbd0;
+  --color-paper-card: #eeede6;
+  --color-paper-bright: #fffefb;
+
+  --color-ink: #1b1814;
+  --color-ink-soft: #5a5448;
+  --color-ink-faint: #8a8576;
+
+  --color-accent: #2c4a6b;
+  --color-accent-soft: #3a5a7c;
+
+  --color-rule: #c2bfae;
+  --color-rule-soft: #e4dcc8;
+
+  /* ---- Type ------------------------------------------------- */
+  --font-sans: "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif;
+  --font-serif: "Fraunces", "Tiempos Headline", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* ---- Border radius scale ---------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --radius-pill: 9999px;
+
+  /* Component-specific radii */
+  --radius-button: 10px;
+  --radius-button-sm: 8px;
+  --radius-input: 14px;
+  --radius-card: 18px;
+
+  /* ---- Shadows ---------------------------------------------- */
+  --shadow-soft:
+    0 1px 2px rgba(40, 30, 20, 0.04), 0 6px 16px rgba(40, 30, 20, 0.08),
+    0 24px 48px rgba(40, 30, 20, 0.06);
+  --shadow-soft-hover:
+    0 1px 2px rgba(40, 30, 20, 0.05), 0 8px 20px rgba(40, 30, 20, 0.1),
+    0 32px 64px rgba(40, 30, 20, 0.08);
+
+  /* ---- Motion ----------------------------------------------- */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 160ms;
+  --duration-slow: 220ms;
+}
+
+/* ---- Lewis-named aliases (ergonomic shorthand) -------------- */
+/* Preserve `var(--paper)`, `var(--ink)` etc. as the canonical names
+ * for direct CSS use. Aliasing into the Tailwind-prefixed variables
+ * keeps a single source of truth in @theme above. */
+:root {
+  --paper: var(--color-paper);
+  --paper-deep: var(--color-paper-deep);
+  --paper-card: var(--color-paper-card);
+  --paper-bright: var(--color-paper-bright);
+
+  --ink: var(--color-ink);
+  --ink-soft: var(--color-ink-soft);
+  --ink-faint: var(--color-ink-faint);
+
+  --accent: var(--color-accent);
+  --accent-soft: var(--color-accent-soft);
+  --accent-bg: rgba(44, 74, 107, 0.09);
+  --accent-ring: rgba(44, 74, 107, 0.12);
+
+  --rule: var(--color-rule);
+  --rule-soft: var(--color-rule-soft);
+
+  --serif: var(--font-serif);
+  --sans: var(--font-sans);
+
+  /* Legacy shadow aliases — soft alpha values for ad-hoc inline shadows */
+  --shadow: rgba(40, 30, 20, 0.08);
+  --shadow-deep: rgba(40, 30, 20, 0.14);
+}

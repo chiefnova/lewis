@@ -13,11 +13,12 @@ export function TopNav() {
         style={{
           maxWidth: 1400,
           margin: "0 auto",
-          padding: "0 32px",
+          padding: "0 24px",
           height: 80,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 12,
         }}
       >
         <Link
@@ -26,24 +27,26 @@ export function TopNav() {
             id: "directory.home.aria",
             defaultMessage: "Lewis home",
           })}
-          style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}
+          style={{ display: "inline-flex", alignItems: "baseline" }}
         >
           <span className="serif" style={{ fontSize: 24, letterSpacing: "-0.015em" }}>
             Lewis
           </span>
           <span
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: "50%",
-              background: "var(--accent)",
-              display: "inline-block",
-              alignSelf: "center",
-            }}
-          />
+            className="serif"
+            style={{ fontSize: 24, color: "var(--accent)", letterSpacing: "-0.015em" }}
+            aria-hidden="true"
+          >
+            .
+          </span>
           <span
             className="serif italic"
-            style={{ fontSize: 18, color: "var(--ink-soft)", fontWeight: 300 }}
+            style={{
+              fontSize: 24,
+              letterSpacing: "-0.015em",
+              color: "var(--ink-soft)",
+              fontWeight: 300,
+            }}
           >
             health
           </span>
@@ -56,7 +59,12 @@ export function TopNav() {
               borderColor: isBrowse ? "var(--ink)" : "rgba(27,24,20,0.25)",
             }}
           >
-            <FormattedMessage id="directory.nav.browse" defaultMessage="Browse Treatments" />
+            <span className="topnav-browse-full">
+              <FormattedMessage id="directory.nav.browse" defaultMessage="Browse Treatments" />
+            </span>
+            <span className="topnav-browse-short">
+              <FormattedMessage id="directory.nav.browse.short" defaultMessage="Browse" />
+            </span>
           </Link>
           <Link
             to="/search"
@@ -67,8 +75,8 @@ export function TopNav() {
             style={{
               width: 40,
               height: 40,
-              borderRadius: 9999,
-              background: "var(--ink)",
+              borderRadius: "var(--radius-button-sm)",
+              background: "var(--accent)",
               color: "var(--paper)",
               display: "inline-flex",
               alignItems: "center",

@@ -1,4 +1,5 @@
 import { ClerkProvider, Show, SignInButton } from "@clerk/react";
+import { Button } from "@lewis/ui";
 import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { IntlProvider } from "react-intl";
@@ -7,6 +8,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { RequireStaffPortal } from "./auth/RequireStaffPortal";
 import { StaffHomeRedirect } from "./auth/StaffHomeRedirect";
 import messages from "./messages/en.json";
+import "@lewis/ui/styles.css";
 import "./styles.css";
 
 const SponsorPortal = lazy(() =>
@@ -29,7 +31,7 @@ function RequireSignedIn({ children }: { children: React.ReactNode }) {
         <div className="auth-shell">
           <h1>Lewis</h1>
           <SignInButton mode="modal">
-            <button type="button">Sign in</button>
+            <Button>Sign in</Button>
           </SignInButton>
         </div>
       </Show>

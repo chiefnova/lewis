@@ -1,7 +1,14 @@
 {
-  "directory.announcement": "Lewis is just getting started. New programs and ETCs are added as Montana licenses them.",
+  "directory.announcement": "Lewis Health is just getting started. New programs and ETCs are added as Montana licenses them.",
   "directory.announcement.cta": "Get notified",
   "directory.nav.browse": "Browse Treatments",
+  "directory.nav.browse.short": "Browse",
   "directory.nav.search.aria": "Search",
-  "directory.home.aria": "Lewis home"
+  "directory.home.aria": "Lewis home",
+  "directory.home.search.aria": "Search treatments",
+  "directory.home.search.placeholder.find": "Find your treatment",
+  "directory.home.search.placeholder.condition": "Search by condition",
+  "directory.home.search.placeholder.treatment": "Search by treatment",
+  "directory.home.search.placeholder.etc": "Search by ETC",
+  "directory.home.search.placeholder.symptom": "Search by symptom"
 }
