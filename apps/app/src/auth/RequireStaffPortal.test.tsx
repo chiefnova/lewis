@@ -10,13 +10,9 @@ type MockUser = {
 
 let mockUseUser: () => { isLoaded: boolean; user: MockUser | null };
 
-vi.mock("@clerk/clerk-react", () => ({
+vi.mock("@clerk/react", () => ({
   useUser: () => mockUseUser(),
-  UserButton: ({ afterSignOutUrl }: { afterSignOutUrl?: string }) => (
-    <button data-testid="user-button" data-after-signout={afterSignOutUrl}>
-      User
-    </button>
-  ),
+  UserButton: () => <button data-testid="user-button">User</button>,
 }));
 
 import { RequireStaffPortal } from "./RequireStaffPortal";

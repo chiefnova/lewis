@@ -8,19 +8,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // imports — referenced via getter so the closure reads the current value.
 const authState = { signedIn: false };
 
-vi.mock("@clerk/clerk-react", () => ({
-  SignedIn: ({ children }: { children: React.ReactNode }) =>
-    authState.signedIn ? <>{children}</> : null,
-  SignedOut: ({ children }: { children: React.ReactNode }) =>
-    authState.signedIn ? null : <>{children}</>,
+vi.mock("@clerk/react", () => ({
+  Show: ({ when, children }: { when: "signed-in" | "signed-out"; children: React.ReactNode }) => {
+    const shouldRender =
+      (when === "signed-in" && authState.signedIn) ||
+      (when === "signed-out" && !authState.signedIn);
+    return shouldRender ? <>{children}</> : null;
+  },
   SignInButton: ({ children }: { children?: React.ReactNode }) => (
     <span data-testid="sign-in-button">{children}</span>
   ),
-  UserButton: ({ afterSignOutUrl }: { afterSignOutUrl?: string }) => (
-    <button data-testid="user-button" data-after-signout={afterSignOutUrl}>
-      User
-    </button>
-  ),
+  UserButton: () => <button data-testid="user-button">User</button>,
 }));
 
 import { RequirePatientSession } from "./RequirePatientSession";

@@ -1,5 +1,5 @@
 import { type StaffPortal, defaultStaffPath, readStaffPortals } from "@corridor/shared";
-import { UserButton, useUser } from "@clerk/clerk-react";
+import { UserButton, useUser } from "@clerk/react";
 import React from "react";
 import { Navigate } from "react-router-dom";
 
@@ -29,7 +29,7 @@ export function RequireStaffPortal({
   return (
     <>
       <div className="user-menu">
-        <UserButton afterSignOutUrl="/" />
+        <UserButton />
       </div>
       {children}
     </>

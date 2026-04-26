@@ -1,4 +1,4 @@
-import { ClerkProvider, SignInButton, SignedIn, SignedOut } from "@clerk/clerk-react";
+import { ClerkProvider, Show, SignInButton } from "@clerk/react";
 import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { IntlProvider } from "react-intl";
@@ -24,15 +24,15 @@ const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 function RequireSignedIn({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <SignedIn>{children}</SignedIn>
-      <SignedOut>
+      <Show when="signed-in">{children}</Show>
+      <Show when="signed-out">
         <div className="auth-shell">
           <h1>Corridor</h1>
           <SignInButton mode="modal">
             <button type="button">Sign in</button>
           </SignInButton>
         </div>
-      </SignedOut>
+      </Show>
     </>
   );
 }
@@ -101,7 +101,7 @@ createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <IntlProvider locale="en" messages={messages}>
       {publishableKey ? (
-        <ClerkProvider publishableKey={publishableKey}>
+        <ClerkProvider publishableKey={publishableKey} afterSignOutUrl="/">
           <RouterProvider router={router} />
         </ClerkProvider>
       ) : (

@@ -1,29 +1,29 @@
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import { Show, SignInButton, UserButton } from "@clerk/react";
 import React from "react";
 
 /**
  * Gates patient-portal routes behind a Clerk session. The patient portal
  * exposes PHI per CLAUDE.md HIPAA #3 — children must NEVER render outside
- * the <SignedIn> branch. The signed-out fallback shows a calm sign-in
+ * the signed-in branch. The signed-out fallback shows a calm sign-in
  * affordance with no marketing copy or urgency tactics (patient dignity rule).
  */
 export function RequirePatientSession({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <SignedIn>
+      <Show when="signed-in">
         <div className="user-menu">
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
         {children}
-      </SignedIn>
-      <SignedOut>
+      </Show>
+      <Show when="signed-out">
         <div className="patient-shell auth-shell">
           <h1>Corridor Patient</h1>
           <SignInButton mode="modal">
             <button type="button">Sign in</button>
           </SignInButton>
         </div>
-      </SignedOut>
+      </Show>
     </>
   );
 }

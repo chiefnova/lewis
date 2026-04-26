@@ -15,7 +15,7 @@
     "test:a11y": "vitest run --passWithNoTests a11y"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.61.3",
+    "@clerk/react": "^6.4.5",
     "@corridor/shared": "workspace:*",
     "@corridor/ui": "workspace:*",
     "@vitejs/plugin-react": "^4.4.1",
