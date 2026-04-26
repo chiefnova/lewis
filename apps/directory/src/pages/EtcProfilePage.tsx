@@ -211,7 +211,9 @@ export function EtcProfilePage() {
               <div key={line}>{line}</div>
             ))}
             <div style={{ marginTop: 10 }}>
-              <a href={`tel:${etc.phone.replace(/[^+0-9]/g, "")}`}>{etc.phone}</a>
+              <a className="link" href={`tel:${etc.phone.replace(/[^+0-9]/g, "")}`}>
+                {etc.phone}
+              </a>
             </div>
             <div style={{ color: "var(--ink-soft)", marginTop: 10, fontSize: 13.5 }}>
               {etc.hours}

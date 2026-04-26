@@ -28,6 +28,21 @@ a {
   text-decoration: none;
 }
 
+/* Inline text-link affordance — opt in for anchors inside prose so
+ * underlines remain available where they aid readability and WCAG
+ * 1.4.1 (color is not the only distinguishing cue). Chrome/nav/card
+ * anchors keep the bare default above. */
+.link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
 /* Type helpers — apply Lewis serif for headings, italic accent for
  * the project's signature italicized brand voice. */
 .serif {
