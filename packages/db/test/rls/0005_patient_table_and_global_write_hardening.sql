@@ -34,18 +34,9 @@ insert into tenant_memberships (user_id, tenant_id, role) values
 insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, status) values
   ('55000000-0000-0000-0000-000000000001', '55000000-0000-0000-0000-000000000002', 'care_team', 'active');
 
-do $$
-declare v_jur uuid;
-begin
-  select id into v_jur from regulatory_jurisdictions where code = 'US-MT';
-
-  insert into patients (tenant_id, jurisdiction_id, full_name)
-  values (
-    '55000000-0000-0000-0000-000000000002',
-    v_jur,
-    'Patient Hardened Patient Writes Seed'
-  );
-end $$;
+-- No patients-row seed here: patients.tenant_id is UNIQUE (one patient per
+-- patient-tenant), so seeding would collide with test 2's clinician INSERT.
+-- Test 2 creates the patient row that tests 3 and 4 then operate against.
 
 set local role app_api;
 
