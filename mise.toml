@@ -44,6 +44,10 @@ run = "pnpm --filter app dev"
 description = "Patient portal"
 run = "pnpm --filter patient dev"
 
+[tasks."dev:directory"]
+description = "Public patient directory (corridor.health) — anonymous browse + connect-request handoff"
+run = "pnpm --filter directory dev"
+
 [tasks."dev:api"]
 description = "Hono API"
 run = "pnpm --filter api dev"

@@ -59,6 +59,16 @@ VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
 VITE_SENTRY_DSN = { provider = "age" }
 VITE_API_BASE_URL = { provider = "age" }
 
+# Directory (corridor.health) is anonymous-first: it does NOT receive
+# Stripe/Plaid credentials and Clerk is only used at the connect-request
+# handoff. Keeping the surface area minimal makes the "directory bundle has
+# no PHI code paths" pen-test posture verifiable.
+[profiles.frontend_directory_dev.secrets]
+VITE_API_BASE_URL = { provider = "age" }
+VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
+VITE_SENTRY_DSN = { provider = "age" }
+VITE_POSTHOG_KEY = { provider = "age" }
+
 [profiles.ci.secrets]
 CLERK_SECRET_KEY = { provider = "age" }
 CLERK_WEBHOOK_SECRET = { provider = "age" }

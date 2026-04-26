@@ -7,3 +7,4 @@ export * from "./patients.js";
 export * from "./boards.js";
 export * from "./internal-admin.js";
 export * from "./search.js";
+export * from "./public.js";
