@@ -1,4 +1,6 @@
 {
   "patient.public.placeholder": "Patient discovery and eligibility flow starts here.",
-  "patient.me.placeholder": "Patient account routes fill in during Sprint 4."
+  "patient.me.placeholder": "Patient account routes fill in during Sprint 4.",
+  "patient.portalTitle": "Lewis Patient",
+  "auth.signIn": "Sign in"
 }

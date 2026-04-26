@@ -26,6 +26,7 @@ import {
   SearchPage,
   TermsPage,
 } from "./pages/StaticPages";
+import "@lewis/ui/styles.css";
 import "./styles.css";
 
 // The directory is intentionally anonymous-first. Clerk is *not* loaded here —

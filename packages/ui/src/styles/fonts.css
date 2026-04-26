@@ -1,0 +1,19 @@
+/* ==============================================================
+   @lewis/ui — fonts
+   Self-hosted brand fonts via @fontsource-variable. Each family is
+   pulled in once at the design-system level so every app inherits
+   the same font-loading path with no third-party request.
+
+   Why self-hosted: the patient portal handles PHI. Loading fonts
+   from fonts.googleapis.com would route patient IPs/UAs through
+   Google, which is not on the approved subprocessor list in
+   prd.md § 17.9. Self-hosting closes that vector entirely and
+   also makes the brand font available offline for dev.
+
+   Inter Tight: variable wght axis, 100-900. We use 300, 400, 500, 600.
+   Fraunces: variable wght axis (with italic styles via wght-italic).
+   ============================================================== */
+
+@import "@fontsource-variable/inter-tight";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/fraunces/wght-italic.css";

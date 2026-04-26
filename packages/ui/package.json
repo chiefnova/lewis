@@ -4,7 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles/index.css",
+    "./styles/tokens.css": "./src/styles/tokens.css",
+    "./styles/base.css": "./src/styles/base.css",
+    "./styles/buttons.css": "./src/styles/buttons.css",
+    "./styles/inputs.css": "./src/styles/inputs.css",
+    "./styles/fonts.css": "./src/styles/fonts.css"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
@@ -14,6 +20,18 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.1.0",
+    "@fontsource-variable/inter-tight": "^5.1.0",
     "clsx": "^2.1.1"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }

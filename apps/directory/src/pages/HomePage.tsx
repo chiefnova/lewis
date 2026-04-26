@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useIntl } from "react-intl";
 import {
   Capsule,
   IVBag,
@@ -15,38 +16,121 @@ import { ArrowRight, Magnifier, PlusIcon } from "../components/icons";
 import { FEATURED_HOMEPAGE } from "../data/catalog";
 import { useSeo, siteUrl } from "../seo/useSeo";
 
-function Hero({ onSearch }: { onSearch: (q: string) => void }) {
-  const [q, setQ] = useState("");
+const SEARCH_PROMPT_IDS = [
+  "directory.home.search.placeholder.find",
+  "directory.home.search.placeholder.condition",
+  "directory.home.search.placeholder.treatment",
+  "directory.home.search.placeholder.etc",
+  "directory.home.search.placeholder.symptom",
+] as const;
+
+const SEARCH_PROMPT_INTERVAL_MS = 2800;
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return true;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+function RotatingPlaceholder({ visible, paused }: { visible: boolean; paused: boolean }) {
+  const intl = useIntl();
+  const reducedMotion = usePrefersReducedMotion();
+  const prompts = useMemo(
+    () =>
+      SEARCH_PROMPT_IDS.map((id) =>
+        intl.formatMessage({ id, defaultMessage: id.split(".").pop() ?? "" }),
+      ),
+    [intl],
+  );
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!visible || paused || reducedMotion) return;
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % prompts.length);
+    }, SEARCH_PROMPT_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [visible, paused, reducedMotion, prompts.length]);
+
   return (
-    <section style={{ padding: "80px 0 100px", position: "relative", overflow: "hidden" }}>
-      <div className="container" style={{ textAlign: "center", position: "relative" }}>
-        <div style={{ position: "absolute", left: "6%", top: 80, transform: "rotate(-8deg)" }}>
+    <span
+      className={`rotating-placeholder${visible ? "" : "rotating-placeholder--hidden"}`}
+      aria-hidden="true"
+    >
+      {prompts.map((prompt, i) => (
+        <span
+          key={prompt}
+          className={
+            i === index
+              ? "rotating-placeholder__item rotating-placeholder__item--current"
+              : "rotating-placeholder__item"
+          }
+        >
+          {prompt}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function Hero({ onSearch }: { onSearch: (q: string) => void }) {
+  const intl = useIntl();
+  const [q, setQ] = useState("");
+  const [focused, setFocused] = useState(false);
+  const empty = q.length === 0;
+  return (
+    <section
+      className="hero-section"
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        className="container"
+        style={{ textAlign: "center", position: "relative", width: "100%" }}
+      >
+        <div style={{ position: "absolute", left: "6%", top: 40, transform: "rotate(-8deg)" }}>
           <MiniPill kind="rose" size={58} />
         </div>
-        <div style={{ position: "absolute", left: "10%", bottom: 110 }}>
+        <div style={{ position: "absolute", left: "10%", bottom: 70 }}>
           <MiniCapsule size={52} rot={20} />
         </div>
-        <div style={{ position: "absolute", right: "8%", top: 120, transform: "rotate(12deg)" }}>
+        <div style={{ position: "absolute", right: "8%", top: 80, transform: "rotate(12deg)" }}>
           <MiniPill kind="amber" size={46} />
         </div>
-        <div style={{ position: "absolute", right: "5%", bottom: 90, transform: "rotate(-6deg)" }}>
+        <div style={{ position: "absolute", right: "5%", bottom: 50, transform: "rotate(-6deg)" }}>
           <MiniPill kind="sage" size={62} />
         </div>
 
-        <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto", paddingTop: 40 }}>
+        <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
           <h1
             className="serif"
             style={{
-              fontSize: "clamp(3.4rem, 8.2vw, 7.8rem)",
+              fontSize: "clamp(4.6rem, 8.2vw, 7.8rem)",
               lineHeight: 1.02,
               letterSpacing: "-0.025em",
               fontWeight: 400,
               color: "var(--ink)",
               textWrap: "balance",
+              margin: 0,
             }}
           >
             Find experimental{" "}
-            <span className="italic" style={{ fontWeight: 300 }}>
+            <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
               treatments
             </span>{" "}
             available in Montana.
@@ -69,7 +153,6 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
         <div style={{ maxWidth: 620, margin: "40px auto 0" }}>
           <form
             className="search-pill"
-            style={{ boxShadow: "0 12px 36px var(--shadow)" }}
             onSubmit={(e) => {
               e.preventDefault();
               onSearch(q);
@@ -77,19 +160,22 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
             role="search"
           >
             <span className="icon">
-              <Magnifier size={16} />
+              <Magnifier size={18} />
             </span>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by condition, treatment, or ETC"
-              aria-label="Search treatments"
-            />
-            <button
-              type="submit"
-              className="pill pill-primary"
-              style={{ background: "#1B1814", color: "#EDE6D6" }}
-            >
+            <div className="search-pill__input">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                aria-label={intl.formatMessage({
+                  id: "directory.home.search.aria",
+                  defaultMessage: "Search treatments",
+                })}
+              />
+              <RotatingPlaceholder visible={empty && !focused} paused={focused} />
+            </div>
+            <button type="submit" className="pill pill-primary">
               Browse
             </button>
           </form>
@@ -114,12 +200,13 @@ function ProblemSection() {
           }}
         >
           Some treatments don't{" "}
-          <span className="italic" style={{ fontWeight: 300 }}>
+          <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
             exist
           </span>{" "}
           anywhere else.
         </h2>
         <div
+          className="grid-stack-mobile"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
@@ -188,7 +275,7 @@ function HowItWorks() {
             }}
           >
             How Montana's program{" "}
-            <span className="italic" style={{ fontWeight: 300 }}>
+            <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
               actually
             </span>{" "}
             works.
@@ -204,10 +291,14 @@ function HowItWorks() {
             Three steps · No account required to browse
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+        <div
+          className="grid-carousel-mobile"
+          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}
+        >
           {steps.map((s, i) => (
             <div key={s.title}>
               <div
+                className="card-art"
                 style={{
                   background: "var(--paper-deep)",
                   borderRadius: 4,
@@ -275,11 +366,15 @@ function FeaturedTreatments() {
             Treatment Centers. Browse the full catalog or search by your condition.
           </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+        <div
+          className="grid-carousel-mobile"
+          style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}
+        >
           {FEATURED_HOMEPAGE.map((p, i) => {
             const cardBody = (
               <>
                 <div
+                  className="card-art"
                   style={{
                     background: "var(--paper-deep)",
                     borderRadius: 4,
@@ -361,7 +456,7 @@ function ForPhysicians() {
   return (
     <section style={{ padding: "100px 0" }}>
       <div
-        className="container-narrow"
+        className="container-narrow grid-stack-mobile"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}
       >
         <div>
@@ -518,7 +613,7 @@ function FaqSection() {
           }}
         >
           Frequently Asked{" "}
-          <span className="italic" style={{ fontWeight: 300 }}>
+          <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
             Questions
           </span>
         </h2>
@@ -605,7 +700,7 @@ function BeginningSection() {
           }}
         >
           More treatments are{" "}
-          <span className="italic" style={{ fontWeight: 300 }}>
+          <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
             coming.
           </span>
         </h2>
@@ -663,7 +758,7 @@ function BeginningSection() {
           style={{
             marginTop: 12,
             fontSize: 12.5,
-            color: "var(--ink-soft)",
+            color: "var(--accent)",
             fontStyle: "italic",
           }}
         >

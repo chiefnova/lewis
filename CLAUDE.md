@@ -127,6 +127,7 @@ PHI is in scope from day one. Lewis is a Business Associate.
 ## Git and repo etiquette
 
 - **Branching flow:** `main` is production, `staging` is the integration branch. Work happens locally, then in feature branches cut **off `staging`** (not `main`). Feature branch → PR into `staging` → after validation in staging, `staging` is promoted to `main` via a separate PR. Never cut a feature branch off `main`, never PR a feature branch directly into `main`, never commit directly to either long-lived branch.
+- **Skill-base override:** When any skill (`/review`, `/ship`, `/land-and-deploy`, etc.) needs to detect "the base branch" for diffs, PRs, or review scope, it MUST use `staging` — NOT `main`, NOT GitHub's auto-detected default branch. Apply this to every `git diff`, `git fetch`, `git log`, and `gh pr create` invocation. Do not ask; this is the project default. The only exception is the staging→main promotion PR, which is created with `--base main` deliberately.
 - Branches: `feat/<short-desc>`, `fix/<short-desc>`, `chore/<short-desc>`.
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `test:`.
 - IMPORTANT: never add `Co-Authored-By: Claude` trailers, `🤖 Generated with Claude Code` footers, or any AI attribution to commits or PRs. Write in first-person imperative as the user.

@@ -2,7 +2,18 @@
 import axe from "axe-core";
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
+import { IntlProvider } from "react-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+// Empty messages — every <FormattedMessage> in this tree has a `defaultMessage`
+// fallback. Decouples the a11y assertion from the real locale catalog.
+function renderWithIntl(ui: React.ReactElement) {
+  return render(
+    <IntlProvider locale="en" messages={{}}>
+      {ui}
+    </IntlProvider>,
+  );
+}
 
 const authState = { signedIn: false };
 
@@ -39,7 +50,7 @@ const AXE_OPTIONS: axe.RunOptions = {
 describe("RequirePatientSession a11y", () => {
   it("signed-out fallback has no axe violations", async () => {
     authState.signedIn = false;
-    const { container } = render(
+    const { container } = renderWithIntl(
       <RequirePatientSession>
         <div>Inner</div>
       </RequirePatientSession>,
@@ -50,7 +61,7 @@ describe("RequirePatientSession a11y", () => {
 
   it("signed-in branch has no axe violations", async () => {
     authState.signedIn = true;
-    const { container } = render(
+    const { container } = renderWithIntl(
       <RequirePatientSession>
         <main aria-label="Patient home">
           <h1>Welcome</h1>

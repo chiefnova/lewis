@@ -5,6 +5,45 @@ All notable changes to Lewis are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a 4-digit version format: `MAJOR.MINOR.PATCH.MICRO`.
 
+## [0.0.6.0] - 2026-04-26
+
+Introduces the `@lewis/ui` shared design system. Each app now imports a single stylesheet that wires Tailwind v4, the Big Sky · Mineral paper tokens, the `.pill` button system, and self-hosted brand fonts. The directory homepage gets responsive mobile layouts and a rotating search placeholder. No backend, schema, or API changes.
+
+### Added
+
+- **`@lewis/ui` design system** — first-class shared package now exports a `Button` component (`primary` / `outline` / `soft` / `accent` variants, three sizes, optional pill-rounded), a `ButtonLink` anchor variant, and a `buttonClasses()` helper for non-button hosts (e.g. `<Link>`, Clerk's `<SignInButton>` child). Public CSS surface: `@lewis/ui/styles.css` plus per-layer entries (`/styles/tokens.css`, `/base.css`, `/buttons.css`, `/inputs.css`, `/fonts.css`).
+- **Design tokens** — single source of truth in [packages/ui/src/styles/tokens.css](packages/ui/src/styles/tokens.css) using Tailwind v4's `@theme` block (auto-emits CSS custom properties on `:root` AND generates utility classes like `bg-paper`, `text-ink`, `rounded-button`). Mirrored in [packages/ui/src/tokens.ts](packages/ui/src/tokens.ts) for JS consumers (charts, animations, conditional logic). Color palette: paper / paper-deep / paper-card / paper-bright, ink / ink-soft / ink-faint, accent (Montana sky blue) / accent-soft, rule / rule-soft. Type, radii, motion, and shadow tokens in the same file.
+- **Self-hosted brand fonts** — Inter Tight + Fraunces (variable weight, with italic axis) imported via `@fontsource-variable` in [packages/ui/src/styles/fonts.css](packages/ui/src/styles/fonts.css). Replaces the Google Fonts CDN link in the directory `index.html`. Required because the patient portal handles PHI and `fonts.googleapis.com` is not on the approved subprocessor list — self-hosting closes that vector.
+- **Directory mobile layout** — homepage now scales correctly on phones: hero headline drops from 4.6rem to a clamp(2.8rem, 11vw, 3.4rem) range, multi-column problem/physician sections stack via `.grid-stack-mobile`, three- and four-up card sections become horizontal snap-carousels via `.grid-carousel-mobile`, and the announcement strip switches from absolute-positioned flex to a 3-column grid so wrapping text never collides with the Montana flag.
+- **Rotating search placeholder** — directory hero search-pill rotates through five prompts ("Find your treatment" / "Search by condition" / "Search by treatment" / "Search by ETC" / "Search by symptom") on a 2.8s crossfade. Pauses on focus, hides while typing, respects `prefers-reduced-motion` (no setInterval, no transitions). Implemented as a positioned overlay so the `<input>` keeps a real `aria-label` instead of a placeholder attribute.
+- **Test coverage** — [packages/ui/src/components/Button.test.tsx](packages/ui/src/components/Button.test.tsx) locks in the `accent` → `pill-primary` alias and the variant/size/rounded class composition.
+- **`.link` opt-in utility** — [packages/ui/src/styles/base.css](packages/ui/src/styles/base.css) keeps the global `a { text-decoration: none }` rule for chrome/nav/card anchors and adds an opt-in `.link` class for inline prose anchors. Restores WCAG 1.4.1 affordance where it matters (text links inside paragraphs) without underlining every navigation anchor in the design system.
+- **Real Montana flag asset** — [apps/directory/src/assets/montana-flag.svg](apps/directory/src/assets/montana-flag.svg) replaces the simplified inline `MontanaIcon` SVG with the actual state flag (1416×943 viewBox, full state seal). Rendered in the announcement strip and footer attribution as decorative chrome (`alt=""` + `aria-hidden`) since the surrounding copy already names Montana. ~61 KB gzipped, served once per session, browser-cached.
+
+### Changed
+
+- **Apps adopt `@lewis/ui`** — `apps/app`, `apps/patient`, and `apps/directory` each import `@lewis/ui/styles.css` once in `main.tsx`. Per-app `styles.css` files now contain only app-specific layout (the staff console's `.app-shell`, the patient portal's `.patient-shell`, the directory's hero/announce-strip/footer rules) — no more duplicated `:root` token blocks, button declarations, or font-family resets.
+- **Tailwind v4 wired into all three apps** — `@tailwindcss/vite` plugin added to each `vite.config.ts`; `tailwindcss` and the plugin pinned at `^4.1.0`. The `@source` directives in [packages/ui/src/styles/index.css](packages/ui/src/styles/index.css) walk up to repo root and tell the Tailwind compiler which app source trees to scan for utility classes.
+- **Sign-in buttons** — `apps/app` and `apps/patient` auth shells render `<Button>Sign in</Button>` instead of bare `<button>`s. Patient `PublicHome` link to `/me` now uses `pill pill-primary` for visual consistency.
+- **Directory top-nav** — wordmark now reads `Lewis.health` with the period in `var(--accent)` (replacing the small accent-blue dot), the search circle in the nav switches from black ink to accent blue, and the "Browse Treatments" pill swaps to a shorter "Browse" label below 768px to fit the mobile chrome cleanly.
+- **Italic accent words** — every italicized word on the directory homepage (`treatments`, `exist`, `actually`, `Questions`, `coming`) shifts to `color: var(--accent)` for a unified brand-forward emphasis pattern.
+- **`pill-primary` paints Montana sky blue** — the variant moved from solid ink to the brand accent across all apps. `accent` is preserved as a typed alias of `primary` for callsite ergonomics; `.pill-accent` no longer exists as a separate ruleset.
+- **Sign-in copy externalized via `react-intl`** — `apps/app` and `apps/patient` auth shells now render `<FormattedMessage id="auth.signIn">` inside the `<Button>` instead of a hard-coded "Sign in" string. Patient portal title also goes through `patient.portalTitle`. Per-app `messages/en.json` catalogs gain `auth.signIn` (both apps) and `patient.portalTitle` (patient). Patient auth tests wrapped in `<IntlProvider locale="en" messages={{}}>` so empty-catalog renders fall through to `defaultMessage`.
+- **Directory footer recomposed** — three-column grid (`1fr auto 1fr`: attribution / wordmark / links) collapses to a two-column grid (`1fr auto`) where the Montana flag chip + `Lewis.health` wordmark are fused into the attribution row. Mobile stack ordering simplified; the wordmark and attribution are now one element, not two.
+- **Announcement strip flag swap** — `<MontanaIcon>` SVG component replaced with `<img src={montanaFlag}>` referencing the new asset. Announcement strip and footer share the same flag asset (Vite dedupes the import), sized via the new `.announce-strip__flag-img` and `.footer-flag-img` rules in [apps/directory/src/styles.css](apps/directory/src/styles.css).
+- **ETC profile phone link adopts `.link`** — the `tel:` anchor inside the contact panel on [apps/directory/src/pages/EtcProfilePage.tsx](apps/directory/src/pages/EtcProfilePage.tsx) now carries the `.link` class so it's visually distinguishable from surrounding address text (the rest of the address is plain prose).
+- **Reduced-motion preference read synchronously on first render** — [apps/directory/src/pages/HomePage.tsx](apps/directory/src/pages/HomePage.tsx) `usePrefersReducedMotion` now uses a lazy initializer that reads `window.matchMedia('(prefers-reduced-motion: reduce)').matches` at mount. Removes the brief animation flash that occurred when the hook returned `false` before the effect ran. Defaults to `true` when `window`/`matchMedia` are unavailable so SSR and unsupported environments err on the safe side.
+
+### Removed
+
+- **Google Fonts CDN link** in [apps/directory/index.html](apps/directory/index.html). Brand fonts now load from the self-hosted `@fontsource-variable` packages — zero third-party requests at runtime.
+- **`MontanaIcon` SVG component** removed from [apps/directory/src/components/icons.tsx](apps/directory/src/components/icons.tsx). Replaced by the real flag asset everywhere it was used (announcement strip + footer); no remaining call sites.
+
+### Tooling
+
+- **`.gstack/`** added to `.gitignore` for gstack analytics + checkpoint state.
+- **CLAUDE.md skill-base override** documented: `/review`, `/ship`, `/land-and-deploy`, etc. always use `staging` as the base branch (never `main`, never the GitHub default). Single exception is the staging→main promotion PR.
+
 ## [0.0.5.0] - 2026-04-26
 
 Rebrands the platform from Corridor to Lewis end-to-end. The product is now Lewis, served at `lewis.health` with `app.lewis.health`, `patient.lewis.health`, and `api.lewis.health` as the deployable surfaces. This is a wholesale rename: every brand string, domain, package name, database identifier, HTTP header, and Clerk metadata key now uses `lewis`. No functional behavior changes.

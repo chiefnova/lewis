@@ -96,3 +96,4 @@ tests/e2e/node_modules/
 .claude/settings.local.json
 .claude/.lock
 .claude/projects/
+.gstack/

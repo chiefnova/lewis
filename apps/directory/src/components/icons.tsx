@@ -5,14 +5,6 @@ interface IconProps {
   size?: number;
 }
 
-export function MontanaIcon({ size = 18 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M2 7 L4 6 L7 7 L10 6 L14 7 L18 6 L22 7 L22 17 L18 18 L14 17 L10 18 L7 17 L4 18 L2 17 Z" />
-    </svg>
-  );
-}
-
 export function Magnifier({ size = 18 }: IconProps) {
   return (
     <svg

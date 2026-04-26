@@ -1,178 +1,80 @@
-/* Lewis Health — design tokens & base.
- * Ported AS IS from the Claude Design handoff (Big Sky / Mineral paper palette).
- * Do not adjust visual values without a design review.
+/* Lewis directory — app-specific layout, components, and motion.
+ * Tokens, base resets, button system, search-pill, and the cream
+ * paper background all live in @lewis/ui (imported once in main.tsx).
+ * Anything visual that's shared across apps belongs there, not here.
  */
-
-:root {
-  /* Big Sky · Mineral paper — Montana sky blue on warm-gray civic stock */
-  --paper: #e6e5dd;
-  --paper-deep: #dcdbd0;
-  --paper-card: #eeede6;
-  --ink: #1b1814;
-  --ink-soft: #5a5448;
-  --accent: #2c4a6b;
-  --accent-soft: #3a5a7c;
-  --accent-bg: rgba(44, 74, 107, 0.09);
-  --rule: #c2bfae;
-  --shadow: rgba(40, 30, 20, 0.08);
-  --shadow-deep: rgba(40, 30, 20, 0.14);
-  --search-bg: #2a2820;
-
-  --serif: "Fraunces", "Tiempos Headline", Georgia, serif;
-  --sans: "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--sans);
-  -webkit-font-smoothing: antialiased;
-}
-
-body {
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: inherit;
-}
-
-.serif {
-  font-family: var(--serif);
-  font-weight: 400;
-  letter-spacing: -0.01em;
-}
-
-.italic {
-  font-style: italic;
-  font-weight: 300;
-}
-
-/* Buttons */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 9999px;
-  padding: 14px 28px;
-  font-size: 14px;
-  font-weight: 500;
-  transition:
-    background 160ms ease,
-    transform 120ms ease,
-    color 160ms ease,
-    border-color 160ms ease;
-  white-space: nowrap;
-}
-
-.pill:active {
-  transform: scale(0.98);
-}
-
-.pill-primary {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.pill-primary:hover {
-  background: #2c2620;
-}
-
-.pill-outline {
-  border: 1px solid var(--ink);
-  color: var(--ink);
-  background: transparent;
-}
-
-.pill-outline:hover {
-  background: rgba(27, 24, 20, 0.04);
-}
-
-.pill-soft {
-  background: rgba(27, 24, 20, 0.06);
-  color: var(--ink);
-}
-
-.pill-soft:hover {
-  background: rgba(27, 24, 20, 0.1);
-}
-
-.pill-sm {
-  padding: 9px 18px;
-  font-size: 13px;
-}
-
-/* Search pill */
-.search-pill {
-  display: flex;
-  align-items: center;
-  background: var(--search-bg);
-  border-radius: 9999px;
-  padding: 6px;
-  gap: 6px;
-}
-
-.search-pill input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--paper);
-  font-family: var(--sans);
-  font-size: 15px;
-  padding: 12px 8px 12px 16px;
-}
-
-.search-pill input::placeholder {
-  color: rgba(230, 229, 221, 0.55);
-}
-
-.search-pill .icon {
-  color: rgba(230, 229, 221, 0.7);
-  padding-left: 14px;
-  display: flex;
-}
-
-.rule {
-  height: 1px;
-  background: var(--rule);
-  width: 100%;
-}
-
-/* Focus */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
 
 /* <main tabIndex={-1}> is focused programmatically on every route change so
  * screen readers announce the new page. It is not keyboard-tabbable, so the
  * browser's default focus ring around the entire page is just visual noise. */
 main:focus {
   outline: none;
+}
+
+/* Hero search-pill rotating placeholder.
+ *
+ * The .search-pill from @lewis/ui has [icon, input, button] as direct flex
+ * children. To overlay an animated placeholder we wrap the input in a
+ * positioned container so the overlay can absolute-position over it. The
+ * native input's placeholder attribute is omitted entirely — accessibility
+ * is preserved via aria-label on the input, and the overlay is aria-hidden.
+ *
+ * The overlay crossfades between four short prompts every ~2.8s. Rotation
+ * pauses on focus so the user has a stable label while interacting, and
+ * disappears entirely once they start typing. prefers-reduced-motion stops
+ * the rotation in JS (no setInterval) and removes CSS transitions so the
+ * first prompt stays visible without movement.
+ */
+.search-pill__input {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-pill__input > input {
+  width: 100%;
+}
+
+.rotating-placeholder {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 16px;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.rotating-placeholder--hidden {
+  opacity: 0;
+}
+
+.rotating-placeholder__item {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  /* Pure opacity crossfade — outgoing prompt fades out as the incoming
+   * one fades in, no vertical motion. ease-in-out keeps the two sides
+   * paced symmetrically so the swap feels even. */
+  transition: opacity 420ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rotating-placeholder__item--current {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotating-placeholder,
+  .rotating-placeholder__item {
+    transition: none;
+  }
 }
 
 /* Scrollbar subtle */
@@ -302,6 +204,237 @@ section {
   }
 }
 
+/* Announcement strip. Desktop = centered (text + CTA) group with the Montana
+ * flag floating at the left edge. Mobile = 3-column grid so wrapping text
+ * never collides with the flag and the CTA pins to the right. */
+.announce-strip {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.announce-strip__flag {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+}
+
+/* Real Montana flag SVG. Aspect ratio is 1416:943 (~3:2). Sized to sit inside
+ * the 50px-min strip with a touch of breathing room. No border, no radius —
+ * the flag stands on its own. */
+.announce-strip__flag-img {
+  display: block;
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Footer attribution gets a small Montana flag chip to anchor the "Bozeman"
+ * geography credit. Same SVG asset as the announcement strip, sized down. */
+.footer-attribution {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-flag-img {
+  display: block;
+  height: 34px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.announce-strip__group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: calc(100% - 100px);
+}
+
+.announce-strip__text {
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .announce-strip {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .announce-strip__flag {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+  }
+  /* Slightly smaller flag on mobile to balance the tighter chrome. */
+  .announce-strip__flag-img {
+    height: 26px;
+  }
+  .announce-strip__group {
+    display: contents;
+  }
+  .announce-strip__text {
+    grid-column: 2;
+    font-size: 11.5px;
+    line-height: 1.35;
+    text-align: center;
+  }
+  .announce-strip__cta {
+    grid-column: 3;
+  }
+}
+
+/* Top nav — desktop shows the full "Browse Treatments" label; mobile swaps
+ * to the compact "Browse" label so the pill fits cleanly next to the
+ * search button without crowding the logo. */
+.topnav-browse-full {
+  display: inline;
+}
+.topnav-browse-short {
+  display: none;
+}
+@media (max-width: 768px) {
+  .topnav-browse-full {
+    display: none;
+  }
+  .topnav-browse-short {
+    display: inline;
+  }
+}
+
+/* Hero section — desktop fills the viewport (minus the 50px announcement
+ * strip + 80px sticky nav = 130px chrome) and centers content vertically.
+ * Mobile is content-driven with a more compact min-height + extra vertical
+ * padding so the headline + search bar feel substantial without leaving a
+ * giant empty gap before the next section. */
+.hero-section {
+  height: calc(100svh - 130px);
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    height: auto;
+    min-height: calc(100svh - 200px);
+    padding: 56px 0 72px;
+  }
+  /* The desktop headline floor (4.6rem ≈ 73.6px) is too tall on mobile —
+   * "experimental" overflows the viewport. Scale it down to a normal
+   * mobile hero size so every word lays out elegantly. */
+  .hero-section h1 {
+    font-size: clamp(2.8rem, 11vw, 3.4rem) !important;
+    line-height: 1.05 !important;
+  }
+}
+
+/* Override the global `section { padding: 120px 0 }` for the hero
+ * specifically — it manages its own padding via .hero-section. */
+section.hero-section {
+  padding: 0;
+}
+@media (max-width: 768px) {
+  section.hero-section {
+    padding: 56px 0 72px;
+  }
+}
+
+/* ===========================================================
+ * Mobile layout helpers (sub-768px ONLY — desktop is untouched)
+ * =========================================================== */
+
+@media (max-width: 768px) {
+  /* Tighter rhythm on mobile. The !important is needed to beat the
+   * inline `padding: "100px 0"` styles on individual sections. */
+  section {
+    padding: 64px 0 !important;
+  }
+  section.hero-section {
+    padding: 56px 0 72px !important;
+  }
+
+  /* Multi-column paragraph/text grids collapse to a single column —
+   * used by the "Some treatments don't exist anywhere else." problem
+   * section and the "For treating physicians" two-column block. */
+  .grid-stack-mobile {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+
+  /* Multi-column card grids become a horizontal snap-carousel: one card
+   * per viewport plus an edge-peek of the next so users discover the
+   * scroll. Used by HowItWorks and FeaturedTreatments. */
+  .grid-carousel-mobile {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 14px !important;
+    /* bleed past the container so the first/last cards align with the
+     * viewport edge once snapped. */
+    margin-left: -24px;
+    margin-right: -24px;
+    padding: 4px 24px 18px;
+    scroll-padding-left: 24px;
+    scrollbar-width: none;
+  }
+  .grid-carousel-mobile::-webkit-scrollbar {
+    display: none;
+  }
+  .grid-carousel-mobile > * {
+    flex: 0 0 86%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  /* The card image areas are 280px tall on desktop — that's too dominant
+   * on a phone with the card now ~86vw wide. Trim them. */
+  .grid-carousel-mobile .card-art {
+    height: 220px !important;
+  }
+
+  /* Footer — desktop is a 3-column grid (attribution | wordmark | links).
+   * On mobile, stack vertically with wordmark first, links in a centered
+   * 2-column compact grid, and the attribution as a small bottom line. */
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+    text-align: center;
+  }
+  .footer-grid > * {
+    justify-content: center !important;
+  }
+  .footer-attribution {
+    order: 1;
+    line-height: 1.45;
+  }
+  .footer-links {
+    order: 2;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 14px 28px !important;
+    justify-items: center;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  .footer-links > a {
+    border-bottom: none !important;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .fade-up,
@@ -320,7 +453,7 @@ section {
   left: -9999px;
   top: 0;
   z-index: 100;
-  background: var(--ink);
+  background: var(--accent);
   color: var(--paper);
   padding: 12px 20px;
   border-radius: 0 0 6px 0;
