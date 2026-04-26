@@ -23,10 +23,24 @@ const databaseEnvSchema = z.object({
   DB_PASSWORD: z.string().optional(),
 });
 
-export function resolveDatabaseConnectionConfig(
-  env: NodeJS.ProcessEnv = process.env,
+type DatabaseEnvPrefix = "" | "MIGRATION_";
+
+function readDatabaseEnv(env: NodeJS.ProcessEnv, prefix: DatabaseEnvPrefix) {
+  return databaseEnvSchema.parse({
+    DATABASE_URL: env[`${prefix}DATABASE_URL`],
+    DB_HOST: env[`${prefix}DB_HOST`],
+    DB_PORT: env[`${prefix}DB_PORT`],
+    DB_DATABASE: env[`${prefix}DB_DATABASE`],
+    DB_USERNAME: env[`${prefix}DB_USERNAME`],
+    DB_PASSWORD: env[`${prefix}DB_PASSWORD`],
+  });
+}
+
+function resolveDatabaseConnectionConfigForPrefix(
+  env: NodeJS.ProcessEnv,
+  prefix: DatabaseEnvPrefix,
 ): DatabaseConnectionConfig {
-  const parsed = databaseEnvSchema.parse(env);
+  const parsed = readDatabaseEnv(env, prefix);
 
   if (parsed.DATABASE_URL) {
     return {
@@ -41,18 +55,18 @@ export function resolveDatabaseConnectionConfig(
   const user = parsed.DB_USERNAME;
   const password = parsed.DB_PASSWORD;
   const missing = [
-    ["DB_HOST", host],
-    ["DB_PORT", port],
-    ["DB_DATABASE", database],
-    ["DB_USERNAME", user],
-    ["DB_PASSWORD", password],
+    [`${prefix}DB_HOST`, host],
+    [`${prefix}DB_PORT`, port],
+    [`${prefix}DB_DATABASE`, database],
+    [`${prefix}DB_USERNAME`, user],
+    [`${prefix}DB_PASSWORD`, password],
   ]
     .filter(([, value]) => value === undefined || value === "")
     .map(([name]) => name);
 
   if (missing.length > 0 || !host || port === undefined || !database || !user || !password) {
     throw new Error(
-      `Missing database configuration. Provide DATABASE_URL or ${missing.join(", ")}.`,
+      `Missing database configuration. Provide ${prefix}DATABASE_URL or ${missing.join(", ")}.`,
     );
   }
 
@@ -64,6 +78,30 @@ export function resolveDatabaseConnectionConfig(
     user,
     password,
   };
+}
+
+export function resolveDatabaseConnectionConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): DatabaseConnectionConfig {
+  return resolveDatabaseConnectionConfigForPrefix(env, "");
+}
+
+export function resolveMigrationDatabaseConnectionConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): DatabaseConnectionConfig {
+  const hasMigrationConfig =
+    env.MIGRATION_DATABASE_URL !== undefined ||
+    env.MIGRATION_DB_HOST !== undefined ||
+    env.MIGRATION_DB_PORT !== undefined ||
+    env.MIGRATION_DB_DATABASE !== undefined ||
+    env.MIGRATION_DB_USERNAME !== undefined ||
+    env.MIGRATION_DB_PASSWORD !== undefined;
+
+  if (!hasMigrationConfig) {
+    return resolveDatabaseConnectionConfig(env);
+  }
+
+  return resolveDatabaseConnectionConfigForPrefix(env, "MIGRATION_");
 }
 
 export function databaseUrlFromConfig(config: DatabaseConnectionConfig): string {

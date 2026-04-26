@@ -5,6 +5,36 @@ All notable changes to Corridor are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a 4-digit version format: `MAJOR.MINOR.PATCH.MICRO`.
 
+## [0.0.2.0] - 2026-04-25
+
+Foundation hardening + Sprint 2 auth start. Closes the runtime-role posture
+called for in [CLAUDE.md security #1](CLAUDE.md), tightens the RLS surface,
+wires Clerk authentication on both frontends, and lands three new CI gates.
+Tracks [docs/implementation.md § 2.1](docs/implementation.md) RLS hardening
+backlog and the env-vars audit captured in [docs/env-vars.md](docs/env-vars.md).
+
+### Added
+
+- **Runtime DB role enforcement.** `app_api` and `app_worker` non-owner roles created in migration `0011` with `FORCE ROW LEVEL SECURITY` everywhere a tenant-scoped policy lives. `apps/api` and `apps/workers` now assert at boot that they're connected as the expected role; staging and production refuse to start if the role is wrong. `WORKER_ELEVATED=true` selects the privileged worker posture. Test escape hatches `API_RUNTIME_ROLE_OPT_OUT` / `WORKER_RUNTIME_ROLE_OPT_OUT` exist for unit tests only and are documented as never-set-in-prod.
+- **RLS hardening migrations 0011-0017.** Patient representative write hardening (0012), corrected PPA program read direction for ETCs (0013), narrowed global write policy to command scope (0014), patient-table write hardening (0015), global writes restricted to admins (0016), supporting indexes for RLS predicates (0017). Each migration paired with semantic SQL coverage in `packages/db/test/rls/` (new harness `0000` + `0003`-`0007`). `0001`/`0002`/`0008` rewritten in place to match the tightened policies and the new `app.can_write_for_tenant` signature.
+- **Clerk authentication on both frontends.** `apps/app` and `apps/patient` now render `ClerkProvider` and gate routes through portal-aware guards. `apps/app/src/auth/RequireStaffPortal.tsx` resolves the active portal from JWT `publicMetadata`, with redirect helpers (`StaffHomeRedirect`, `NoAssignedPortal`). `apps/patient/src/auth/RequirePatientSession.tsx` gates the patient experience and ships an a11y test alongside the unit test. Both apps gain `vite-env.d.ts` so `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL`, and friends are type-checked at compile time.
+- **Shared Clerk metadata schemas.** `packages/shared/src/clerk-metadata.ts` defines zod schemas for the `publicMetadata` / `privateMetadata` shape Corridor stores on Clerk users (`active_tenant_id`, `role`, `support_ticket_id`). One source of truth for JWT-claim validation across API and frontends.
+- **Three CI drift gates.** `secrets:profiles:check` asserts `SUPABASE_SERVICE_ROLE_KEY` lives only in `workers_elevated_dev`. `contracts:openapi:check` asserts `apps/api/src/openapi.ts` paths match the live Hono route graph. `config:local-defaults:check` asserts `env/.env.local.example`, `docker-compose.yml` ports, and the database client defaults all agree. All three wire into [api-ci.yml](.github/workflows/api-ci.yml) and [pr.yml](.github/workflows/pr.yml).
+- **End-to-end env-var tracker.** [docs/env-vars.md](docs/env-vars.md) documents every env var across `apps/api`, `apps/workers`, `apps/workers-elevated`, `apps/app`, `apps/patient`, `packages/db`, and CI. Includes sprint-timing matrix, gap closure log, source-code reference table, and onboarding/offboarding playbook for fnox recipients.
+- **Local runtime-role provisioning.** `packages/db/scripts/setup-local-runtime-roles.ts` provisions `app_api` and `app_worker` against a local Postgres with the right grants. `packages/db/scripts/_local-safety.ts` gates seed/reset operations behind a hard "is this localhost" check; `CORRIDOR_SEED_ALLOW_NON_LOCAL` is documented as a deliberate trap, not an override.
+- **`apps/workers/src/database-env.ts`** centralizes worker DB env parsing with `.test.ts` coverage so `WORKER_DATABASE_URL` / `WORKER_DB_*` semantics live in one place.
+
+### Changed
+
+- **fnox.toml restructured to 2.x format.** Migrated from legacy `[[recipients]]` + `[profiles.*] secrets = [...]` to `[providers.age]` + per-profile `[profiles.*.secrets]` per-key. Restored `RESEND_WEBHOOK_SECRET` to the `api_dev` profile (it was dropped mid-restructure; re-aligned with `env/.env.api.example` for Sprint 4 wiring).
+- **Env templates moved to `env/`.** The six `.env.*.example` templates now live in `env/` with documented headers explaining what each is, who reads it (fnox profile vs `.env.local` vs Vercel/Railway), and where the real values come from. The redundant `env/.env.example` (a 3-line subset of `.env.local.example` with no consumers) was deleted.
+- **CI workflow Postgres URL.** `.github/workflows/api-ci.yml` and `.github/workflows/pr.yml` switched from the old `54322`-port `DATABASE_URL` to the matching `app_api`/`15432` runtime URL plus `MIGRATION_DATABASE_URL` and `REDIS_URL`. RLS semantic tests now run on CI against the same Docker Postgres that `db:up` brings up, replacing the previous "skipped on CI" workaround.
+- **OpenAPI spec regenerated.** `apps/api/src/openapi.ts` re-emitted from the current Hono route graph; `contracts:openapi:check` now keeps it honest going forward.
+
+### Fixed
+
+- **Five env-var code-vs-config gaps.** `WORKER_ELEVATED`, `WORKER_RUNTIME_ROLE_OPT_OUT`, `API_RUNTIME_ROLE_OPT_OUT`, `CORRIDOR_SEED_ALLOW_NON_LOCAL`, and `RESEND_WEBHOOK_SECRET` were referenced in source but undeclared in any template or fnox profile. All five are now documented in their respective `env/.env.*.example` files and (where applicable) the matching fnox profile.
+
 ## [0.0.1.0] - 2026-04-25
 
 Sprint 1 (Foundation) per [docs/implementation.md § 0.2](docs/implementation.md).

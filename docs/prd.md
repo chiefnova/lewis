@@ -1208,7 +1208,7 @@ Every PHI-containing table has RLS policies keyed off transaction-local applicat
 
 The API opens a transaction and sets `app.user_id`, `app.active_tenant_id`, `app.request_id`, and optional `app.support_ticket_id` via `set local`. RLS helper functions read those settings and never read raw Clerk JWT claims.
 
-Application and worker database roles do not have `BYPASSRLS`. Migration/admin roles are not available to app or worker runtimes.
+Application and worker database roles do not have `BYPASSRLS` and must not own application tables. Every RLS-enabled table must use `FORCE ROW LEVEL SECURITY` so owner-level bypass cannot become an application-runtime escape hatch. Migration/admin roles are not available to app or worker runtimes.
 
 ---
 
@@ -1487,7 +1487,7 @@ PHI is in scope from MVP 1 day one. Corridor is a Business Associate to ETCs (wh
 - AES-256 at rest (Supabase default)
 - Application-layer encryption for highly sensitive fields (tax IDs, payment method last-4, SSN if ever captured — though MVP 1 should not capture SSN)
 - Storage objects encrypted with bucket-level keys; sensitive objects (informed consent recordings, AE reports) additionally signed for tamper detection
-- Local-development and CI secrets are encrypted at rest in the repo via age, configured in `fnox.toml` with an explicit `[[recipients]]` list (developer pubkeys + a CI pubkey whose private half lives only in the CI secret store). Profiles (`api_dev`, `workers_dev`, `frontend_app_dev`, `frontend_patient_dev`, `ci`) scope which secrets each runtime receives. **Staging and production secrets live exclusively in Vercel and Railway environment variables; they never appear in `fnox.toml` or its encrypted blobs.** Recipient changes (onboarding, revocation) are auditable in git history; revocation triggers value rotation per HIPAA hygiene
+- Local-development and CI secrets are encrypted at rest in the repo via age, configured in `fnox.toml` with an explicit `[providers.age].recipients` list (developer pubkeys + a CI pubkey whose private half lives only in the CI secret store). Profiles (`api_dev`, `workers_dev`, `workers_elevated_dev`, `frontend_app_dev`, `frontend_patient_dev`, `ci`) scope which secrets each runtime receives. `SUPABASE_SERVICE_ROLE_KEY` is allowed only in the isolated `workers_elevated_dev` profile and is forbidden from API, regular worker, frontend, and CI profiles. **Staging and production secrets live exclusively in Vercel and Railway environment variables; they never appear in `fnox.toml` or its encrypted blobs.** Recipient changes (onboarding, revocation) are auditable in git history; revocation triggers value rotation per HIPAA hygiene
 
 ### 18.3 Access control
 
@@ -1700,7 +1700,7 @@ Events follow `domain.subject.verb` (e.g., `etc.patient.enrolled`, `sponsor.prog
 - Clerk application setup, Supabase project, Railway project, Vercel project
 - Stripe account setup with healthcare-eligible configuration
 - Toolchain bootstrap via `mise install` (Node 20, pnpm 9, Postgres 15 client tools per `mise.toml`) and Docker Compose local Postgres/Redis; CI runs `mise run ci` as the consolidated pre-merge gate (§ 17.10)
-- Secrets bootstrap: each developer's age public key registered in `fnox.toml` `[[recipients]]`; CI age pubkey registered, private half loaded into the CI secret store; non-prod values seeded into the relevant profiles (§ 18.2)
+- Secrets bootstrap: each developer's age public key registered in `fnox.toml` `[providers.age].recipients`; CI age pubkey registered, private half loaded into the CI secret store; non-prod values seeded into the relevant profiles (§ 18.2)
 
 ### 22.2 Sprint plan (2-week sprints, 6 sprints to MVP 1)
 

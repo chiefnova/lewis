@@ -3,6 +3,12 @@
 Backlog seeded by `/review` against the staged scaffold on `staging` (2026-04-25).
 Originally 12 critical + 22 informational findings.
 
+**Status update (2026-04-25, sixth pass — informational close-out):** Tooling and CI gates hardened end-to-end. `check-fnox-secret-boundaries.mjs` now uses TOML-key-boundary regex with section-header reset and a positive `workers_elevated_dev` assertion. `check-rls-coverage.ts` tracks DROP POLICY in textual order (caught and verified 5 same-file drop-then-create patterns). `check-openapi-route-drift.mjs` rewritten as a TypeScript-AST walker over `server.ts` + each `domains/*/routes.ts` + `openapi.ts`, with auto-discovery of domain dirs, zero-match assertions per route file, support for `.openapi(...)`, template literals, and Hono path edge cases. New CI gate `config:local-defaults:check` keeps `docker-compose.yml`, env examples, and CI workflow DSNs in lockstep with `packages/db/src/local-defaults.ts` (the new TS source of truth for `corridor_app_api`/`corridor_app_worker` passwords + ports 15432/16379). New `packages/db/src/runtime-role.ts` plus `assertRuntimeRole(...)` wired into both `apps/api/src/index.ts` and `apps/workers/src/index.ts` so each process refuses to start unless `current_user` is the expected non-superuser NOBYPASSRLS role. Shared `_local-safety.ts` extracted between `setup-local-runtime-roles.ts` and `seed-dev.ts` with 11 colocated unit tests. `StaffPortal` types + Clerk metadata constants moved to `@corridor/shared/clerk-metadata`. Test harness `throws_ok` now uses a private SQLSTATE class (XX900) and `is_empty` trims trailing semicolons. New RLS tests 0006 (every RLS table has SELECT/INSERT/UPDATE/DELETE grants for app_api + app_worker) and 0007 (helper hoisting regression — STABLE/IMMUTABLE markers preserved + multi-row UPDATE invokes `current_tenant_member_grants_action` ≤ 4 times). Worker `resolveWorkerDatabaseEnv` extracted with 10 precedence tests. Patient portal wired into a real `test:a11y` task using axe-core (component tests for `RequirePatientSession` + a11y assertions). CI workflows: dropped unconditional `docker compose down -v`, removed step-level `DATABASE_URL` duplication, normalized to mise invocation throughout. Component tests added: 6 for `RequireStaffPortal` (jsdom + `@testing-library/react` + Clerk mock), 4 for `RequirePatientSession`. Total: 76 vitest tests, 4 CI drift gates, 8 RLS test files all green.
+
+**Status update (2026-04-25, fifth pass — same-class hardening close-out):** Migrations 0015 (extend `current_tenant_member_grants_action` requirement to `patients`, `patient_data_sharing_consents`, `patient_device_registry_entries`), 0016 (NULL-tenant writes on `notifications` + `feature_flags` require an active membership whose role grants the action — today corridor*admin only), and 0017 (partial indexes on `tenant_relationships`, `support_access_grants`, `tenant_memberships` to support hot policy expressions) close the same hardening class 0012 named. Migration 0012's new check constraint added as `NOT VALID` then `VALIDATE` for forward deploy safety. Migration 0011 documents the SECURITY DEFINER function-owner contract under FORCE RLS. New RLS test 0005 covers 0015 + 0016 (11 assertions); 0004 extended to 10 assertions (UPDATE/DELETE coverage, self-relationship signing bypass, cross-tenant negative); 0003 extended to 6 assertions (positive read case). Frontend portal access logic extracted to `apps/app/src/auth/portals.ts` with 16 unit tests; staff portals lazy-loaded via `React.lazy` + `<Suspense>`. `setup-local-runtime-roles.ts` now validates passwords against `/^[A-Za-z0-9*-]{8,128}$/`and exports the safety helpers; 25 unit tests cover them.`RequireStaffPortal` denied-redirect loop guard added.
+
+**Status update (2026-04-25, fourth pass):** The foundation now includes CI-gated semantic RLS execution under runtime roles, representative/minor-assent write hardening, frontend Clerk route guards, an OpenAPI drift check, corrected local CORS defaults, and explicit documentation that the Sprint 1 worker queues are scaffold processors until their feature phases.
+
 **Status update (2026-04-25, third pass):** All 12 critical AND all 18
 remaining informational findings from the original /review have been
 implemented. The scaffold now has full security middleware (CORS, secure-headers,
@@ -20,6 +26,30 @@ references.
 locked in but actual DB queries land sprint-by-sprint per the PRD.
 
 Sections are organized by component. Within each section, items are sorted P0 first.
+
+---
+
+## Open from /review (sixth pass — residual deferrals, 2026-04-25)
+
+The sixth-pass `/review` close-out (see status update at top) landed every CI/runtime hardening item the fifth-pass review left open: `check-fnox-secret-boundaries` hardening, `check-rls-coverage` DROP POLICY tracking, `assertRuntimeRole` startup checks for API + workers, AST-based OpenAPI drift gate with auto-discovery, `_local-safety.ts` extraction, centralized `local-defaults.ts` + drift gate, `StaffPortal` move to `@corridor/shared`, `throws_ok`/`is_empty` harness fixes, RLS test 0006 (grants assertion) + 0007 (helper hoisting regression), `resolveWorkerDatabaseEnv` extraction + tests, `test:a11y` axe-core scaffold, CI workflow cleanup, jsdom + `@testing-library/react` component tests for `RequireStaffPortal` + `RequirePatientSession`. Two items remain intentionally open:
+
+### Document `publicMetadata.corridorPortals` Clerk metadata contract
+
+**What:** Add a section to `docs/runbooks/developer-onboarding.md` (or a new doc) describing the Clerk publicMetadata shape: `corridorPortals: ('sponsor'|'etc'|'admin')[]` and `corridorDefaultPortal`. Reference the constants in `packages/shared/src/clerk-metadata.ts` and the parallel server-side check that the API will perform via `app.resolve_authenticated_membership`. Note that publicMetadata is server-trusted (Clerk admin only) and is defense-in-depth for UX routing only — backend RLS is the actual gate.
+
+**Why:** The contract is now centralized in code (with JSDoc) but a runbook anchor still helps engineers wiring API tenant resolution off it.
+
+**Effort:** S
+**Priority:** P2
+
+### Restrict `resolveMigrationDatabaseConnectionConfig` to migration tooling
+
+**What:** Add an ESLint `no-restricted-imports` rule preventing `apps/api/**` and `apps/workers/**` from importing `resolveMigrationDatabaseConnectionConfig` from `@corridor/db`, OR move the migration helpers into `packages/db/scripts/_migration-config.ts` so they’re physically not in the package’s public exports.
+
+**Why:** The export is module-level public; the new `assertRuntimeRole` startup check catches misconfigured connections, but a static lint rule is cheaper and prevents the wrong import from compiling in the first place.
+
+**Effort:** S
+**Priority:** P3
 
 ---
 
@@ -217,7 +247,7 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 **Why:** The current policy queries `tenant_memberships` inside `USING(...)` without a SECURITY DEFINER helper. `tenant_memberships` itself has RLS, causing recursive policy evaluation. Worst case: silent denial of rows on the `users` table or recursion errors under concurrent access. Pattern matches `app.is_tenant_member` and `app.has_active_support_grant` already in 0001.
 
-**Context:** Add a pgTAP test in `packages/db/test/rls/users.test.sql` that verifies a user can see other members of their own tenant but not unrelated users.
+**Context:** Add a semantic SQL RLS test in `packages/db/test/rls/users.test.sql` that verifies a user can see other members of their own tenant but not unrelated users.
 
 **Effort:** S
 **Priority:** P0
@@ -229,7 +259,7 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 **Why:** Per the project model, ETCs treat patients (`care_team` relationship) and sponsors see consented data. The current policy `tenant_id = app.current_tenant_id() OR has_active_support_grant(...)` blocks both paths — the first patient view from an ETC dashboard returns zero rows.
 
-**Context:** `app.has_tenant_relationship` already exists. Will need pgTAP coverage for all three personas (patient self, ETC care team, sponsor consented).
+**Context:** `app.has_tenant_relationship` already exists. Will need semantic RLS coverage for all three personas (patient self, ETC care team, sponsor consented).
 
 **Effort:** M
 **Priority:** P0
@@ -247,7 +277,7 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 ### Establish the write-policy pattern for RLS-enabled tables
 
-**What:** Define a helper `app.can_write_for_tenant(target_tenant_id uuid, action text) returns boolean` (SECURITY DEFINER) that encodes who can INSERT / UPDATE / DELETE per role. Add SELECT + INSERT + UPDATE + DELETE policies on every RLS-enabled table as it lands. Add a CI check (pgTAP-driven, or a SQL meta-query) that any new RLS-enabled table without all four operations represented = fail.
+**What:** Define a helper `app.can_write_for_tenant(target_tenant_id uuid, action text) returns boolean` (SECURITY DEFINER) that encodes who can INSERT / UPDATE / DELETE per role. Add SELECT + INSERT + UPDATE + DELETE policies on every RLS-enabled table as it lands. Add a CI check (semantic SQL-driven, or a SQL meta-query) that any new RLS-enabled table without all four operations represented = fail.
 
 **Why:** Migrations 0001/0002/0004/0005 enable RLS but only define SELECT policies. Default RLS denies every INSERT/UPDATE/DELETE. The first feature PR will need to invent the write-policy pattern under deadline pressure — ugly.
 
@@ -259,7 +289,7 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 ### Add retention enforcement primitives to file_storage_objects, audit_log, ETRB, QAPI
 
-**What:** Add `retention_until timestamptz` to `file_storage_objects`, `audit_log`, and (as schemas land) ETRB and QAPI tables. Add a `BEFORE DELETE` trigger that raises if `retention_until > now()`. Provide a function `app.compute_retention(category text) returns interval` so insert-time triggers can populate `retention_until` from the object category. Add pgTAP tests for the full retention matrix (patient files 5y, ETRB 5y, QAPI 3y, audit_log 7y).
+**What:** Add `retention_until timestamptz` to `file_storage_objects`, `audit_log`, and (as schemas land) ETRB and QAPI tables. Add a `BEFORE DELETE` trigger that raises if `retention_until > now()`. Provide a function `app.compute_retention(category text) returns interval` so insert-time triggers can populate `retention_until` from the object category. Add semantic SQL tests for the full retention matrix (patient files 5y, ETRB 5y, QAPI 3y, audit_log 7y).
 
 **Why:** CLAUDE.md HIPAA #6 mandates retention IN the database. No primitives exist today.
 
@@ -279,7 +309,7 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 ### tax_id_encrypted: pick a real encryption strategy or remove
 
-**What:** Either remove `sponsor_organizations.tax_id_encrypted` until a key-management design exists, or wrap it in a `pgcrypto`-based helper (`pgp_sym_encrypt` with a key sourced from KMS, write-only by app role, read-only via a SECURITY DEFINER function). Document the key source and rotation procedure. Add a pgTAP test that the raw column is unreadable without the helper.
+**What:** Either remove `sponsor_organizations.tax_id_encrypted` until a key-management design exists, or wrap it in a `pgcrypto`-based helper (`pgp_sym_encrypt` with a key sourced from KMS, write-only by app role, read-only via a SECURITY DEFINER function). Document the key source and rotation procedure. Add a semantic SQL test that the raw column is unreadable without the helper.
 
 **Why:** `packages/db/migrations/0004_architecture_stubs.sql:7` declares the column as `bytea` with no encryption helper, no key management, no KMS strategy. Will end up storing plaintext bytes called "encrypted" the first time someone writes to it.
 
@@ -372,7 +402,7 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 ### Remove SUPABASE_SERVICE_ROLE_KEY from API + workers runtime env
 
-**What:** Remove `SUPABASE_SERVICE_ROLE_KEY` from `.env.api.example` and `profiles.api_dev` / `profiles.workers_dev` in `fnox.toml`. The API and workers should connect to Postgres as a low-privilege application role bound by RLS. Any service-role-needing operation (e.g. Storage signed URLs) must run in a dedicated worker with its own profile and an explicit code-level guard that asserts no request context is active. Tighten the CI grep that bans the literal `service_role` to also ban `SUPABASE_SERVICE_ROLE_KEY` env reads in `apps/api`.
+**What:** Remove `SUPABASE_SERVICE_ROLE_KEY` from `env/.env.api.example` and `profiles.api_dev` / `profiles.workers_dev` in `fnox.toml`. The API and workers should connect to Postgres as a low-privilege application role bound by RLS. Any service-role-needing operation (e.g. Storage signed URLs) must run in a dedicated worker with its own profile and an explicit code-level guard that asserts no request context is active. Tighten the CI grep that bans the literal `service_role` to also ban `SUPABASE_SERVICE_ROLE_KEY` env reads in `apps/api`.
 
 **Why:** CLAUDE.md security #1 explicitly bans user-facing code paths from using a service-role to bypass tenant RLS. Even having the key available to the API process invites accidental use.
 
@@ -396,8 +426,8 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 These items come from the principal-engineer remediation backlog in
 [docs/implementation.md](docs/implementation.md). The Sprint-1 portions
-(§ 2.1.1 schema and § 2.2.1 pgTAP coverage) were closed via migrations
-0010 + pgTAP 0002 — see Completed. The remaining items are tagged by the
+(§ 2.1.1 schema and § 2.2.1 semantic RLS coverage) were closed via migrations
+0010 + semantic RLS 0002 — see Completed. The remaining items are tagged by the
 sprint that owns them per implementation.md § 0.2. Each entry references
 the canonical source in implementation.md so the spec stays the source of
 truth and these entries stay short.
@@ -959,11 +989,11 @@ All three mounted globally in `apps/api/src/server.ts` before the access logger.
 
 **Completed:** 2026-04-25
 
-### Remove SUPABASE_SERVICE_ROLE_KEY from .env.api.example + create elevated-worker profile
+### Remove SUPABASE_SERVICE_ROLE_KEY from env/.env.api.example + create elevated-worker profile
 
-**What:** `.env.api.example` no longer lists `SUPABASE_SERVICE_ROLE_KEY`. New `.env.workers-elevated.example` documents the dedicated elevated-worker profile that holds the service-role key for narrow bypass operations (signed Storage URLs, cross-tenant indexers). The CI grep ban on `service_role` env reads in `apps/api/src` and `apps/workers/src` (existing) ensures nothing in user-facing or regular-worker code can read it.
+**What:** `env/.env.api.example` no longer lists `SUPABASE_SERVICE_ROLE_KEY`. New `env/.env.workers-elevated.example` documents the dedicated elevated-worker profile that holds the service-role key for narrow bypass operations (signed Storage URLs, cross-tenant indexers). The CI grep ban on `service_role` env reads in `apps/api/src` and `apps/workers/src` (existing) ensures nothing in user-facing or regular-worker code can read it.
 
-`.env.api.example` also expanded with the full env vocabulary needed by the new middleware: `CORS_ALLOWED_ORIGINS`, `PUBLIC_API_BASE_URL`, `LOG_LEVEL`, `RESEND_WEBHOOK_SECRET`, `PLAID_ENV`, optional `CLERK_JWT_AUDIENCE` + `CLERK_AUTHORIZED_PARTIES`.
+`env/.env.api.example` also expanded with the full env vocabulary needed by the new middleware: `CORS_ALLOWED_ORIGINS`, `PUBLIC_API_BASE_URL`, `LOG_LEVEL`, `RESEND_WEBHOOK_SECRET`, `PLAID_ENV`, optional `CLERK_JWT_AUDIENCE` + `CLERK_AUTHORIZED_PARTIES`.
 
 **Completed:** 2026-04-25
 
@@ -986,7 +1016,7 @@ landed on 2026-04-25.)
 
 **Completed:** 2026-04-25
 
-### pgTAP 0002 — comprehensive RLS coverage (§ 2.2.1 Sprint-1 portion)
+### Semantic RLS 0002 — comprehensive RLS coverage (§ 2.2.1 Sprint-1 portion)
 
 **What:** `packages/db/test/rls/0002_helpers_policies_retention.sql` (38 plan items) covers:
 
@@ -1000,8 +1030,44 @@ landed on 2026-04-25.)
 - Retention triggers: `compute_retention` returns expected interval; `file_storage_objects` BEFORE INSERT auto-populates `retention_until`; BEFORE DELETE blocks premature delete.
 - `notifications` + `feature_flags` NULL-tenant policies require authenticated session (validates the 0009 tightening).
 
-`packages/db/package.json` `rls:test` script changed to run the entire `test/rls/` directory so any new pgTAP file added later picks up automatically.
+`packages/db/package.json` `rls:test` script runs the entire `test/rls/` directory so any new semantic SQL test file added later picks up automatically.
 
-**Why:** CLAUDE.md mandates "Every PHI table needs an RLS test in `packages/db/test/rls`." Pre-pgTAP-0002 we had 25 RLS-enabled tables and only 6 plan items in `0001_foundation.sql` — under-covered against our own contract. The static check (`pnpm rls:coverage`) verifies every table HAS policies; the new pgTAP file verifies the policies actually deny cross-tenant access for a representative sample of tables.
+**Why:** CLAUDE.md mandates "Every PHI table needs an RLS test in `packages/db/test/rls`." Before 0002 we had 25 RLS-enabled tables and only 6 plan items in `0001_foundation.sql` — under-covered against our own contract. The static check (`pnpm rls:coverage`) verifies every table HAS policies; the semantic SQL file verifies the policies actually deny cross-tenant access for a representative sample of tables.
+
+**Completed:** 2026-04-25
+
+---
+
+(Fourth-pass foundation hardening landed on 2026-04-25.)
+
+### Semantic RLS harness + CI execution gate
+
+**What:** Added `packages/db/test/rls/0000_semantic_test_harness.sql` so RLS tests run with in-repo assertion helpers instead of depending on a host `pgTAP` extension. `pr.yml` and `api-ci.yml` now run `mise run db:rls:test` against Docker Postgres with runtime-role connection strings, not only static policy coverage.
+
+**Why:** Static coverage proves policies exist; it does not prove the policies authorize correctly. This gate also caught and fixed two real policy bugs: reversed PPA program-read direction and `FOR ALL` write policies that could widen global-row SELECT visibility.
+
+**Completed:** 2026-04-25
+
+### Migration 0012 — representative/minor-assent write hardening
+
+**What:** `packages/db/migrations/0012_representative_write_hardening.sql` adds a role/action helper, rewrites representative and minor-assent write policies to require both a care-team relationship and the relevant ETC role grant, splits write authority into command-specific INSERT/UPDATE/DELETE policies so write grants do not widen SELECT visibility, and requires a verified authority-document file before a non-self representative can hold signing authority. `packages/db/test/rls/0004_representative_write_hardening.sql` proves the semantic behavior.
+
+**Completed:** 2026-04-25
+
+### Migration 0013/0014 — policy bugs found by semantic RLS
+
+**What:** `0013_ppa_program_read_direction.sql` corrects sponsor/ETC PPA direction for program reads. `0014_global_write_policy_command_scope.sql` replaces `FOR ALL` notification and feature-flag write policies with command-specific INSERT/UPDATE/DELETE policies.
+
+**Completed:** 2026-04-25
+
+### Frontend Clerk route guard scaffold
+
+**What:** `apps/app` and `apps/patient` now use `@clerk/clerk-react`, wrap with `ClerkProvider`, and gate staff/patient portal routes before rendering protected shells. Staff `/` redirects by Clerk public metadata portal hints; missing Clerk publishable keys fail closed with a configuration message.
+
+**Completed:** 2026-04-25
+
+### OpenAPI route drift gate
+
+**What:** Added `scripts/check-openapi-route-drift.mjs`, `pnpm run contracts:openapi:check`, and CI steps so documented OpenAPI path/method coverage cannot drift silently from Hono route files.
 
 **Completed:** 2026-04-25

@@ -46,9 +46,9 @@ Every phase ends with a checklist of objective, demonstrable criteria. **A phase
 
 These are non-negotiable from day 1, woven through every phase:
 
-- **Compliance trace test.** Every shipped feature has a test (or pgTAP assertion, or e2e check) that names the SB 535 § or RULE it implements. CI fails if a feature module ships without a trace test. This operationalizes Principle 2 ("the rules are the spec").
+- **Compliance trace test.** Every shipped feature has a test (or semantic SQL assertion, or e2e check) that names the SB 535 § or RULE it implements. CI fails if a feature module ships without a trace test. This operationalizes Principle 2 ("the rules are the spec").
 - **Audit-log coverage test.** Every API mutation has an integration test asserting an `audit_log` row was written with the right (`tenant_id`, `actor_user_id`, `action`, `target_object_type`, `target_object_id`, `before`, `after`, `ip`, `ua`, `ts`). CI fails on missing coverage. This is Principle 4 in code.
-- **RLS coverage test.** Every PHI-bearing table has a pgTAP test that asserts tenant A cannot read tenant B's rows. CI fails if a new table with a tenant, patient, board, or relationship-scoped foreign key ships without an RLS pgTAP test. This is Principle 5 in code.
+- **RLS coverage test.** Every PHI-bearing table has a semantic SQL RLS test that asserts tenant A cannot read tenant B's rows. Static CI also fails if an RLS-enabled table lacks `FORCE ROW LEVEL SECURITY`, SELECT policy coverage, or write policy coverage. This is Principle 5 in code.
 - **No PHI in logs/Sentry/analytics.** A redaction layer is in place from Sprint 1 and tested with synthetic PHI fixtures. PHI ever appearing in a Sentry event is a P0 incident.
 - **i18n string discipline.** Every user-facing string goes through `react-intl`. ESLint rule blocks raw strings in JSX. English-only ships, but the scaffolding is right from line one.
 - **UTC at rest, America/Denver for deadlines.** A shared `packages/shared/time.ts` module exposes `montanaDeadline(date)` helpers; raw `new Date()` in feature code is an ESLint warn.
@@ -311,7 +311,7 @@ These close the P1 gaps that do not block the core happy path as hard as § 2.1,
 - Add inpatient stubs: `inpatient_facility_profiles`; store inpatient fields as nullable/disabled evidence, with validation inactive for MVP outpatient tenants.
 - Add payment-rail abstraction: `payment_rails`, `payment_obligations`, `payment_transactions`; seed USD/Stripe active and alt-currency rails disabled.
 - Add HFAR Path A stub fields to `hfar_filings` and related payment/free-product evidence objects, but keep workflow inactive.
-- Add pgTAP tests proving all new stub tables are tenant scoped and RLS protected.
+- Add semantic SQL tests proving all new stub tables are tenant scoped and RLS protected.
 
 **Acceptance criteria:**
 
@@ -341,7 +341,7 @@ These close the P1 gaps that do not block the core happy path as hard as § 2.1,
 - ETC staff can find a patient, AE, protocol, staff file, or document from one search box.
 - Patient search returns only patient-visible records.
 - Sponsor search never returns identified PHI.
-- Cross-tenant search leakage is covered by pgTAP/e2e tests.
+- Cross-tenant search leakage is covered by semantic SQL/e2e tests.
 
 #### 2.2.3 Subprocessor classification for operational tools
 
@@ -503,7 +503,7 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
     workers/        # BullMQ workers — Node
   packages/
     shared/         # zod schemas, types, time.ts, intl helpers
-    db/             # drizzle schema, migrations, seed, pgTAP suite
+    db/             # drizzle schema, migrations, seed, semantic RLS suite
     ui/             # shared shadcn/ui primitives, design tokens
     rbac/           # role/permission map shared across portals
     pdf/            # React-Email + Puppeteer templates
@@ -516,8 +516,8 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
   .claude/rules/    # path-scoped Claude instructions
   ```
 - Commit `mise.toml`, `fnox.toml`, `.gitignore`, `CLAUDE.md` from existing files.
-- Per-app `package.json` scripts wrap in `fnox run <profile> --` for dev.
-- `.env.example` and `.env.<app>.example` per app, committed as templates for non-secret config (`VITE_API_BASE_URL`, `PORT`, `LOG_LEVEL`).
+- Per-app `package.json` scripts wrap in `fnox run -P <profile> --` for dev.
+- `env/.env.local.example` (template devs copy to `.env.local`) and `env/.env.<app>.example` per app/worker (documentation of each fnox-profile surface), committed as templates for non-secret config (`VITE_API_BASE_URL`, `PORT`, `LOG_LEVEL`, …).
 - Drizzle chosen over sqitch (TS-native, schema-as-code, integrates with shared types).
 
 ### 3.4 CI/CD scaffolding
@@ -527,14 +527,14 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
   - `deploy-staging.yml` — on merge to `main`, deploy to staging.
   - `deploy-prod.yml` — manual trigger from `main` after staging green for 1 hour.
   - `nightly.yml` — full e2e on staging, DR drill validation (monthly cadence in CI).
-- CI age key: pubkey added to `fnox.toml` `[[recipients]]`; private key as GitHub Actions secret.
+- CI age key: pubkey added to `fnox.toml` `[providers.age].recipients`; private key as GitHub Actions secret.
 
 ### 3.5 Per-developer onboarding
 
 - Generate `~/.config/age/key.txt`, share pubkey with founding product, get added to `fnox.toml`.
 - `mise install` provisions Node/pnpm/Postgres client tools.
 - Local Docker Compose infrastructure via `mise run dev:infra` provides Postgres and Redis.
-- `.env.local.example` documents safe local defaults; provider secrets still come from `fnox` profiles.
+- `env/.env.local.example` documents safe local defaults; provider secrets still come from `fnox` profiles.
 - Run `mise run ci` from a clean clone — must be green.
 
 ### 3.6 Legal and compliance content setup
@@ -559,7 +559,7 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
 
 ## 4. Phase 1 — Foundation (Sprint 1, Weeks 1–2)
 
-**Goals.** A clean tenancy, RLS, and audit foundation that every subsequent feature builds on without revisiting. Auth + storage + notifications working end-to-end. Empty portal shells routed correctly. Time/i18n primitives. The first three workers running.
+**Goals.** A clean tenancy, RLS, and audit foundation that every subsequent feature builds on without revisiting. Auth + storage + notification queue contracts in place. Empty portal shells routed correctly. Time/i18n primitives. The first three worker queues registered, with functional processors landing in their feature phases.
 
 This is the most leveraged sprint. Time spent here saves 5x time later. Do not under-invest.
 
@@ -571,27 +571,31 @@ These items track the local development foundation added before continuing deepe
 - [x] Corridor local ports are isolated from Navwise Broker and common defaults: staff app `13000`, API `13001`, patient app `13002`, Postgres `15432`, Redis `16379`.
 - [x] Root and mise scripts expose `dev:infra`, `dev:api`, `dev:workers`, `dev:app`, `dev:patient`, `dev:all`, `dev:down`, `db:migrate`, and `db:seed`.
 - [x] Database runtime config supports `DATABASE_URL` first, then `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`.
+- [x] Migration/seed config is split from runtime config through `MIGRATION_DATABASE_URL` / `MIGRATION_DB_*`, so app runtimes never need the migration-owner connection string.
 - [x] Redis runtime config supports `REDIS_URL` first, then `REDIS_HOST` and `REDIS_PORT`.
 - [x] API startup initializes Postgres and Redis before listening, and `/readyz` checks Postgres with `select 1` plus Redis with `PING`.
 - [x] Worker startup initializes Postgres and Redis, registers BullMQ workers for `notifications`, `pdf`, and `compliance`, logs registered queues, and handles `SIGINT`/`SIGTERM`.
-- [x] Scaffold worker processors are gated to local/test by default; non-local stub execution requires explicit `ENABLE_STUB_WORKERS=true`.
+- [x] Worker processors are intentionally scaffold-only in Sprint 1; they are gated to local/test by default and non-local stub execution requires explicit `ENABLE_STUB_WORKERS=true`.
 - [x] SQL migrations run through a Node/pg runner rather than an undeclared host `psql` dependency.
+- [x] Migration 0011 creates `app_api`, `app_worker`, and `app_migrator`; grants app schemas to runtime roles; and applies `FORCE ROW LEVEL SECURITY` to every RLS-enabled table.
 - [x] `db:seed` inserts synthetic local tenants, users, relationships, and a draft program without real PHI.
-- [x] `.env.local.example`, app env examples, README, developer onboarding, and local-development runbook document the canonical local path.
+- [x] `env/.env.local.example`, app env examples, README, developer onboarding, and local-development runbook document the canonical local path.
 - [x] Local smoke test passed on the dedicated Corridor ports: Docker Postgres/Redis up, migrations applied, seed applied, API `/healthz` and `/readyz` passed, and workers registered all three queues.
 - [x] Verification passed: `pnpm -r typecheck`, `pnpm -r lint`, `pnpm format:check`, `pnpm -r test`, and `pnpm -r build`.
 - [x] Clerk JWT auth, tenant resolution, request-scoped DB transactions, and transaction-local RLS context are mounted before authenticated domain routes.
 - [x] `AppContext` now includes tenant role and is zod-validated before setting Postgres session variables.
 - [x] API and worker runtimes use structured pino loggers with PHI/secret redaction; `console.*` is banned in runtime source by ESLint and API CI.
 - [x] API global hardening exists: security headers, CORS allowlist, 1 MB body limit, sanitized error envelopes, Redis-backed rate limits, and Redis-backed idempotency-key middleware.
-- [x] API publishes generated docs at `/v1/openapi.json` and `/v1/docs`.
+- [x] API publishes generated docs at `/v1/openapi.json` and `/v1/docs`; `pnpm run contracts:openapi:check` gates route/OpenAPI drift in PR/API CI.
 - [x] Webhook signature-verification scaffolds exist for Clerk, Stripe, Plaid, and Resend; state-changing handlers remain in their feature phases.
 - [x] Domain route shells now call service-layer functions instead of embedding future business logic directly in route files.
 - [x] Shared API contract primitives exist for branded IDs, canonical error envelopes, cursor pagination, and per-domain response shapes.
 - [x] Internal admin routes are role-gated to `corridor_admin`, require a support-ticket context, and write access audit rows through the DB audit helper.
-- [x] Regular API and worker env examples exclude `SUPABASE_SERVICE_ROLE_KEY`; elevated worker credentials are documented in a separate profile for future explicitly approved bypass-only maintenance jobs.
-- [x] RLS coverage is now part of the local/CI gate via `packages/db/scripts/check-rls-coverage.ts` and `mise run db:rls:coverage`.
-- [x] Hardening delta verification passed: `pnpm --filter api typecheck`, `pnpm --filter @corridor/db typecheck`, `pnpm --filter api lint`, `pnpm --filter @corridor/db rls:coverage`, `pnpm format:check`, and `git diff --check`.
+- [x] Regular API, worker, and CI fnox profiles exclude `SUPABASE_SERVICE_ROLE_KEY`; `workers_elevated_dev` is the only local profile allowed to receive it, enforced by `pnpm run secrets:profiles:check` in PR/API CI.
+- [x] RLS coverage is now part of the local/CI gate via `packages/db/scripts/check-rls-coverage.ts` and `mise run db:rls:coverage`; the static gate now requires `FORCE ROW LEVEL SECURITY`, SELECT policy coverage, and write policy coverage for every RLS-enabled table.
+- [x] Semantic runtime-role coverage asserts `app_api` and `app_worker` are login-capable `NOBYPASSRLS` roles and that `app_api` cannot read tenant rows without transaction-local app context.
+- [x] Representative/minor-assent semantic RLS coverage proves care-team relationships are not enough to write unless the ETC user also has the required tenant role grant; non-self signing authority requires a verified authority document.
+- [x] Latest RLS hardening verification passed: API/DB/workers typecheck + lint, `pnpm --filter @corridor/db rls:coverage`, fresh-DB `migrate:local`, semantic runtime-role RLS checks, `pnpm format:check`, and `git diff --check`.
 
 ### 4.1 Database foundation (PRD §§ 13.1, 13.3, 14.1, 14.10, 14.11, 18.4)
 
@@ -620,7 +624,7 @@ In `packages/db`:
   CREATE TRIGGER audit_log_no_update BEFORE UPDATE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_immutable();
   CREATE TRIGGER audit_log_no_delete BEFORE DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_immutable();
   ```
-- pgTAP harness (`mise run db:rls:test`) with test 0001 asserting the trigger raises on UPDATE and DELETE.
+- Semantic SQL RLS harness (`mise run db:rls:test`) with test 0001 asserting the trigger raises on UPDATE and DELETE. The harness is in-repo and does not require the external pgTAP extension.
 - Migration 0004 — create architecture-preserved stubs required by PRD § 7:
   - Device: `investigational_devices`, `patient_device_registry_entries` with RULE 21 workflow status disabled by default.
   - Inpatient: `inpatient_facility_profiles` linked to ETC tenant; nullable RULE 24 evidence fields; validation inactive for outpatient MVP tenants.
@@ -650,6 +654,20 @@ In `packages/db`:
   - Add `app.resolve_authenticated_membership(...)` as the only narrow pre-RLS tenant bootstrap helper used after Clerk verification.
   - Tighten notification, feature-flag, and search-index global reads.
   - Remove the unused encrypted sponsor tax-id field from the current schema.
+- Migration 0011 — enforce runtime role separation:
+  - Create `app_api` and `app_worker` as login-capable `NOBYPASSRLS` runtime roles.
+  - Create `app_migrator` as the non-runtime DDL role placeholder for managed environments.
+  - Grant schemas, tables, sequences, and `app` helper functions to app runtime roles without transferring table ownership.
+  - Apply `FORCE ROW LEVEL SECURITY` to every RLS-enabled table so table ownership cannot bypass policies.
+- Migration 0012 — harden representative/minor-assent write authority:
+  - Add `app.current_tenant_member_grants_action(...)` for transaction-local role/action checks.
+  - Require both an active care-team relationship and the appropriate ETC membership grant for representative/minor-assent writes.
+  - Replace broad `FOR ALL` write policies with command-specific INSERT/UPDATE/DELETE policies so write grants do not widen read visibility.
+  - Require verified authority-document evidence before a non-self representative can hold signing authority.
+- Migration 0013 — correct PPA program-read direction:
+  - Sponsor program visibility follows the canonical sponsor-to-ETC PPA relationship direction.
+- Migration 0014 — scope global write policies to write commands:
+  - Replace `FOR ALL` notification and feature-flag write policies with explicit INSERT/UPDATE/DELETE policies so write grants cannot widen SELECT visibility.
 - RLS helper functions live in SQL migrations and read only transaction-local application context:
   - `app.current_user_id()` from `current_setting('app.user_id', true)`
   - `app.current_tenant_id()` from `current_setting('app.active_tenant_id', true)`
@@ -667,7 +685,8 @@ In `packages/db`:
   - Corridor support reads only through active ticket-scoped grants.
 - Database roles:
   - `app_api` and `app_worker` have no `BYPASSRLS`; all app and worker queries run under forced RLS.
-  - `app_migrator` owns migrations only and is never available to app or worker runtimes.
+  - Local app runtime uses `DATABASE_URL=postgres://app_api:...`; local worker runtime uses `WORKER_DATABASE_URL=postgres://app_worker:...`; migrations and seed use `MIGRATION_DATABASE_URL=postgres://corridor:...`.
+  - `app_migrator` is the managed-environment DDL role placeholder and is never available to app or worker runtimes. In local Docker, `corridor` remains the bootstrap owner only for migrations/seed.
 - `packages/db` exports context helpers that validate `AppContext` before running `set local app.user_id`, `app.active_tenant_id`, `app.role`, `app.request_id`, and optional `app.support_ticket_id`. The DB-side `app.write_audit(...)` helper is the authoritative same-transaction audit primitive for mutations.
 
 ### 4.2 Storage bucket (PRD § 13.3)
@@ -696,17 +715,18 @@ In `packages/db`:
   10. Versioned domain routes.
 - `/healthz` is liveness. `/readyz` checks Postgres with `select 1` and Redis with `PING`. There is intentionally no `/v1/health`.
 - Webhook endpoint scaffolds verify Clerk, Stripe, Plaid, and Resend signatures before any state change; payload handlers remain in later phases.
-- OpenAPI 3.1 documentation is generated from shared zod contracts and exposed at `/v1/openapi.json` plus Scalar UI at `/v1/docs`.
+- OpenAPI 3.1 documentation is hand-authored for the current route scaffold, exposed at `/v1/openapi.json` plus Scalar UI at `/v1/docs`, and guarded by `pnpm run contracts:openapi:check` so route handlers cannot drift from documented path/method coverage.
 - Domain routes use a service-layer seam so future business logic, transactions, authorization, and audit behavior do not accrete inside route handlers.
 
 ### 4.4 Workers (`apps/workers`) — PRD § 16
 
 - BullMQ + Redis on Railway.
-- Three queues from day 1:
-  - `notifications` — Resend dispatch
-  - `pdf` — Puppeteer rendering (skeleton; templates added later phases)
-  - `compliance` — daily compliance scheduler (skeleton; rules added Sprint 3)
-- Worker registry pattern; new workers register a class, get auto-loaded.
+- Three queue contracts from day 1:
+  - `notifications` — dispatch contract now; real Resend delivery processor lands with notifications activation.
+  - `pdf` — rendering contract now; Puppeteer templates and render processor land in the PDF phases.
+  - `compliance` — scheduler contract now; rule-specific jobs land in Sprint 3.
+- Worker registry pattern; new workers register named processors through the shared queue helpers.
+- Production refuses scaffold processors unless `ENABLE_STUB_WORKERS=true` is explicitly set, so placeholder workers cannot masquerade as live processing.
 - Local dev connects to Docker Redis via `mise run dev:infra`; API and worker readiness both check Postgres and Redis.
 
 ### 4.5 Frontend shells (`apps/app`, `apps/patient`)
@@ -752,7 +772,7 @@ In `packages/db`:
 - Resend account configured; domain verified.
 - `packages/notifications` exports template registry + `send(channel, template, recipient, payload)`.
 - React Email templates for the few transactionals already needed: invite, account-created, password-reset.
-- Notification dispatcher worker consumes the `notifications` queue; tracks delivery; retries with exponential backoff.
+- Notification dispatcher queue contract exists in Sprint 1; the real Resend dispatcher, delivery tracking, and retry lifecycle are implemented with notifications activation.
 - Delivery webhook from Resend updates row status (Sprint 1 wires the path; full lifecycle handling Sprint 2+).
 
 ### 4.7 Observability + status page (PRD §§ 17.6, 20.2)
@@ -765,13 +785,14 @@ In `packages/db`:
 ### 4.8 Sprint 1 acceptance criteria
 
 - [ ] `mise run ci` green from a clean clone.
-- [ ] pgTAP suite proves: sponsor, ETC, patient, board reviewer, patient representative, and Corridor support policies allow only their explicitly scoped rows.
-- [ ] pgTAP suite proves cross-tenant denial for unrelated tenants across every PHI-bearing table.
+- [ ] Semantic RLS suite proves: sponsor, ETC, patient, board reviewer, patient representative, and Corridor support policies allow only their explicitly scoped rows.
+- [ ] Semantic RLS suite proves cross-tenant denial for unrelated tenants across every PHI-bearing table.
+- [x] Runtime DB roles are separate from the migration owner: `app_api`/`app_worker` are `NOBYPASSRLS`, every RLS table is forced, and tests prove app-role reads fail without app context.
 - [x] Architecture-preserved stubs exist for device registry, inpatient profile, payment rails/obligations/transactions, HFAR Path A, and future sponsor patient-data-sharing consents.
 - [ ] Every regulated table introduced in Sprint 1 has `jurisdiction_id`; test fails on regulated tables without jurisdiction.
 - [ ] Search foundation tables and indexes exist; search RLS tests prove one tenant cannot discover another tenant's rows through snippets or counts.
-- [x] pgTAP test proves: `audit_log` UPDATE and DELETE both raise.
-- [ ] Clerk login works on `app` and `patient` (preview deploy URLs); MFA enforced for app users.
+- [x] Semantic SQL test proves: `audit_log` UPDATE and DELETE both raise.
+- [x] Clerk React providers and route guards exist for `apps/app` and `apps/patient`; preview Clerk application wiring and app-user MFA enforcement remain deployment tasks.
 - [ ] A test mutation through the API writes the matching `audit_log` row.
 - [ ] Notification dispatcher sends a Resend email end-to-end (preview env).
 - [x] All four product surfaces render their empty navigation per PRD § 8.3: sponsor/biotech manufacturer, ETC, internal admin in `apps/app`, and patient in `apps/patient`.
@@ -987,7 +1008,7 @@ Migrations: `boards`, `board_etc_associations` (M:M), `board_members`, `board_me
 #### 6.3.8 Retention enforcement (RULE 16(6)(d))
 
 - DB trigger blocks DELETE on ETRB tables for rows < 5 years old.
-- pgTAP test asserts the lock fires.
+- Semantic SQL test asserts the lock fires.
 
 ### 6.4 QAPI program (PRD § 10.9)
 
@@ -1058,7 +1079,7 @@ Migrations: `boards`, `board_etc_associations` (M:M), `board_members`, `board_me
 - [ ] Cleaning logs, equipment disinfection logs, safety reports, medication-error/fall injury reports, and expiring product tracking work end-to-end.
 - [ ] Infection/safety events route into QAPI briefing data.
 - [ ] ETC creates ETRB; composition validator rejects under-spec board.
-- [ ] Conflict declarations are append-only (pgTAP).
+- [ ] Conflict declarations are append-only (semantic SQL).
 - [ ] Sponsor's protocol moves through review → approval; vote record + conflict declarations immutable.
 - [ ] Provisional ETC cannot enroll patients (e2e: 403 on `/v1/etcs/:id/patients`).
 - [ ] QAPI committee created; quarterly meeting scheduled; minutes upload tested; 3-year retention lock verified.
@@ -1779,7 +1800,7 @@ These run throughout every phase, not bound to a sprint:
 
 - **Compliance trace tests** — every shipped feature names its rule.
 - **Audit log coverage** — every mutation has a coverage test.
-- **RLS coverage** — every new PHI table has a pgTAP test.
+- **RLS coverage** — every new PHI table has a semantic RLS test and static `FORCE ROW LEVEL SECURITY` coverage.
 - **PHI redaction posture** — beforeSend hooks tested with synthetic fixtures.
 - **i18n string discipline** — react-intl wraps everything.
 - **Time discipline** — UTC at rest, America/Denver for deadlines.
@@ -1923,7 +1944,7 @@ This proves no PRD section is unaddressed.
 | 14.9 Compliance + reporting | Phase 3 (compliance), Phase 5 (reporting), HFAR Path A stubs Phase 1 |
 | 14.9A Architecture-preserved stubs | Phase 1 |
 | 14.10 Audit + infra | Phase 1; subprocessor DB portal Phase 6 |
-| 14.11 RLS strategy | Phase 1 (policies + pgTAP) |
+| 14.11 RLS strategy | Phase 1 (policies + semantic SQL RLS suite) |
 
 ### 14.8 PRD § 15 — API Surface
 

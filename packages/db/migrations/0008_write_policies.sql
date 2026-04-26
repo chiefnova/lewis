@@ -63,11 +63,11 @@
 --   patient
 --   board_reviewer
 --   corridor_admin, corridor_support
--- Plus the special "system role" path: any worker context where there is no
--- session user (app.current_user_id() IS NULL) but a request_id IS set. We do
--- not grant system-role write here; webhook/job handlers should use a
--- dedicated worker DB role that bypasses RLS by being SUPERUSER or BYPASSRLS,
--- and that path is separate from this helper.
+-- There is intentionally no "system role" RLS bypass. Worker and webhook
+-- handlers must either run with an auditable Corridor user/tenant context that
+-- passes these policies, or use a future explicitly scoped elevated worker
+-- path that writes its own audit evidence. App runtimes never receive
+-- SUPERUSER, BYPASSRLS, or table-owner credentials.
 
 -- ---------------------------------------------------------------------------
 -- Helper
@@ -358,9 +358,10 @@ create policy payment_obligations_write on payment_obligations
     or (etc_tenant_id is not null and app.can_write_for_tenant(etc_tenant_id, 'payment_obligation:write'))
   );
 
--- payment_transactions are normally written by webhook handlers running with
--- elevated privileges. Block all user-facing writes by default; webhook
--- handlers should run as a BYPASSRLS role.
+-- payment_transactions are normally written by webhook handlers. Block broad
+-- user-facing writes by default; webhook workers must set an auditable
+-- Corridor admin context or use a future explicitly scoped elevated worker
+-- path, never a general app-runtime RLS bypass.
 create policy payment_transactions_write on payment_transactions
   for all to public
   using (
@@ -420,8 +421,9 @@ create policy patient_device_registry_entries_write on patient_device_registry_e
 -- ---------------------------------------------------------------------------
 --
 -- search_index_documents and search_index_jobs are written by background
--- search indexers, not user-facing handlers. Block user writes by default;
--- workers run with BYPASSRLS or with corridor_admin context.
+-- search indexers, not user-facing handlers. Block broad user writes by
+-- default; workers must set an auditable Corridor admin context or use a
+-- future explicitly scoped elevated worker path.
 
 create policy search_index_documents_write on search_index_documents
   for all to public

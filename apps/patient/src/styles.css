@@ -25,3 +25,32 @@ body {
 a {
   color: #145c4d;
 }
+
+button {
+  border: 1px solid #145c4d;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #fff;
+  background: #145c4d;
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-shell {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 16px;
+}
+
+.auth-shell h1,
+.auth-shell p {
+  margin: 0;
+}
+
+.user-menu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}

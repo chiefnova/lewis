@@ -3,9 +3,9 @@ import { join, resolve } from "node:path";
 
 import { Pool } from "pg";
 
-import { databaseUrlFromConfig, resolveDatabaseConnectionConfig } from "../src/config.js";
+import { databaseUrlFromConfig, resolveMigrationDatabaseConnectionConfig } from "../src/config.js";
 
-const databaseUrl = databaseUrlFromConfig(resolveDatabaseConnectionConfig());
+const databaseUrl = databaseUrlFromConfig(resolveMigrationDatabaseConnectionConfig());
 
 async function expandSqlTargets(targets: string[]): Promise<string[]> {
   const files: string[] = [];

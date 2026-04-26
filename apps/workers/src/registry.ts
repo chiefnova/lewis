@@ -9,17 +9,20 @@ export type WorkerDefinition = {
 export const workerDefinitions: readonly WorkerDefinition[] = [
   {
     queueName: "notifications",
-    description: "Dispatches Resend transactional emails and records delivery lifecycle.",
+    description:
+      "Notification dispatch queue contract; real Resend processor lands with notification activation.",
     concurrency: 5,
   },
   {
     queueName: "pdf",
-    description: "Renders regulated PDF artifacts outside the API request path.",
+    description:
+      "PDF render queue contract; real Puppeteer processor lands with PDF template activation.",
     concurrency: 2,
   },
   {
     queueName: "compliance",
-    description: "Runs daily compliance obligation scheduling and health-score recalculation.",
+    description:
+      "Compliance queue contract; real schedulers land with Sprint 3 compliance activation.",
     concurrency: 1,
   },
 ];

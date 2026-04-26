@@ -8,7 +8,7 @@ Corridor local development uses Docker for infrastructure and host-run Node proc
 2. Install `mise`.
 3. Run `mise install`.
 4. Run `mise run install`.
-5. Copy `.env.local.example` to `.env.local`.
+5. Copy `env/.env.local.example` to `.env.local`.
 
 `.env.local` is for safe local defaults only. Provider secrets still come from `fnox` profiles or hosting-provider env vars. Do not place production secrets or PHI in plaintext env files.
 
@@ -22,7 +22,14 @@ Corridor local development uses Docker for infrastructure and host-run Node proc
 | Postgres | `127.0.0.1:15432` |
 | Redis | `127.0.0.1:16379` |
 
-Host-run processes use `DATABASE_URL=postgres://corridor:corridor@127.0.0.1:15432/corridor_dev` and `REDIS_URL=redis://127.0.0.1:16379`. If a future containerized API or worker is added, use Docker service hostnames through `DB_HOST=postgres` and `REDIS_HOST=redis`.
+Host-run processes use split DB roles so local development exercises the same RLS boundary as production:
+
+- API runtime: `DATABASE_URL=postgres://app_api:corridor_app_api@127.0.0.1:15432/corridor_dev`
+- Worker runtime: `WORKER_DATABASE_URL=postgres://app_worker:corridor_app_worker@127.0.0.1:15432/corridor_dev`
+- Migration and seed: `MIGRATION_DATABASE_URL=postgres://corridor:corridor@127.0.0.1:15432/corridor_dev`
+- Redis: `REDIS_URL=redis://127.0.0.1:16379`
+
+`app_api` and `app_worker` are non-owner `NOBYPASSRLS` roles. `mise run db:migrate` applies SQL migrations as the local migration owner and then provisions local-only passwords for the runtime roles. If a future containerized API or worker is added, use Docker service hostnames through `DB_HOST=postgres` and `REDIS_HOST=redis`.
 
 The default host ports intentionally avoid common local ports and the Navwise Broker defaults. If any are still occupied, set `LOCAL_POSTGRES_PORT` or `LOCAL_REDIS_PORT` in `.env.local` and update `DATABASE_URL` or `REDIS_URL` to match. `mise` loads `.env.local` before running Docker Compose tasks.
 
@@ -34,7 +41,7 @@ mise run db:migrate
 mise run db:seed
 ```
 
-`dev:infra` starts Docker Postgres and Redis. `db:migrate` applies SQL migrations. `db:seed` inserts synthetic local tenants, users, relationships, and a draft program.
+`dev:infra` starts Docker Postgres and Redis. `db:migrate` applies SQL migrations, creates/grants `app_api` and `app_worker`, and forces RLS on every RLS-enabled table. `db:seed` inserts synthetic local tenants, users, relationships, and a draft program through the migration connection, not an app runtime role.
 
 ## Run Services
 

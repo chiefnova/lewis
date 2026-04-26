@@ -1,3 +1,4 @@
+export * from "./clerk-metadata.js";
 export * from "./env.js";
 export * from "./phi-redaction.js";
 export * from "./queues.js";

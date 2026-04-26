@@ -18,7 +18,9 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      DATABASE_URL: postgres://app_api:corridor_app_api@127.0.0.1:15432/corridor_dev
+      MIGRATION_DATABASE_URL: postgres://corridor:corridor@127.0.0.1:15432/corridor_dev
+      REDIS_URL: redis://127.0.0.1:16379
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
@@ -32,6 +34,12 @@ jobs:
         run: mise run lint
       - name: Prettier check
         run: mise run format:check
+      - name: Secret profile boundary check
+        run: mise run secrets:profiles:check
+      - name: OpenAPI route drift check
+        run: mise run contracts:openapi:check
+      - name: Local-defaults drift check
+        run: mise run config:local-defaults:check
       - name: Unit and integration tests
         run: mise run test
       # Static RLS-policy completeness check — every RLS-enabled table
@@ -41,10 +49,10 @@ jobs:
       # PR regardless of which paths changed.
       - name: RLS write-policy coverage
         run: mise run db:rls:coverage
+      - name: RLS semantic tests
+        # Inherits DATABASE_URL + MIGRATION_DATABASE_URL from the job env
+        # block. mise run db:rls:test brings up Docker Postgres via db:up;
+        # no pre-emptive `docker compose down -v` needed on a fresh runner.
+        run: mise run db:rls:test
       - name: Production build
         run: mise run build
-      # pgTAP semantic RLS tests are NOT run in CI yet. See note in
-      # api-ci.yml — needs a Postgres image with pgtap preinstalled.
-      # Local devs run them via `mise run db:rls:test`.
-      # - name: RLS pgTAP tests
-      #   run: mise run db:rls:test

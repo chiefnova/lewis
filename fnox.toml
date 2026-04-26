@@ -1,85 +1,74 @@
-[encryption]
-provider = "age"
+# Local + CI secrets for Corridor. Production lives in Vercel/Railway env vars.
+# Adding yourself: generate a key (`age-keygen -o ~/.config/corridor-age-maintainer.key`),
+# share your pubkey with an existing recipient, who appends it below and re-encrypts
+# every secret (`fnox reencrypt`).
 
-# Recipients are the age public keys that can decrypt this repo's secrets.
-# Adding yourself: generate a key (`age-keygen -o ~/.config/age/key.txt`),
-# share your pubkey with an existing recipient, who appends it below and
-# re-encrypts every profile (`fnox rekey`). Revocation = remove the pubkey
-# + re-encrypt + rotate any leaked-by-presence values.
-[[recipients]]
-name = "gabeviggers@corridor.health"
-public_key = "age1m94qg8j6ylpqem2sucdeduhqtr4vdr2ryyal44jdcdq8x59um5lsjn378u"
+default_provider = "age"
+age_key_file = "~/.config/corridor-age-maintainer.key"
+if_missing = "warn"  # secrets without encrypted values warn instead of crashing dev
 
-# CI recipient. The matching age private key is held only in CI's secret store
-# (GitHub Actions, Railway, etc.); never on a developer machine.
-[[recipients]]
-name = "ci@corridor.health"
-public_key = "age18yac0966xfuhkzcz3lwepm4ncm04wuccftv4vh5kpch3mpv4qsfqfw0g9a"
-
-# === Profiles ===
-# Each profile groups the secrets one runtime needs. The matching package.json
-# `dev` script wraps in `fnox run <profile> --` so secrets land in env at start.
-#
-# IMPORTANT: production secrets do NOT live here. Vercel and Railway env vars
-# hold staging + prod values. fnox is for local development and CI only.
-
-[profiles.api_dev]
-secrets = [
-    "CLERK_SECRET_KEY",
-    "CLERK_WEBHOOK_SECRET",
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-    "PLAID_CLIENT_ID",
-    "PLAID_SECRET",
-    "PLAID_WEBHOOK_SECRET",
-    "RESEND_API_KEY",
-    "SENTRY_DSN",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_URL",
-    "DAILY_API_KEY",
-    "ESIGN_API_KEY",
+[providers.age]
+type = "age"
+recipients = [
+  "age1m94qg8j6ylpqem2sucdeduhqtr4vdr2ryyal44jdcdq8x59um5lsjn378u",  # gabeviggers@corridor.health
+  "age18yac0966xfuhkzcz3lwepm4ncm04wuccftv4vh5kpch3mpv4qsfqfw0g9a",  # ci@corridor.health
 ]
 
-[profiles.workers_dev]
-secrets = [
-    "CLERK_SECRET_KEY",
-    "STRIPE_SECRET_KEY",
-    "RESEND_API_KEY",
-    "SENTRY_DSN",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_URL",
-    "REDIS_URL",
-]
+# Secrets are added with `fnox set --profile <name> <KEY> <value>` and stored
+# encrypted in this file. The empty profiles below define which env vars each
+# runtime expects — fill them as you connect each provider account.
 
-[profiles.frontend_app_dev]
-secrets = [
-    "VITE_CLERK_PUBLISHABLE_KEY",
-    "VITE_STRIPE_PUBLISHABLE_KEY",
-    "VITE_SENTRY_DSN",
-    "VITE_API_BASE_URL",
-]
+[profiles.api_dev.secrets]
+CLERK_SECRET_KEY = { provider = "age" }
+CLERK_WEBHOOK_SECRET = { provider = "age" }
+STRIPE_SECRET_KEY = { provider = "age" }
+STRIPE_WEBHOOK_SECRET = { provider = "age" }
+PLAID_CLIENT_ID = { provider = "age" }
+PLAID_SECRET = { provider = "age" }
+PLAID_WEBHOOK_SECRET = { provider = "age" }
+RESEND_API_KEY = { provider = "age" }
+RESEND_WEBHOOK_SECRET = { provider = "age" }
+SENTRY_DSN = { provider = "age" }
+SUPABASE_URL = { provider = "age" }
+DAILY_API_KEY = { provider = "age" }
+ESIGN_API_KEY = { provider = "age" }
 
-[profiles.frontend_patient_dev]
-secrets = [
-    "VITE_CLERK_PUBLISHABLE_KEY",
-    "VITE_STRIPE_PUBLISHABLE_KEY",
-    "VITE_SENTRY_DSN",
-    "VITE_API_BASE_URL",
-]
+[profiles.workers_dev.secrets]
+CLERK_SECRET_KEY = { provider = "age" }
+STRIPE_SECRET_KEY = { provider = "age" }
+RESEND_API_KEY = { provider = "age" }
+SENTRY_DSN = { provider = "age" }
+SUPABASE_URL = { provider = "age" }
+REDIS_URL = { provider = "age" }
 
-[profiles.ci]
-secrets = [
-    "CLERK_SECRET_KEY",
-    "CLERK_WEBHOOK_SECRET",
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-    "PLAID_SECRET",
-    "RESEND_API_KEY",
-    "SENTRY_DSN",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_URL",
-    "DAILY_API_KEY",
-    "ESIGN_API_KEY",
-    "VITE_CLERK_PUBLISHABLE_KEY",
-    "VITE_STRIPE_PUBLISHABLE_KEY",
-]
+[profiles.workers_elevated_dev.secrets]
+SENTRY_DSN = { provider = "age" }
+SUPABASE_SERVICE_ROLE_KEY = { provider = "age" }
+SUPABASE_URL = { provider = "age" }
+REDIS_URL = { provider = "age" }
+
+[profiles.frontend_app_dev.secrets]
+VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
+VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
+VITE_SENTRY_DSN = { provider = "age" }
+VITE_API_BASE_URL = { provider = "age" }
+
+[profiles.frontend_patient_dev.secrets]
+VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
+VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
+VITE_SENTRY_DSN = { provider = "age" }
+VITE_API_BASE_URL = { provider = "age" }
+
+[profiles.ci.secrets]
+CLERK_SECRET_KEY = { provider = "age" }
+CLERK_WEBHOOK_SECRET = { provider = "age" }
+STRIPE_SECRET_KEY = { provider = "age" }
+STRIPE_WEBHOOK_SECRET = { provider = "age" }
+PLAID_SECRET = { provider = "age" }
+RESEND_API_KEY = { provider = "age" }
+SENTRY_DSN = { provider = "age" }
+SUPABASE_URL = { provider = "age" }
+DAILY_API_KEY = { provider = "age" }
+ESIGN_API_KEY = { provider = "age" }
+VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
+VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
