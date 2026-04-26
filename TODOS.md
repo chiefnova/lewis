@@ -743,6 +743,20 @@ synthetic-data tenants without doc edits.
 
 ## Completed
 
+### Directory app launch (apps/directory) — corridor.health public patient directory
+
+**What:** New Vite/React/TS SPA at [apps/directory/](apps/directory/) covering homepage, browse, treatment detail, ETC profile, eligibility self-screen, connect-request handoff, and supporting static pages. Anonymous-first (Clerk not in bundle). Bundle 109.96 KB gzipped (under 120 KB above-the-fold budget). Public-API contract module [packages/shared/src/api/public.ts](packages/shared/src/api/public.ts) defines the `/v1/public/*` Zod schemas. SEO infrastructure (per-route head meta, JSON-LD, robots.txt, build-time sitemap.xml). 24 vitest tests covering eligibility evaluator, anonymous-session round-trip, catalog lookups, schema validation, and axe-core a11y sweeps. Monorepo glue: `dev:directory` task, `frontend_directory_dev` fnox profile, eslint browser-globals block scoped to frontend apps, `.claude/rules/frontend.md` updated. Followed by `/review` (multi-specialist; quality_score 9.0) which auto-fixed 10 mechanical issues (SVG `id` collision, dead state, broken canonical URLs, etc.) and applied option-C polish (cards as Link, auto-advance removed for WCAG 2.2.1, mobile responsive, full a11y test suite).
+
+**Followups (deferred per scope):**
+- `packages/auth` scaffold for cross-subdomain `.corridor.health` Clerk session sharing — directory's connect-request flow will lazy-load Clerk through this package.
+- SSG via `vite-plugin-ssr` for crawler coverage (Googlebot reads `useSeo` runtime tags today; SSG bakes them at build for non-JS crawlers).
+- Hardcoded WST-057 detail content → catalog-driven (acceptable while WST-057 is the only available program; refactor when a second lands).
+- React.lazy route splitting (bundle is under budget without it; revisit if budget tightens).
+- Tailwind preset (the design source uses CSS variables AS IS; CSS variables are already token-based for a clean future migration).
+- i18n externalization of inline strings to `react-intl` messages (en.json scaffold exists for chrome strings).
+
+**Completed:** v0.0.4.0 (2026-04-26)
+
 (Six mechanical fixes applied during /review on 2026-04-25.)
 
 ### audit_log: block TRUNCATE + revoke privilege

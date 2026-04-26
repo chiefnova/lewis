@@ -1,6 +1,6 @@
 {
   "name": "corridor",
-  "version": "0.0.1",
+  "version": "0.0.4.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.9",
@@ -11,7 +11,8 @@
     "dev:workers": "pnpm --filter workers dev",
     "dev:app": "pnpm --filter app dev",
     "dev:patient": "pnpm --filter patient dev",
-    "dev:all": "pnpm -r --parallel --stream --filter app --filter patient --filter api --filter workers dev",
+    "dev:directory": "pnpm --filter directory dev",
+    "dev:all": "pnpm -r --parallel --stream --filter app --filter patient --filter directory --filter api --filter workers dev",
     "dev:down": "docker compose down",
     "db:migrate": "pnpm --filter @corridor/db migrate:local",
     "db:seed": "pnpm --filter @corridor/db seed",

@@ -63,6 +63,42 @@ export default [
     },
   },
   {
+    // Browser globals for frontend app code. The base config above only loads
+    // a small Node-shaped set; adding the browser surface here keeps app code
+    // honest without polluting the API/workers globals (where, e.g., a stray
+    // `localStorage` reference should be a hard error).
+    files: ["apps/app/**/*.{ts,tsx}", "apps/patient/**/*.{ts,tsx}", "apps/directory/**/*.{ts,tsx}"],
+    languageOptions: {
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        localStorage: "readonly",
+        sessionStorage: "readonly",
+        navigator: "readonly",
+        location: "readonly",
+        fetch: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        requestAnimationFrame: "readonly",
+        cancelAnimationFrame: "readonly",
+        HTMLElement: "readonly",
+        HTMLInputElement: "readonly",
+        HTMLFormElement: "readonly",
+        HTMLMetaElement: "readonly",
+        HTMLLinkElement: "readonly",
+        HTMLScriptElement: "readonly",
+        Element: "readonly",
+        Event: "readonly",
+        FormData: "readonly",
+        crypto: "readonly",
+      },
+    },
+  },
+  {
     // PHI-bearing runtime code paths must use the structured pino logger
     // (apps/api/src/logger.ts, apps/workers/src/logger.ts), never console.*.
     // redactPhi is a last-line defense; the field-based pino API is the

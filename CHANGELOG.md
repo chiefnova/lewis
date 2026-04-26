@@ -5,6 +5,35 @@ All notable changes to Corridor are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a 4-digit version format: `MAJOR.MINOR.PATCH.MICRO`.
 
+## [0.0.4.0] - 2026-04-26
+
+Launches `apps/directory`, the public, anonymous, SEO-optimized patient directory served at `corridor.health`. Adds the public-API contract module (`packages/shared/src/api/public.ts`) the directory bundle hits, plus the monorepo glue to dev/build/lint the new app alongside `apps/app` and `apps/patient`. Aligns root `package.json` `version` (which had drifted to `0.0.1` across prior releases) with the canonical `VERSION` file at this release.
+
+### Added
+
+- **`apps/directory` patient directory app.** Vite/React/TypeScript SPA at [apps/directory/](apps/directory/) covering the homepage, browse catalog, treatment detail, ETC profile, eligibility self-screen, connect-request handoff, and supporting static pages. Bundle is **109.96 KB gzipped** for the homepage chunk (under the 120 KB above-the-fold budget). Anonymous-first by design — Clerk is intentionally not imported in the bundle so a pen-tester can confirm the directory has neither the code paths nor the credentials to access PHI. Cards and the top nav use real `<Link>` elements (crawlable + middle-clickable). The eligibility self-screen exposes a `role="progressbar"` and a `role="radiogroup"` of options that no longer auto-advance after a click (WCAG 2.1 AA).
+- **WST-057 worked example.** Treatment detail page for the launch program (WST-057, WinSanTor, diabetic peripheral neuropathy) and ETC profile for the launch ETC (Big Sky ETC, Bozeman) are content-complete. Other programs are shown as muted "Coming soon" placeholders. Cost guidance, evidence link, and AE-summary rendering carry inline `[COUNSEL REVIEW]` markers.
+- **Public-API contract module.** [packages/shared/src/api/public.ts](packages/shared/src/api/public.ts) defines Zod schemas for the `/v1/public/*` surface (programs, ETCs, eligibility sessions, connect requests) plus the two narrowly-scoped semi-authenticated endpoints (`/v1/patient/me/context`, `/v1/patient/account/link-anonymous-screen`). 15 schema tests in [public.test.ts](packages/shared/src/api/public.test.ts) lock the trust boundary the directory bundle depends on.
+- **Anonymous eligibility-screen session.** [apps/directory/src/eligibility/anonymousSession.ts](apps/directory/src/eligibility/anonymousSession.ts) persists an opaque session token in `localStorage` keyed per-program. Token is generated client-side via `crypto.randomUUID` until the API endpoint is wired; the linkage to a patient user record happens at Clerk signup time on the connect-request flow.
+- **SEO infrastructure.** Per-route `<title>`, `description`, `canonical`, `og:*`, `twitter:card` via [seo/useSeo.ts](apps/directory/src/seo/useSeo.ts). JSON-LD structured data (WebSite, ItemList, Drug, MedicalClinic) per page type. [public/robots.txt](apps/directory/public/robots.txt) (Disallow `/eligibility/`, `/connect/`) and a build-time-generated [public/sitemap.xml](apps/directory/public/sitemap.xml) via [scripts/generate-sitemap.mjs](apps/directory/scripts/generate-sitemap.mjs) (wired into `pnpm --filter directory build`).
+- **Test suite for the new app.** 24 vitest tests in `apps/directory/src/**` covering the eligibility evaluator, anonymous-session round-trip (round-trip preserves data, per-program namespacing, corrupted-JSON tolerance, quota-error swallow, `crypto.randomUUID` happy path), catalog lookups, schema regex compliance, and axe-core a11y sweeps for HomePage, EligibilityPage, TreatmentDetailPage, and ConnectPage.
+- **Shared `Panel` component.** [components/Panel.tsx](apps/directory/src/components/Panel.tsx) — the section-wrapper used on TreatmentDetailPage and EtcProfilePage. Renders an `h2` (axe-core caught a heading-order regression when the prior duplicate used `h3`).
+- **`frontend_directory_dev` fnox profile.** Minimal-surface env-var profile in [fnox.toml](fnox.toml) for the directory app. No Stripe/Plaid keys; only `VITE_API_BASE_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_SENTRY_DSN`, `VITE_POSTHOG_KEY`. Keeps the "directory bundle has no PHI code paths" pen-test posture verifiable.
+
+### Changed
+
+- **`mise.toml`, root `package.json`, `pnpm-workspace.yaml` glue.** New `dev:directory` task, `dev:all` now includes the directory app alongside app/patient/api/workers. [pnpm-workspace.yaml](pnpm-workspace.yaml) already covered `apps/*`.
+- **`eslint.config.js` browser-globals block.** New scoped block for `apps/app/**`, `apps/patient/**`, `apps/directory/**` adds `window`, `localStorage`, `setTimeout`, `crypto`, etc. so frontend code lints cleanly without polluting API/workers globals (where `localStorage` is still a hard error).
+- **`.claude/rules/frontend.md` adds `apps/directory/**` path.** Codifies the directory's bundle (<120 KB above-the-fold), API surface (`/v1/public/*` only), and Clerk-lazy-load rules so future edits stay within the pen-test posture.
+- **Public schemas re-exported from `@corridor/shared/api`.** [packages/shared/src/api/index.ts](packages/shared/src/api/index.ts) now re-exports `./public.js`.
+
+### Notes
+
+- **Directory data is static seed for launch.** [apps/directory/src/data/catalog.tsx](apps/directory/src/data/catalog.tsx) holds the WST-057 + Big Sky ETC fixtures the directory renders today. Once the public API endpoints land, the directory swaps the static data for the typed client in [apps/directory/src/api/client.ts](apps/directory/src/api/client.ts) (already wired with `ApiNetworkError` / `ApiSchemaError` and dev-mode `localhost:13001` fallback so a missing `VITE_API_BASE_URL` cannot accidentally hit prod).
+- **Cross-subdomain Clerk session is documented but not implemented.** The directory bundle does not yet detect an existing `.corridor.health` session cookie. The connect-request flow will lazy-load Clerk and deep-link into `patient.corridor.health` once `packages/auth` is scaffolded — the comment block in [apps/directory/src/pages/ConnectPage.tsx](apps/directory/src/pages/ConnectPage.tsx) documents the contract.
+- **Tailwind preset, SSG, and full lazy-route splitting are deferred.** The directory uses CSS variables (matching the design source AS IS) instead of Tailwind extensions; the homepage SPA is under the 120 KB budget without `React.lazy`. Both can land in a follow-up PR with no rework to the existing pages.
+- **`VERSION` and root `package.json` realigned at this release.** Prior `/ship` runs left root `package.json` at `0.0.1` while the canonical `VERSION` advanced; this release sets both to `0.0.4.0` to remove the drift.
+
 ## [0.0.3.0] - 2026-04-25
 
 Clerk React SDK upgrade from `@clerk/clerk-react@5.61.3` to `@clerk/react@6.4.5`
