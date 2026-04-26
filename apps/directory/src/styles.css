@@ -228,6 +228,31 @@ section {
   align-items: center;
 }
 
+/* Real Montana flag SVG. Aspect ratio is 1416:943 (~3:2). Sized to sit inside
+ * the 50px-min strip with a touch of breathing room. No border, no radius —
+ * the flag stands on its own. */
+.announce-strip__flag-img {
+  display: block;
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Footer attribution gets a small Montana flag chip to anchor the "Bozeman"
+ * geography credit. Same SVG asset as the announcement strip, sized down. */
+.footer-attribution {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-flag-img {
+  display: block;
+  height: 34px;
+  width: auto;
+  flex-shrink: 0;
+}
+
 .announce-strip__group {
   display: flex;
   align-items: center;
@@ -252,6 +277,10 @@ section {
     position: static;
     transform: none;
     flex-shrink: 0;
+  }
+  /* Slightly smaller flag on mobile to balance the tighter chrome. */
+  .announce-strip__flag-img {
+    height: 26px;
   }
   .announce-strip__group {
     display: contents;
@@ -388,9 +417,9 @@ section.hero-section {
   .footer-grid > * {
     justify-content: center !important;
   }
-  .footer-wordmark {
+  .footer-attribution {
     order: 1;
-    font-size: 22px !important;
+    line-height: 1.45;
   }
   .footer-links {
     order: 2;
@@ -403,11 +432,6 @@ section.hero-section {
   }
   .footer-links > a {
     border-bottom: none !important;
-  }
-  .footer-attribution {
-    order: 3;
-    font-size: 11.5px !important;
-    line-height: 1.45;
   }
 }
 
