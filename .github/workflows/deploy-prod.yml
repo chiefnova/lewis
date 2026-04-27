@@ -36,6 +36,15 @@ jobs:
         run: mise run test
       - name: Production build
         run: mise run build
+      - name: Deploy directory
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.PROD_DIRECTORY_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "PROD_DIRECTORY_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
       - name: Deploy app portal
         env:
           DEPLOY_HOOK_URL: ${{ secrets.PROD_APP_DEPLOY_HOOK_URL }}
@@ -80,4 +89,5 @@ jobs:
     with:
       app_url: ${{ vars.PROD_APP_URL || 'https://app.lewis.health' }}
       patient_url: ${{ vars.PROD_PATIENT_URL || 'https://patient.lewis.health' }}
+      directory_url: ${{ vars.PROD_DIRECTORY_URL || 'https://lewis.health' }}
       api_origin_url: ${{ vars.PROD_API_ORIGIN_URL || 'https://api.lewis.health' }}

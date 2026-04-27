@@ -34,10 +34,10 @@ jobs:
         run: mise run install
 
       - name: TypeScript check
-        run: pnpm --filter app --filter patient typecheck
+        run: pnpm --filter app --filter patient --filter directory typecheck
 
       - name: Lint
-        run: pnpm --filter app --filter patient lint
+        run: pnpm --filter app --filter patient --filter directory lint
 
       - name: Build frontend portals
         env:
@@ -45,17 +45,32 @@ jobs:
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_STRIPE_PUBLISHABLE_KEY_PROD || secrets.VITE_STRIPE_PUBLISHABLE_KEY_STAGING }}
           VITE_API_BASE_URL: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_API_BASE_URL_PROD || secrets.VITE_API_BASE_URL_STAGING }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-        run: pnpm --filter app --filter patient build
+          VITE_POSTHOG_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_POSTHOG_KEY_PROD || secrets.VITE_POSTHOG_KEY_STAGING }}
+        run: pnpm --filter app --filter patient --filter directory build
 
-      - name: Remove source maps from deployment artifacts
+      - name: Remove source maps from app + patient artifacts
+        # Directory is anonymous-first (no PHI by design) so its sourcemaps
+        # stay shipped — they let Sentry deobfuscate client-side stack traces.
+        # app + patient are PHI-bearing; sourcemaps are stripped per the
+        # CLAUDE.md "no PHI in build artifacts" posture.
         run: |
           find apps/app/dist apps/patient/dist -name "*.map" -type f -delete
           MAP_COUNT=$(find apps/app/dist apps/patient/dist -name "*.map" -type f | wc -l)
-          echo "Remaining source maps: $MAP_COUNT"
+          echo "Remaining source maps in app + patient: $MAP_COUNT"
           if [ "$MAP_COUNT" -ne 0 ]; then
-            echo "ERROR: source maps still present in frontend artifacts."
+            echo "ERROR: source maps still present in PHI-bearing frontend artifacts."
             exit 1
           fi
+
+      - name: Deploy directory
+        env:
+          DIRECTORY_DEPLOY_HOOK_URL: ${{ github.event.inputs.deploy_target == 'production' && secrets.PROD_DIRECTORY_DEPLOY_HOOK_URL || secrets.STAGING_DIRECTORY_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DIRECTORY_DEPLOY_HOOK_URL" ]; then
+            echo "Directory deploy hook is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DIRECTORY_DEPLOY_HOOK_URL"
 
       - name: Deploy app portal
         env:
