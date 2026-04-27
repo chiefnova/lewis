@@ -17,46 +17,71 @@ recipients = [
 # Secrets are added with `fnox set --profile <name> <KEY> <value>` and stored
 # encrypted in this file. The empty profiles below define which env vars each
 # runtime expects — fill them as you connect each provider account.
+#
+# DEFERRED services (commented out below until provider accounts are created
+# and the corresponding webhook endpoints / SDKs go live):
+#   - Stripe       (subscriptions + ACH disbursements; PRD § 14)
+#   - Plaid        (bank linking for ACH; PRD § 14.4)
+#   - Resend       (transactional email; PRD § 13)
+#   - Sentry       (frontend + backend error reporting; PRD § 18)
+#   - PostHog      (anonymous directory analytics; PRD § 18.4)
+# App code uses each via lazy `requiredEnv()` calls, so the API + workers
+# boot fine without them — errors only surface when the corresponding
+# webhook route is actually hit, which won't happen until the provider is
+# wired and an endpoint is registered. Uncomment the relevant lines (and
+# `fnox set` real values) when you onboard each provider.
 
 [profiles.api_dev.secrets]
-CLERK_SECRET_KEY = { provider = "age" }
+CLERK_SECRET_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB3MitUZW1PaFArKy9UK205VHE4enFHZS9GSHBXb2xIQU0vTjd4M21wVGdJCnFaOFg0T0F2MW9sMkVEU2JpdDNjQzZnODBLd09WZlBIb2hkVTdUR3JVMVkKLT4gWDI1NTE5IDlsYUUzZzg4T0hkcndPSHh6ODJ5Qms4ZGF6VzhQNnYveTJVdjhtek0vVTgKRzR5QkpRN1pKdmdBbk1iR2pDRWJDY3dyUnlKZ0ZlWVpaRDcxVXhRQ24rMAotPiAzWEZyUCItZ3JlYXNlCnVPTDhkVEVkOE1nR2NQVzhibXBPY3VjaFN2VTA3Z2xkeHdPRk1uQkZjbmY1RkpPT09KSVN6YWVKOWdKc0d1cFIKMEhlLzhlK282cU42Q2trNUtIYmhwcis4NEhtelNQSXFUV2RGdVB2dAotLS0gMUx3NUFHRkJNeG5IZGd3S3dNSjZaNzlqRUpGNTkxQXgxVTlNTGlTL3RRdwpU8OGgFB1fj2poXtdI3BccbU8UxCMxyqtK47JDqafUWDiRIGs8zXU5/a9msCP0p+D+nYrSaiHvtre6JA6e+uxoUkr5YBrJalS2rugBbw3AtuKz" }
 CLERK_WEBHOOK_SECRET = { provider = "age" }
-STRIPE_SECRET_KEY = { provider = "age" }
-STRIPE_WEBHOOK_SECRET = { provider = "age" }
-PLAID_CLIENT_ID = { provider = "age" }
-PLAID_SECRET = { provider = "age" }
-PLAID_WEBHOOK_SECRET = { provider = "age" }
-RESEND_API_KEY = { provider = "age" }
-RESEND_WEBHOOK_SECRET = { provider = "age" }
-SENTRY_DSN = { provider = "age" }
+# DEFERRED — Stripe (PRD § 14)
+# STRIPE_SECRET_KEY = { provider = "age" }
+# STRIPE_WEBHOOK_SECRET = { provider = "age" }
+# DEFERRED — Plaid (PRD § 14.4)
+# PLAID_CLIENT_ID = { provider = "age" }
+# PLAID_SECRET = { provider = "age" }
+# PLAID_WEBHOOK_SECRET = { provider = "age" }
+# DEFERRED — Resend (PRD § 13 — transactional email)
+# RESEND_API_KEY = { provider = "age" }
+# RESEND_WEBHOOK_SECRET = { provider = "age" }
+# DEFERRED — Sentry (PRD § 18)
+# SENTRY_DSN = { provider = "age" }
 SUPABASE_URL = { provider = "age" }
 DAILY_API_KEY = { provider = "age" }
 ESIGN_API_KEY = { provider = "age" }
 
 [profiles.workers_dev.secrets]
-CLERK_SECRET_KEY = { provider = "age" }
-STRIPE_SECRET_KEY = { provider = "age" }
-RESEND_API_KEY = { provider = "age" }
-SENTRY_DSN = { provider = "age" }
+CLERK_SECRET_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBFVlJPdEdkeS92Q01LcDVhellmNjQzU3QwN0xCc0xMcURJem03czJNOFZNCkRsYnhBaFp4TXNsSHpjanJKaVM5MHBFR0lkWCttZFRpeU93TUpVcnUxZW8KLT4gWDI1NTE5IGFacEVEL09adnpGOTlzMk16N0pqQUhEMUtZeGxxUUQ0cHoxV09wVTRBVGMKUkwyVmJYOGZEZzBEcU1PaFZQeG9OUWJpTFNTdjJBcnlSRmc3WFJEb2tzawotPiBpb3FRLCRsLWdyZWFzZSBOMyZ1bElERCBfJDhxQkViCjhqNG5zSEZ5clFCZ2lNZm1ORFRPdlNxaFdPMXJVRUk3aGFyUngxZlV2Vk01Z3puZ2NQOUlmckQ3L3I0Vyt6OVEKMkY4Ti82L0xJU2pVeXcxOFVIVFMKLS0tIDVNK285VXVwUWhUcDZTTGFpZ0Jwb0JhV0hnNHdIY0FFdkhVcExBTTduZTQKVWmthnNJrXNqswIzdgGLNFKkxwBn415uusBhvAqwkVdp/9fJ/1JSX82vNkifBnrjTND95FIQcbhp2TQ+hHS5Ejaefq4NL1RmaIUC16lMFFZGoQ==" }
+# DEFERRED — Stripe (PRD § 14)
+# STRIPE_SECRET_KEY = { provider = "age" }
+# DEFERRED — Resend (PRD § 13 — transactional email)
+# RESEND_API_KEY = { provider = "age" }
+# DEFERRED — Sentry (PRD § 18)
+# SENTRY_DSN = { provider = "age" }
 SUPABASE_URL = { provider = "age" }
 REDIS_URL = { provider = "age" }
 
 [profiles.workers_elevated_dev.secrets]
-SENTRY_DSN = { provider = "age" }
+# DEFERRED — Sentry (PRD § 18)
+# SENTRY_DSN = { provider = "age" }
 SUPABASE_SERVICE_ROLE_KEY = { provider = "age" }
 SUPABASE_URL = { provider = "age" }
 REDIS_URL = { provider = "age" }
 
 [profiles.frontend_app_dev.secrets]
-VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
-VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
-VITE_SENTRY_DSN = { provider = "age" }
+VITE_CLERK_PUBLISHABLE_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA3YjBqdXZ2YUl5Wmo1aU5zSmtraWw2K1RORFFXenlHWUhpMVJhUEcvNFRzCm9sUEZOUXp5UnhseFVSQUwzV0hGV2hpaS9NSEEwR25NZmFEdFB4YmdZSjQKLT4gWDI1NTE5IFR1TVpXNllWMFRsOUFiM1pwcE5KdlV6em1LRG5DOWZ0VzZmTWVBZXlQVG8KcHRidmwyVDZrWjRLMk44NGlwb0VxTzFsV0Q0NlVaTDBWSFZORHlJcldxSQotPiB8MVZAaXcvLWdyZWFzZSBgdgpMeE9NS2ErRHBPZkxSUlYrSjB4NG01TXpxM0pOCi0tLSAzTW41WVZra2swSUNHYk9Ocmc3b2xnQnI0bnBRRjh5cjlIS1l4MnJ0WVNrCkb8xr2MBSau24YUPXC5d5+GyIQQ/BN3NVKipwcTbU8osjRYPnh8NOA4vbgxXk49ZkRFfkNFf4MJEmiL2r53iJPSOCDkK48IQ5vO8GbQmlO8ZOOL+A==" }
+# DEFERRED — Stripe (PRD § 14)
+# VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
+# DEFERRED — Sentry (PRD § 18)
+# VITE_SENTRY_DSN = { provider = "age" }
 VITE_API_BASE_URL = { provider = "age" }
 
 [profiles.frontend_patient_dev.secrets]
-VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
-VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
-VITE_SENTRY_DSN = { provider = "age" }
+VITE_CLERK_PUBLISHABLE_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBhRzAwVm9CWlFueENEdE5Yc2h1VmJKRkUrVkl0N2FyRlFkcldXZTVIMUFvCldBc1JaaVY3b1dFeTRKYkpTMCttS0xyK05tS0NGNmlOeTFSK21EV2lvTUUKLT4gWDI1NTE5IE1yM0ErME51YjNBbmVodzBuaE5yRkluOVR6RlVYMlh5S2JhS2xXdVZkbVEKbEpjdFRhZEorK1VrYWtqMUFBMDR5OE5OUDVzeEhOVEwrOVoweC91Y0RzdwotPiAoUi1ncmVhc2UgP35xXiBaNAp4bzNocXI0WEs0Q1ptbHo0N3lFc0VtNE9ucGlDcDltZXV5Rjg1UmZYUS9sK0U2Q01acTBUd212UFhBbGg5VEkyCmY0elNoZmRKCi0tLSBUVjc2VnZxdUxteFd2UXI4MHU5WllhRXBIeE5aeDQzRlpPcEFjNUk3cHQwCoS6KBD/Af1m/bk2N4dtke0pSYAHCcTA/D0IrWiXDqgUkGLDN2eyPzwqdfanx08dzlp277wS4Fa/0j67yAMOzc3sos9exH+kiSHLjELcUcx92FALDw==" }
+# DEFERRED — Stripe (PRD § 14)
+# VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
+# DEFERRED — Sentry (PRD § 18)
+# VITE_SENTRY_DSN = { provider = "age" }
 VITE_API_BASE_URL = { provider = "age" }
 
 # Directory (lewis.health) is anonymous-first: it does NOT receive
@@ -65,20 +90,27 @@ VITE_API_BASE_URL = { provider = "age" }
 # no PHI code paths" pen-test posture verifiable.
 [profiles.frontend_directory_dev.secrets]
 VITE_API_BASE_URL = { provider = "age" }
-VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
-VITE_SENTRY_DSN = { provider = "age" }
-VITE_POSTHOG_KEY = { provider = "age" }
+VITE_CLERK_PUBLISHABLE_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBuL0lYQlViSFpjRUIzKzhidFlvVE5IaW10QVdYVXZSRFJHMFVhVHdRbTNvCjFhbHYzZGkrTTNtcmI3Z2h1WSs1eVBVd3dvZk53alBEdnd6Rk05S1FCNW8KLT4gWDI1NTE5IFltYVRzZ1ZhV3B5YXdLWFBPM1NndHZHSFpjMjNRbVZrWlg5RkY3SE1zUkkKakxtaGZjRjc3MmFnK1o1Tjh1anc1NVhlUXBrK00xaTRkUkFWR0lRZkRhcwotPiBnO1UtZ3JlYXNlCk5NWmllZDgKLS0tIGNSc2RNR2lQOFdGaVhyeFkwRWx2S0ExOWJkSGJUWXpISUVPL0J2ZnRUeG8Kjg1StjO0NByGpKts6nbW3t0t09oaUwlEe0LFigf1rXCKn9muZT9d5wfPB6CqzT027zHZ9RE83BKsgj6VIvgioy5rTdd8LtnWPgFK6XAMvHxXi0xH" }
+# DEFERRED — Sentry (PRD § 18)
+# VITE_SENTRY_DSN = { provider = "age" }
+# DEFERRED — PostHog (PRD § 18.4)
+# VITE_POSTHOG_KEY = { provider = "age" }
 
 [profiles.ci.secrets]
-CLERK_SECRET_KEY = { provider = "age" }
+CLERK_SECRET_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBXakNMbjJKREZack1oc0RJckp0S0Z1T2RQcjE3QUhjWjlWVGJFSU5vL1MwCm9QRG4zd2FsTGJvcThkYSs5aWFzU1Q4WWtGQmp4UThjcEtqenhWNjdnNzgKLT4gWDI1NTE5IERDemo1YzhQMEl1Q1hmY2VMYkVmU2ZaYXMrQXdhNnlkMG10QlNFUGtVbEUKVTNUck1oOFJoUkRpYUlUcUlJZHhuSUZvTE92ZDA4d1hoQ2NXWFlDNitjYwotPiA8W0Z1dyVpLWdyZWFzZSBGNTRCX3heJgpDWHNxV1MvR2VMb3BpTm80TzlSZXNjUGxKUDc0YjBGcVVOR2pyZStacGF2SzBTaHVuZ29SZ2dBd21zYnphRUl1CmI1cXJoSVdHSzNURjBJejZMY21UaGpXS1FwbTJxVEFDZUUyV2QyY3VNbUVJVEVlVVpKeURPZDZrY3FFRjhzSHQKeWcKLS0tIDJiOUdOSzJnelNKZ09OVFFQT1VMTm5HNkxNMVJRN284T3dqUHNvcG9LTW8KPkq7y2g1PIdWwf4pisMGjfx91PKVv5aJVZjwYiDA/xmqtEFaGNj+NGuPOOE+Za2NLhzfTsDLmVTDcKNc6kFcFmA4V5nyaSgOkcntGheXgodqhg==" }
 CLERK_WEBHOOK_SECRET = { provider = "age" }
-STRIPE_SECRET_KEY = { provider = "age" }
-STRIPE_WEBHOOK_SECRET = { provider = "age" }
-PLAID_SECRET = { provider = "age" }
-RESEND_API_KEY = { provider = "age" }
-SENTRY_DSN = { provider = "age" }
+# DEFERRED — Stripe (PRD § 14)
+# STRIPE_SECRET_KEY = { provider = "age" }
+# STRIPE_WEBHOOK_SECRET = { provider = "age" }
+# DEFERRED — Plaid (PRD § 14.4)
+# PLAID_SECRET = { provider = "age" }
+# DEFERRED — Resend (PRD § 13 — transactional email)
+# RESEND_API_KEY = { provider = "age" }
+# DEFERRED — Sentry (PRD § 18)
+# SENTRY_DSN = { provider = "age" }
 SUPABASE_URL = { provider = "age" }
 DAILY_API_KEY = { provider = "age" }
 ESIGN_API_KEY = { provider = "age" }
-VITE_CLERK_PUBLISHABLE_KEY = { provider = "age" }
-VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
+VITE_CLERK_PUBLISHABLE_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBlL1FLbkw2eGVkbGVSdTRCSDllR1lPMGJibHd6QkpxRDl3MG5TSVpvMlRJCklpOFBuTUdxWUZlNVBHOUwrYnVsMlFDQm01MVNMSXNjVjJQQXFrRkRCQUEKLT4gWDI1NTE5IHg3YUJ5dkloOEpYT0RERklPVmczbFdBYkJjOCtOd0QyZU1CVEFERmZuUlkKZ0JTWUxSa3haNExsTW5tQ3RaalAybW51TnV2TFF3R1N1dHhVbUptbXZvdwotPiBMVEZJQi19LWdyZWFzZSBfX3Y8IHZvNVJHQS0gLTEtWiRvTgpnaCtleUVzSgotLS0gRUd4bXlqNFptdEt2eldDdFMzeEc2dHN3cHRqUHVLK3l3R3loTlRnN1hXNAo0tyOhdvdLPSfo7nUNmDgInHuHF4/kjC43ckM9Trvo86IxW7L7e8nv2Mu1DbiQQMJsQpfvTWK+XsttsLrtCOVY40YErLClon5JlCQyzyTCCeQ+X4Y=" }
+# DEFERRED — Stripe (PRD § 14)
+# VITE_STRIPE_PUBLISHABLE_KEY = { provider = "age" }
