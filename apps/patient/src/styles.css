@@ -1,0 +1,31 @@
+/* Lewis patient portal — app-specific layout.
+ * Tokens, base resets, paper background, and the .pill button system
+ * come from @lewis/ui. Patient UX must stay plain, calm, WCAG 2.1 AA.
+ * Don't add visual flourish here without a design + a11y review.
+ */
+
+.patient-shell {
+  max-width: 720px;
+  min-height: 100vh;
+  padding: 32px 20px;
+  margin: 0 auto;
+}
+
+.auth-shell {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 16px;
+}
+
+.auth-shell h1,
+.auth-shell p {
+  margin: 0;
+}
+
+.user-menu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}

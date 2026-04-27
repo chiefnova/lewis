@@ -1,0 +1,194 @@
+name: API CI
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - "apps/api/**"
+      - "apps/workers/**"
+      - "packages/db/**"
+      - "packages/shared/**"
+      - "packages/notifications/**"
+      - "packages/pdf/**"
+      - "packages/rbac/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "mise.toml"
+      - "fnox.toml"
+      - "scripts/check-fnox-secret-boundaries.mjs"
+      - "scripts/check-openapi-route-drift.mjs"
+      - ".github/workflows/api-ci.yml"
+  pull_request:
+    branches:
+      - main
+      - staging
+    paths:
+      - "apps/api/**"
+      - "apps/workers/**"
+      - "packages/db/**"
+      - "packages/shared/**"
+      - "packages/notifications/**"
+      - "packages/pdf/**"
+      - "packages/rbac/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "mise.toml"
+      - "fnox.toml"
+      - "scripts/check-fnox-secret-boundaries.mjs"
+      - "scripts/check-openapi-route-drift.mjs"
+      - ".github/workflows/api-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: postgres://app_api:lewis_app_api@127.0.0.1:15432/lewis_dev
+      MIGRATION_DATABASE_URL: postgres://lewis:lewis@127.0.0.1:15432/lewis_dev
+      REDIS_URL: redis://127.0.0.1:16379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+
+      - name: Install toolchain
+        run: mise install
+
+      - name: Install dependencies
+        run: mise run install
+
+      - name: API and worker TypeScript check
+        run: pnpm --filter api --filter workers --filter @lewis/db --filter @lewis/shared --filter @lewis/notifications --filter @lewis/pdf --filter @lewis/rbac typecheck
+
+      - name: API and worker lint
+        run: pnpm --filter api --filter workers --filter @lewis/db --filter @lewis/shared --filter @lewis/notifications --filter @lewis/pdf --filter @lewis/rbac lint
+
+      - name: Prettier check
+        run: mise run format:check
+
+      - name: Check for unsafe auth/RLS stubs
+        run: |
+          # Banned: hand-coded "Not Implemented" string responses in business
+          # logic. Webhook scaffold routes and verifiers are exempt because
+          # they use the canonical not_implemented error code via
+          # buildErrorResponse — that code path is allowed. --exclude-dir
+          # matches basename, so excluding "webhooks" covers both
+          # apps/api/src/webhooks/ (verifier impls) and
+          # apps/api/src/domains/webhooks/ (route file).
+          if grep -R "Not Implemented" --include="*.ts" \
+              --exclude-dir=webhooks \
+              apps/api/src packages/db/src; then
+            echo "ERROR: 'Not Implemented' string found in API or DB business logic."
+            echo "If this is a webhook scaffold, it belongs under apps/api/src/(domains/)?webhooks/."
+            exit 1
+          fi
+          if grep -R "auth.jwt()" packages/db apps/api --include="*.sql" --include="*.ts"; then
+            echo "ERROR: auth.jwt() is banned. Use transaction-local app.* RLS context."
+            exit 1
+          fi
+          if grep -R "service_role" apps/api apps/workers packages --include="*.ts"; then
+            echo "ERROR: service_role references are banned in app/worker runtime code."
+            exit 1
+          fi
+          if grep -R "SUPABASE_SERVICE_ROLE_KEY" apps/api/src apps/workers/src --include="*.ts"; then
+            echo "ERROR: SUPABASE_SERVICE_ROLE_KEY env reads are banned in app/worker code."
+            echo "Service-role-needing operations must run in a dedicated isolated worker."
+            exit 1
+          fi
+
+      - name: Webhooks must verify signatures
+        # Every file under apps/api/src/domains/webhooks/ that defines a POST
+        # route must call a verifier function (verify*Webhook). Scoped to the
+        # routes file specifically so we don't false-positive on README files.
+        run: |
+          missing=""
+          for f in apps/api/src/domains/webhooks/*.ts; do
+            [ -f "$f" ] || continue
+            if grep -qE "\.post\s*\(" "$f"; then
+              if ! grep -qE "verify[A-Z][A-Za-z]*Webhook\s*\(" "$f"; then
+                missing="$missing $f"
+              fi
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "ERROR: webhook routes are missing signature verification:$missing"
+            echo "Every POST handler under apps/api/src/domains/webhooks/ must call a verify*Webhook(...) function."
+            exit 1
+          fi
+
+      - name: /v1 routes must be auth-gated
+        # The authed v1 sub-router in apps/api/src/server.ts must mount all
+        # three middleware in order: requireClerkAuth, resolveTenant,
+        # withDbContext. If any are missing, the gate fails.
+        run: |
+          server="apps/api/src/server.ts"
+          for mw in requireClerkAuth resolveTenant withDbContext; do
+            if ! grep -qE "v1Authed\.use\(\"\\*\",\s*$mw\)" "$server"; then
+              echo "ERROR: $server is missing required middleware on the v1Authed sub-router: $mw"
+              exit 1
+            fi
+          done
+
+      - name: RLS write-policy coverage
+        # Every RLS-enabled table must have SELECT + (INSERT|UPDATE|DELETE|ALL).
+        run: pnpm --filter @lewis/db rls:coverage
+
+      - name: fnox.toml placeholder recipients
+        # The placeholder age public keys (age1placeholder...) shipped with
+        # the scaffold must be replaced with real recipient keys before any
+        # secret is encrypted to a profile. If they're still present, fnox
+        # rekey would produce ciphertexts that no one can decrypt.
+        run: |
+          if grep -nE 'age1placeholder' fnox.toml; then
+            echo "ERROR: fnox.toml still contains age1placeholder* recipient keys."
+            echo "Replace with real maintainer + CI age public keys before encrypting any secret to this profile."
+            exit 1
+          fi
+
+      - name: fnox service-role boundary
+        run: mise run secrets:profiles:check
+
+      - name: OpenAPI route drift check
+        run: mise run contracts:openapi:check
+
+      - name: Local-defaults drift check
+        run: mise run config:local-defaults:check
+
+      - name: RLS semantic tests
+        # Inherits DATABASE_URL + MIGRATION_DATABASE_URL from the job env
+        # block at the top of this file. mise run db:rls:test depends on
+        # db:up (idempotent docker compose up), so no docker compose down
+        # is needed on a fresh runner.
+        run: mise run db:rls:test
+
+      - name: ban console.* in apps/api + apps/workers source
+        # Belt-and-suspenders for the ESLint rule. ESLint config bans
+        # console.* in apps/api/src and apps/workers/src; this CI step is
+        # a backstop so a future eslint config edit can't silently re-allow
+        # PHI-bearing log calls. Scripts directories are exempt.
+        run: |
+          if grep -RnE '\bconsole\.(log|warn|error|info|debug|trace)\(' \
+              --include='*.ts' --include='*.tsx' \
+              --exclude-dir=scripts \
+              apps/api/src apps/workers/src; then
+            echo "ERROR: console.* call found in apps/api/src or apps/workers/src."
+            echo "Use the structured pino logger (apps/api/src/logger.ts or apps/workers/src/logger.ts) instead."
+            echo "This rule prevents accidental PHI leakage via free-form log strings; redactPhi is a last-line defense, not a primary control."
+            exit 1
+          fi
+
+      - name: API and worker tests
+        run: pnpm --filter api --filter workers --filter @lewis/db --filter @lewis/shared --filter @lewis/notifications --filter @lewis/pdf --filter @lewis/rbac test
+
+      - name: API and worker build
+        run: pnpm --filter api --filter workers build

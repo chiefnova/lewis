@@ -1,0 +1,90 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Install toolchain
+        run: mise install
+      - name: Install dependencies
+        run: mise run install
+      - name: TypeScript check
+        run: mise run typecheck
+      - name: ESLint
+        run: mise run lint
+      - name: Prettier check
+        run: mise run format:check
+      - name: Tests
+        run: mise run test
+      - name: Production build
+        run: mise run build
+      - name: Deploy directory
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.STAGING_DIRECTORY_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "STAGING_DIRECTORY_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+      - name: Deploy app portal
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.STAGING_APP_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "STAGING_APP_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+      - name: Deploy patient portal
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.STAGING_PATIENT_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "STAGING_PATIENT_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+      - name: Deploy API
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.STAGING_API_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "STAGING_API_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+      - name: Deploy workers
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.STAGING_WORKERS_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "STAGING_WORKERS_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+
+  e2e:
+    needs: deploy-staging
+    uses: ./.github/workflows/e2e-post-deploy.yml
+    with:
+      app_url: ${{ vars.STAGING_APP_URL || 'https://app.staging.lewis.health' }}
+      patient_url: ${{ vars.STAGING_PATIENT_URL || 'https://patient.staging.lewis.health' }}
+      directory_url: ${{ vars.STAGING_DIRECTORY_URL || 'https://staging.lewis.health' }}
+      api_origin_url: ${{ vars.STAGING_API_ORIGIN_URL || 'https://api.staging.lewis.health' }}

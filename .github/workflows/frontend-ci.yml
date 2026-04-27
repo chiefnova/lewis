@@ -1,0 +1,90 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - "apps/app/**"
+      - "apps/patient/**"
+      - "packages/ui/**"
+      - "packages/shared/**"
+      - "packages/rbac/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "mise.toml"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    branches:
+      - main
+      - staging
+    paths:
+      - "apps/app/**"
+      - "apps/patient/**"
+      - "packages/ui/**"
+      - "packages/shared/**"
+      - "packages/rbac/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "mise.toml"
+      - ".github/workflows/frontend-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+
+      - name: Install toolchain
+        run: mise install
+
+      - name: Install dependencies
+        run: mise run install
+
+      - name: Frontend lint
+        run: pnpm --filter app --filter patient --filter @lewis/ui --filter @lewis/shared --filter @lewis/rbac lint
+
+      - name: Frontend TypeScript check
+        run: pnpm --filter app --filter patient --filter @lewis/ui --filter @lewis/shared --filter @lewis/rbac typecheck
+
+      - name: Unit tests
+        run: pnpm --filter app --filter patient --filter @lewis/ui --filter @lewis/shared --filter @lewis/rbac test
+
+      # Accessibility tests — CLAUDE.md requires axe to gate patient PRs
+      # (patient portal targets WCAG 2.1 AA). Currently the package.json
+      # script is a placeholder echo; will fire real assertions when
+      # axe-via-playwright tests land in Sprint 4 patient UI work.
+      # Bypass `mise run test:a11y` because that mise task declares a
+      # depends-on db:up (Docker Postgres) which would burn ~30s/run for
+      # zero value while the placeholder echo is all there is to run.
+      # When real tests land, switch this to `mise run test:a11y` so the
+      # db:up dependency activates.
+      - name: Accessibility (axe) tests
+        run: pnpm run test:a11y
+
+      - name: Prettier check
+        run: mise run format:check
+
+      - name: Frontend production build
+        run: pnpm --filter app --filter patient build
+
+      - name: Verify source maps are not emitted
+        run: |
+          MAP_COUNT=$(find apps/app/dist apps/patient/dist -name "*.map" -type f | wc -l)
+          echo "Source maps found: $MAP_COUNT"
+          if [ "$MAP_COUNT" -ne 0 ]; then
+            echo "ERROR: source maps must not be included in frontend deployment artifacts."
+            exit 1
+          fi

@@ -1,0 +1,680 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit configuration for Lewis.
+# Lewis is a HIPAA-regulated, multi-tenant operating platform for Montana ETCs.
+
+language: en-US
+tone_instructions: >
+  Be direct and evidence-driven. Prioritize security,HIPAA/PHI, RLS tenancy, audit
+  immutability, regulatory traceability, bug risk, simplicity, maintainability,
+  portal boundaries, and deploy safety.
+
+early_access: true
+enable_free_tier: true
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  high_level_summary_instructions: |
+    Summarize the product surface touched, PRD/rule traceability, security or PHI
+    risk, database/RLS impact, bug/concurrency risk, maintainability impact,
+    required migrations, and test evidence. Call out any missing verification
+    plainly.
+  high_level_summary_in_walkthrough: false
+  review_status: true
+  review_details: true
+  commit_status: true
+  fail_commit_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  in_progress_fortune: false
+  poem: false
+  enable_prompt_for_ai_agents: true
+  abort_on_close: true
+  disable_cache: false
+  slop_detection:
+    enabled: true
+    label: "ai-slop"
+
+  # path_filters is denylist-only. Adding ANY positive (non-`!`) pattern flips
+  # the list into allowlist mode, where files not matching an include pattern
+  # are silently dropped from review (CodeRabbit reports them as "excluded by
+  # none and included by none"). Supply-chain review on pnpm-lock.yaml is
+  # already covered by osvScanner / trufflehog / gitleaks under `tools:`.
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/.vite-temp/**"
+    - "!**/coverage/**"
+    - "!**/playwright-report/**"
+    - "!**/test-results/**"
+    - "!**/.turbo/**"
+    - "!**/.next/**"
+    - "!**/*.map"
+    - "!**/*.pdf"
+    - "!**/*.mp4"
+    - "!**/*.mov"
+    - "!**/*.zip"
+    - "!**/*.xlsx"
+    - "!docs/workbooks/**"
+
+  labeling_instructions:
+    - label: "area:frontend"
+      instructions: "Apply when changes touch apps/app, apps/patient, packages/ui, routing, React components, or frontend tests."
+    - label: "area:api"
+      instructions: "Apply when changes touch apps/api, request validation, auth middleware, route domains, or API tests."
+    - label: "area:db-rls"
+      instructions: "Apply when changes touch packages/db, SQL migrations, pgTAP, RLS helpers, tenancy, audit, retention, or search indexing."
+    - label: "area:workers"
+      instructions: "Apply when changes touch apps/workers, queues, scheduled jobs, notification dispatch, PDF generation, or retry logic."
+    - label: "area:ci"
+      instructions: "Apply when changes touch GitHub Actions, mise tasks, deploy workflows, environment setup, or repository automation."
+    - label: "area:docs"
+      instructions: "Apply when changes touch PRD, implementation plan, CLAUDE.md, runbooks, compliance docs, or source legislation notes."
+    - label: "risk:phi"
+      instructions: "Apply when changes introduce or modify PHI/PII capture, display, storage, logging, analytics, uploads, downloads, messages, documents, or exports."
+    - label: "risk:migration"
+      instructions: "Apply when changes include schema migrations, data backfills, destructive SQL, retention changes, or RLS policy changes."
+    - label: "risk:regulatory"
+      instructions: "Apply when changes affect SB 535 or MAR rule compliance, legal templates, treatment authorization, AE clocks, ETRB, QAPI, HFAR, or patient rights."
+    - label: "risk:bug"
+      instructions: "Apply when changes have notable defect risk: race conditions, stale state, incorrect async behavior, transaction gaps, edge-case math/time bugs, or missing regression tests."
+    - label: "quality:refactor"
+      instructions: "Apply when the PR would benefit from simpler structure, clearer boundaries, deduplication, smaller modules, or removal of unnecessary abstraction."
+    - label: "quality:ai-slop"
+      instructions: "Apply when code appears generated without product understanding: unused scaffolding, vague names, dead paths, placeholder logic, duplicated patterns, or broad abstractions not justified by current needs."
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 8
+    drafts: true
+    base_branches:
+      - main
+      - staging
+    ignore_title_keywords:
+      - WIP
+      - DO NOT REVIEW
+      - DRAFT
+      - NO REVIEW
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: true
+    simplify:
+      enabled: true
+    custom:
+      - name: add focused safety tests
+        instructions: |
+          Add or propose focused tests for the changed security, RLS, tenancy,
+          PHI-redaction, or regulated workflow behavior. Use synthetic data only.
+      - name: align docs to implementation
+        instructions: |
+          For architecture, workflow, or regulatory behavior changes, identify the
+          exact PRD, implementation plan, CLAUDE.md, or runbook sections that need
+          updates and propose concise patches.
+      - name: harden external boundary
+        instructions: |
+          Review changed webhook, upload, payment, notification, storage, or
+          third-party integration code for validation, signature verification,
+          least-privilege secrets, sanitized logs, and retry/idempotency behavior.
+      - name: find hidden bug risks
+        instructions: |
+          Look for race conditions, stale React state, double-submit paths,
+          missing abort/cancel handling, non-idempotent retries, transaction
+          gaps, time-zone edge cases, and authorization checks that can drift
+          between read and write paths. Propose focused regression tests.
+      - name: simplify and de-slop
+        instructions: |
+          Identify overbuilt abstractions, duplicated code, dead scaffolding,
+          vague names, needless indirection, placeholder logic, and files that
+          do not match the current architecture. Prefer small, explicit modules
+          aligned with the PRD and implementation plan.
+
+  pre_merge_checks:
+    override_requested_reviewers_only: true
+    title:
+      mode: warning
+      requirements: >
+        Use a specific Conventional Commit style title that names the subsystem
+        and intent, such as feat(api): mount ETC routes, fix(db): tighten RLS
+        policy, docs(prd): clarify portal boundary, or chore(ci): split staging
+        deploy.
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - name: PRD and Rule Traceability
+        mode: warning
+        instructions: |
+          If a PR changes product behavior, schema, API contracts, compliance
+          logic, portal navigation, treatment flow, reporting, or legal content,
+          pass only if the PR description or touched docs identify the relevant
+          PRD section and, where applicable, SB 535 section or MAR rule. Flag
+          undocumented behavior drift or implementation-plan divergence.
+
+      - name: RLS Tenancy Contract
+        mode: warning
+        instructions: |
+          For changes under packages/db, apps/api, apps/workers, packages/rbac,
+          or any data-access code, verify:
+          - no browser-side Supabase database access is introduced
+          - no service-role, admin, BYPASSRLS, or auth.jwt() access path is used
+            in app or worker runtime code
+          - access goes through Clerk verification, tenant membership or
+            tenant_relationship validation, and transaction-local app.* RLS context
+          - every new PHI-bearing table has RLS, audit expectations, and pgTAP or
+            equivalent policy tests for allowed access and cross-tenant denial
+
+      - name: PHI Redaction and Subprocessors
+        mode: warning
+        instructions: |
+          Pass only if changed code keeps PHI/PII out of logs, URLs, analytics,
+          Sentry payloads, queue payloads, browser storage, error messages, and
+          unapproved subprocessors. New third-party integrations or telemetry
+          sinks must be classified in docs/subprocessors.md before production use.
+
+      - name: Regulated Artifact Integrity
+        mode: warning
+        instructions: |
+          For documents, legal templates, consent recordings/transcripts,
+          agreements, ETRB records, AE reports, QAPI minutes, patient files,
+          audit logs, or storage objects, verify immutability/versioning,
+          SHA-256 or tamper evidence where planned, jurisdiction/rule version
+          linkage, retention locks, and audit events. Replacement must create a
+          new version; do not overwrite regulated artifacts.
+
+      - name: Treatment Authorization Gate
+        mode: warning
+        instructions: |
+          For changes affecting patient intake, visits, treatment documentation,
+          payments, consents, agreements, H&P, PPA, licensure, ETRB, transfer
+          agreements, provider credentials, or AE workflow, verify the central
+          treatment-authorization gate remains the enforcement point. Agreement
+          signing alone must never authorize treatment.
+
+      - name: Portal Deployment Boundary
+        mode: warning
+        instructions: |
+          Verify frontend changes preserve the two-product boundary:
+          apps/app is the staff/business console with sponsor, ETC, and internal
+          admin modules under apps/app/src/portals/*; apps/patient is the separate
+          patient-facing product under apps/patient/src/portal. Patient code should
+          not pull staff/admin bundles or copy patient PHI into app URLs/storage.
+
+      - name: Queue and Worker Safety
+        mode: warning
+        instructions: |
+          For worker, queue, notification, PDF, scheduled job, retention, or
+          webhook changes, require idempotency, retry-safe writes, dead-letter or
+          failure visibility, minimal payloads, tenant/request correlation, and
+          PHI-safe logging. Scheduled compliance jobs must be safe to rerun.
+
+      - name: CI and Deploy Gate Integrity
+        mode: warning
+        instructions: |
+          For workflow or mise changes, verify protected branches still run
+          typecheck, lint, prettier, tests, build, and RLS tests where applicable.
+          Staging deploys from staging; production deploys from main. Secrets must
+          come from GitHub environments/secrets and must never be echoed.
+
+      - name: Bug and Race Risk
+        mode: warning
+        instructions: |
+          For all code changes, look for production defects a senior reviewer
+          would catch: race conditions, stale closures, lost updates,
+          double-submits, retries that are not idempotent, missing transaction
+          boundaries, time-zone boundary bugs, pagination/count drift, unhandled
+          promise rejection, memory leaks, cancellation gaps, N+1 queries, and
+          error paths that leave partial state. Require focused tests or a clear
+          explanation when these risks are present.
+
+      - name: Maintainability and Simplicity
+        mode: warning
+        instructions: |
+          Pass only if the implementation is understandable, cohesive, and
+          proportional to the current product slice. Flag unnecessary abstraction,
+          duplicated logic, oversized modules, vague names, hidden side effects,
+          complex branching without tests, leaky boundaries between app/patient/
+          api/db/workers, or code that would be hard for the next engineer to
+          safely change.
+
+      - name: AI Slop and Dead Code
+        mode: warning
+        instructions: |
+          Flag generated-looking code that is not production-grade: placeholder
+          behavior, generic comments, unused exports, dead routes, orphaned files,
+          TODOs without owner/date, copied patterns from another product, fake
+          tests that assert implementation details only, broad catch-all handlers,
+          or abstractions created before a second real use case exists.
+
+      - name: Performance and Scale Hygiene
+        mode: warning
+        instructions: |
+          For changed data access, rendering, search, queues, exports, reports,
+          or dashboards, check for bounded queries, pagination, indexes, cache
+          invalidation, batch behavior, backpressure, large payloads, render
+          waterfalls, unnecessary bundle growth, and work accidentally performed
+          in request paths instead of workers.
+
+  tools:
+    github-checks:
+      enabled: true
+      timeout_ms: 900000
+    eslint:
+      enabled: true
+    ast-grep:
+      essential_rules: true
+    opengrep:
+      enabled: true
+    semgrep:
+      enabled: true
+    gitleaks:
+      enabled: true
+    trufflehog:
+      enabled: true
+    osvScanner:
+      enabled: true
+    markdownlint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    dotenvLint:
+      enabled: true
+    yamllint:
+      enabled: true
+    actionlint:
+      enabled: true
+    hadolint:
+      enabled: true
+    sqlfluff:
+      enabled: true
+    checkov:
+      enabled: true
+    trivy:
+      enabled: true
+    htmlhint:
+      enabled: true
+    stylelint:
+      enabled: true
+    languagetool:
+      enabled: true
+      level: default
+
+  path_instructions:
+    - path: "**/*.{ts,tsx}"
+      instructions: |
+        - Enforce strict TypeScript with no any, typed errors, explicit null
+          handling, and zod validation at every external boundary.
+        - Treat patient, representative, sponsor, ETC, board, staff, payment,
+          document, message, audit, and treatment data as PHI/PII or PHI-adjacent.
+        - Flag PHI in logs, Sentry, analytics, queue payloads, localStorage,
+          sessionStorage, URL params, thrown errors, or test fixtures.
+        - Require tenant-scoped access, deterministic business rules, synthetic
+          tests, and clear audit behavior for state-changing code.
+        - Look for hidden production bugs: stale closures, unhandled promises,
+          double-submit behavior, retry/idempotency gaps, lost updates, time-zone
+          edge cases, off-by-one pagination, memory leaks, and state machines that
+          can enter impossible states.
+        - Prefer simple, explicit code. Flag vague names, dead branches, unused
+          exports, broad abstractions, duplicated logic, and comments that merely
+          narrate obvious code.
+
+    - path: "apps/app/src/**/*.{ts,tsx}"
+      instructions: |
+        - This is app.lewis.health, the staff/business console. Verify route
+          protection, Clerk session use, active tenant selection, role checks, and
+          least-privilege data fetching before rendering sensitive UI.
+        - Keep sponsor, ETC, and admin modules under apps/app/src/portals/*.
+        - Do not introduce patient-facing UX patterns, patient auth assumptions,
+          or browser-side Supabase DB access here.
+        - Review React Query invalidation, loading/error states, stale cache after
+          mutations, double-click submits, optimistic updates, stale closures,
+          useEffect dependency bugs, missing abort handling, and accidental PHI in
+          component state beyond the current session.
+
+    - path: "apps/app/src/portals/sponsor/**/*.{ts,tsx}"
+      instructions: |
+        - Sponsor/biotech manufacturer users must not receive identified patient
+          PHI in MVP 1. Verify aggregate-only or de-identified line-level safety
+          data, k-anonymity/redaction assumptions, export audit events, and PPA
+          data-sharing limits.
+        - Flag UI/API calls that expose patient names, DOBs, contact info, raw
+          notes, message bodies, documents, consents, H&P, or raw treatment notes.
+
+    - path: "apps/app/src/portals/etc/**/*.{ts,tsx}"
+      instructions: |
+        - ETC workflows handle clinical and operational PHI. Verify tenant context,
+          role checks, treatment authorization gate status, patient representative
+          authority, and sanitized display of failure reasons.
+        - Licensure, P&P, ETRB, QAPI, infection/safety, inventory, AE, HFAR, and
+          transfer-agreement changes should surface rule-specific status without
+          replacing backend enforcement.
+
+    - path: "apps/app/src/portals/admin/**/*.{ts,tsx}"
+      instructions: |
+        - Internal admin screens must use explicit support-access grants, ticket
+          references, expiration, tenant-admin notification, and audit logging.
+        - Flag impersonation, unrestricted cross-tenant browsing, permanent PHI
+          access, or admin UI that can mutate regulated objects without audit.
+
+    - path: "apps/patient/src/**/*.{ts,tsx}"
+      instructions: |
+        - This is patient.lewis.health. Preserve calm, plain-language,
+          mobile-first, WCAG 2.1 AA UX. No marketing pressure, gamification, or
+          urgency manipulation.
+        - Do not store PHI in URLs, browser storage, analytics, logs, or Sentry.
+          Keep React Query cache scoped to the authenticated patient session.
+        - Representative flows must respect verified scope, signing authority,
+          revocation, minor assent/co-sign, and audit behavior.
+        - Watch for stale treatment status, reschedule/payment race conditions,
+          duplicate AE submissions, interrupted upload/download flows, and UI
+          states that imply treatment authorization before the backend gate passes.
+
+    - path: "apps/api/src/server.ts"
+      instructions: |
+        - Verify middleware ordering: request ID, PHI-redacted logging, Sentry
+          scrubber, webhook signature verification, Clerk auth, zod validation,
+          tenant context resolution, transaction-local app.* RLS context, audit
+          hook for mutations, then sanitized error handling.
+        - Public routes still need rate limits, body-size limits, safe CORS, and
+          non-diagnostic errors.
+        - Flag middleware or error-handler changes that can cause partial writes,
+          skip audit logging, double-parse request bodies, swallow async failures,
+          or apply auth after route handlers have already run.
+
+    - path: "apps/api/src/domains/sponsors/**/*.{ts,tsx}"
+      instructions: |
+        - Enforce sponsor tenant ownership and PPA-scoped access. MVP 1 sponsor
+          responses are aggregate or de-identified safety data only.
+        - Require sponsor read/export audit events and no identified PHI unless
+          the future patient_data_sharing_consents workflow is explicitly built.
+
+    - path: "apps/api/src/domains/etcs/**/*.{ts,tsx}"
+      instructions: |
+        - Enforce ETC tenant membership, license status, active PPA, ETRB/protocol
+          approval, RULE 16(6)(f) determinations, H&P freshness, provider/staff
+          credentials, transfer agreements, and the central treatment gate.
+        - Mutations must write audit events and return sanitized, actionable
+          failure reasons.
+        - Review transactional consistency for patient state transitions,
+          scheduling, inventory dispense, payment status, AE reporting, and gate
+          evaluation. Lost updates and double processing must be prevented by
+          constraints, transactions, idempotency keys, or explicit locking.
+
+    - path: "apps/api/src/domains/patients/**/*.{ts,tsx}"
+      instructions: |
+        - Patient endpoints must be patient-tenant scoped and representative-aware.
+          Verify caregiver/guardian access scopes, revocation, signature authority,
+          privacy rights, record requests, amendments, restrictions, and disclosure
+          accounting.
+
+    - path: "apps/api/src/domains/boards/**/*.{ts,tsx}"
+      instructions: |
+        - Board reviewers are first-class tenants and can serve multiple ETCs.
+          Verify board-to-ETC relationships, conflict declarations, scoped review
+          assignments, outside-ETC determinations, annual reports, and no access to
+          unrelated ETC or patient data.
+
+    - path: "apps/api/src/domains/internal-admin/**/*.{ts,tsx}"
+      instructions: |
+        - Internal admin APIs must require Lewis internal tenant membership plus
+          explicit support-access grants for tenant PHI. No broad service-role or
+          silent bypass path is acceptable.
+
+    - path: "apps/workers/src/**/*.{ts,tsx}"
+      instructions: |
+        - Workers run under forced RLS using app_worker and transaction-local
+          context. No service-role DB access.
+        - Jobs must be idempotent, retry-safe, tenant-scoped, PHI-minimizing, and
+          safe to rerun. Logs should use tenant/object IDs only.
+        - Compliance, retention, notification, PDF, AE, HFAR, and transcript jobs
+          must preserve audit and regulated-artifact immutability.
+        - Check concurrency controls, backoff, dead-letter visibility, duplicate
+          job delivery, poison messages, partial failure recovery, and bounded
+          memory use for large reports, PDFs, recordings, or exports.
+
+    - path: "packages/db/migrations/**/*.sql"
+      instructions: |
+        - Every PHI-bearing or regulated table needs tenant ownership or explicit
+          relationship scope, jurisdiction_id where required, RLS enabled/forced,
+          audit expectations, retention model, and tests.
+        - Ban auth.jwt(), BYPASSRLS, app/worker service-role access, broad public
+          grants, destructive drops without migration strategy, and unredacted
+          search snippets.
+        - Search indexes must be tenant-scoped and store redacted snippets only.
+        - Review indexes, foreign keys, unique constraints, check constraints,
+          deferrable constraints, transaction safety, lock behavior, backfill
+          strategy, rollback path, and whether data integrity is enforced in the
+          database instead of only in application code.
+
+    - path: "packages/db/test/rls/**/*.sql"
+      instructions: |
+        - RLS tests must cover allowed sponsor, ETC, patient, board reviewer,
+          representative, support-grant, and cross-tenant denial cases with
+          synthetic data only.
+        - Include negative tests proving unrelated tenants cannot infer rows
+          through counts, snippets, joins, or relationship leakage.
+
+    - path: "packages/db/src/context.ts"
+      instructions: |
+        - withAppContext must set transaction-local app.user_id,
+          app.active_tenant_id, app.request_id, and optional support ticket ID
+          before data access. Context must reset at transaction boundaries.
+        - Flag any helper that permits direct queries without RLS context.
+
+    - path: "packages/db/src/storage.ts"
+      instructions: |
+        - Storage adapters must mint short-lived signed URLs only from backend code,
+          compute/verify SHA-256, create file_storage_objects rows transactionally,
+          and preserve immutable regulated references.
+        - No frontend Supabase storage credentials or permanent public URLs for PHI.
+
+    - path: "packages/rbac/src/**/*.{ts,tsx}"
+      instructions: |
+        - RBAC must be least-privilege and tenant-scoped. Sponsor, ETC, patient,
+          representative, board, support, and lewis_internal roles should map
+          cleanly to PRD permissions and RLS tests.
+        - Frontend RBAC is advisory only; backend and RLS remain authoritative.
+
+    - path: "packages/shared/src/env.ts"
+      instructions: |
+        - Env validation must reject missing or malformed required values and never
+          log secrets. Staging/prod secrets belong in platform env vars, not repo
+          files or fnox encrypted local profiles.
+
+    - path: "packages/shared/src/time.ts"
+      instructions: |
+        - Deadline logic for AE 5-day reporting, Jan 31 annual reports, Feb 1 HFAR,
+          retention, reminders, and licensure must use America/Denver semantics for
+          regulatory display and deterministic tests around DST/boundaries.
+
+    - path: "packages/shared/src/phi-redaction.ts"
+      instructions: |
+        - Redaction must cover names, emails, phones, addresses, DOBs, patient IDs,
+          document titles, message bodies, payment identifiers, external IDs, and
+          structured PHI before logging or telemetry.
+
+    - path: "packages/notifications/src/**/*.{ts,tsx}"
+      instructions: |
+        - Notifications must minimize PHI, use approved templates, respect tenant
+          scope and preferences, track delivery/audit state, and avoid medical
+          details in subject lines or provider logs.
+
+    - path: "packages/pdf/src/**/*.{ts,tsx}"
+      instructions: |
+        - PDF generation is a regulated artifact path. Verify immutable versioning,
+          counsel-approved template versions, deterministic rendering, jurisdiction
+          and rule-version references, and no API request-path blocking.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        - Verify least-privilege permissions, correct branch triggers, concurrency,
+          full quality gates, RLS tests, source-map handling, post-deploy E2E, and
+          environment-scoped secrets.
+        - Staging workflows should target staging; production workflows should target
+          main and production environments. Never echo secrets.
+
+    - path: "mise.toml"
+      instructions: |
+        - Tool versions and tasks should keep mise run ci aligned with GitHub
+          workflows. New tasks need explicit dependencies and should not hide
+          network, destructive, or production operations.
+
+    - path: "package.json"
+      instructions: |
+        - New dependencies must be justified, maintained, license-compatible, and
+          classified for subprocessor/PHI exposure when they can receive operational
+          data. Prefer existing stack choices from the PRD.
+
+    - path: "pnpm-lock.yaml"
+      instructions: |
+        - Treat lockfile changes as supply-chain changes. Look for unexpected
+          transitive packages, typosquatting risk, install scripts, abandoned
+          packages, vulnerable versions, and license/subprocessor implications.
+
+    - path: "**/*.{test.ts,test.tsx,spec.ts,spec.tsx}"
+      instructions: |
+        - Tests must use synthetic data only. Cover unhappy paths, auth failures,
+          tenant boundaries, representative revocation, PHI redaction, audit writes,
+          retention locks, and regulatory edge cases for changed behavior.
+        - Prefer behavioral tests over snapshot-only coverage. Include regression
+          tests for races, stale state, retries, double submissions, transaction
+          rollbacks, time-zone boundaries, pagination, and authorization-denial
+          edge cases when the changed code touches those risks.
+
+    - path: "docs/prd.md"
+      instructions: |
+        - The PRD is canonical. Changes must preserve SB 535/MAR traceability,
+          schema/API consistency, portal boundaries, and MVP/Phase 2 distinctions.
+          Flag implementation promises that lack data model, API, tests, or legal
+          review path.
+
+    - path: "docs/implementation.md"
+      instructions: |
+        - The implementation plan must stay aligned with the PRD and current repo
+          architecture. Flag missing migrations, tests, workers, portal modules,
+          acceptance criteria, or sequencing gaps.
+
+    - path: "docs/legislation/**/*.md"
+      instructions: |
+        - Treat legislation/rule documents as source material. Flag edits that
+          paraphrase, weaken, or alter legal source text without citation, date,
+          and clear reason.
+
+    - path: "docs/legal-content-inventory.md"
+      instructions: |
+        - Legal templates need immutable counsel-approved versions before use:
+          P&P templates, informed consent, patient agreement, 50-12-110 text,
+          grievance policy, PPA language, privacy rights, and sponsor data-sharing.
+
+    - path: "docs/subprocessors.md"
+      instructions: |
+        - Subprocessor entries must classify PHI posture, BAA/DPA status, data
+          categories, environment, owner, and approval. No production PHI exposure
+          without an approved BAA where required.
+
+    - path: "CLAUDE.md"
+      instructions: |
+        - CLAUDE.md should remain concise and consistent with the PRD, implementation
+          plan, and current architecture. Do not add stale portal, RLS, or toolchain
+          instructions.
+
+    - path: ".claude/rules/**"
+      instructions: |
+        - Scoped agent rules should reinforce repo architecture without duplicating
+          stale implementation details. Path frontmatter must match actual files.
+
+    - path: ".env*"
+      instructions: |
+        - Committed env files must contain placeholders only. No real secrets, URLs
+          with credentials, tokens, passwords, PHI, or production values.
+
+    - path: ".gitignore"
+      instructions: |
+        - Ensure env files, build outputs, coverage, logs, source maps, generated
+          PDFs, recordings, transcripts, exports, and PHI-sensitive artifacts cannot
+          be committed accidentally.
+
+    - path: ".coderabbit.yaml"
+      instructions: |
+        - Keep this file valid against the current CodeRabbit schema, specific to
+          Lewis, and maintainable. Prefer high-signal rules over stale copied
+          path instructions.
+
+chat:
+  auto_reply: true
+  allow_non_org_members: false
+  art: false
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - ".claude/rules/*.md"
+      - "docs/prd.md"
+      - "docs/implementation.md"
+      - "docs/legal-content-inventory.md"
+      - "docs/subprocessors.md"
+      - "docs/runbooks/*.md"
+      - "docs/legislation/*.md"
+  learnings:
+    scope: local
+  issues:
+    scope: local
+  pull_requests:
+    scope: local
+  mcp:
+    usage: auto
+
+code_generation:
+  docstrings:
+    language: en-US
+    path_instructions:
+      - path: "**/*.{ts,tsx}"
+        instructions: "Generate docstrings only for public APIs or non-obvious regulated business logic; avoid noise on simple React components."
+  unit_tests:
+    path_instructions:
+      - path: "apps/api/src/**/*.ts"
+        instructions: "Generate tests for auth failures, tenant scoping, zod validation, sanitized errors, and audit writes using synthetic data."
+      - path: "packages/db/**/*.sql"
+        instructions: "Generate pgTAP-style cases for allowed access, denied cross-tenant access, immutable audit/retention behavior, and search leakage."
+      - path: "apps/**/*.tsx"
+        instructions: "Generate accessibility-aware rendering tests for route guards, role-based visibility, and PHI-safe UI behavior."
+
+issue_enrichment:
+  auto_enrich:
+    enabled: true
+  planning:
+    enabled: true
+    auto_planning:
+      enabled: true
+      labels:
+        - "risk:regulatory"
+        - "risk:phi"
+        - "area:db-rls"
+  labeling:
+    labeling_instructions:
+      - label: "risk:regulatory"
+        instructions: "Use when an issue affects SB 535/MAR compliance, treatment authorization, ETRB, QAPI, AE reporting, HFAR, legal templates, or patient rights."
+      - label: "risk:phi"
+        instructions: "Use when an issue affects patient or representative data, PHI/PII storage, logs, telemetry, uploads, messages, documents, or exports."
+      - label: "area:db-rls"
+        instructions: "Use when an issue affects tenancy, RLS, migrations, audit, retention, search, or database roles."

@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@lewis/shared": ["packages/shared/src/index.ts"],
+      "@lewis/shared/*": ["packages/shared/src/*"],
+      "@lewis/db": ["packages/db/src/index.ts"],
+      "@lewis/db/*": ["packages/db/src/*"],
+      "@lewis/rbac": ["packages/rbac/src/index.ts"],
+      "@lewis/rbac/*": ["packages/rbac/src/*"],
+      "@lewis/notifications": ["packages/notifications/src/index.ts"],
+      "@lewis/notifications/*": ["packages/notifications/src/*"],
+      "@lewis/pdf": ["packages/pdf/src/index.ts"],
+      "@lewis/pdf/*": ["packages/pdf/src/*"],
+      "@lewis/ui": ["packages/ui/src/index.ts"],
+      "@lewis/ui/*": ["packages/ui/src/*"]
+    }
+  }
+}

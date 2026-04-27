@@ -1,0 +1,41 @@
+name: lewis
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: lewis-postgres
+    environment:
+      # Bootstrap/migration owner only. API and workers use app_api/app_worker,
+      # created by migrations and configured by the local role setup script.
+      POSTGRES_USER: lewis
+      POSTGRES_PASSWORD: lewis
+      POSTGRES_DB: lewis_dev
+    ports:
+      - "${LOCAL_POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lewis -d lewis_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: lewis-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${LOCAL_REDIS_PORT:-16379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_data:
+  redis_data:

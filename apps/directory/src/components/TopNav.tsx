@@ -1,0 +1,92 @@
+import { Link, useLocation } from "react-router-dom";
+import { FormattedMessage, useIntl } from "react-intl";
+import { Magnifier } from "./icons";
+
+export function TopNav() {
+  const location = useLocation();
+  const intl = useIntl();
+  const isBrowse = location.pathname.startsWith("/browse");
+
+  return (
+    <header style={{ background: "var(--paper)", position: "sticky", top: 0, zIndex: 30 }}>
+      <div
+        style={{
+          maxWidth: 1400,
+          margin: "0 auto",
+          padding: "0 24px",
+          height: 80,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <Link
+          to="/"
+          aria-label={intl.formatMessage({
+            id: "directory.home.aria",
+            defaultMessage: "Lewis home",
+          })}
+          style={{ display: "inline-flex", alignItems: "baseline" }}
+        >
+          <span className="serif" style={{ fontSize: 24, letterSpacing: "-0.015em" }}>
+            Lewis
+          </span>
+          <span
+            className="serif"
+            style={{ fontSize: 24, color: "var(--accent)", letterSpacing: "-0.015em" }}
+            aria-hidden="true"
+          >
+            .
+          </span>
+          <span
+            className="serif italic"
+            style={{
+              fontSize: 24,
+              letterSpacing: "-0.015em",
+              color: "var(--ink-soft)",
+              fontWeight: 300,
+            }}
+          >
+            health
+          </span>
+        </Link>
+        <nav aria-label="Primary" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Link
+            to="/browse"
+            className="pill pill-outline pill-sm"
+            style={{
+              borderColor: isBrowse ? "var(--ink)" : "rgba(27,24,20,0.25)",
+            }}
+          >
+            <span className="topnav-browse-full">
+              <FormattedMessage id="directory.nav.browse" defaultMessage="Browse Treatments" />
+            </span>
+            <span className="topnav-browse-short">
+              <FormattedMessage id="directory.nav.browse.short" defaultMessage="Browse" />
+            </span>
+          </Link>
+          <Link
+            to="/search"
+            aria-label={intl.formatMessage({
+              id: "directory.nav.search.aria",
+              defaultMessage: "Search",
+            })}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "var(--radius-button-sm)",
+              background: "var(--accent)",
+              color: "var(--paper)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Magnifier />
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}

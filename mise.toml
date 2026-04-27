@@ -1,0 +1,193 @@
+# mise.toml — toolchain and task runner for Lewis.
+# Run `mise install` after clone to provision exact versions.
+# Run `mise tasks` to list everything below.
+
+[tools]
+node = "20"
+pnpm = "9"
+# Postgres is intentionally NOT a mise tool. Local devs run Postgres via
+# Docker Compose (see docker-compose.yml — port 15432). CI uses a Postgres
+# service container per workflow. mise's postgres plugin compiles from
+# source and requires libreadline-dev + zlib1g-dev which aren't on bare
+# Ubuntu CI runners — that combination broke every workflow on the first
+# /ship attempt before this comment landed. Don't put it back.
+# If you need `psql` locally for ad-hoc queries: `brew install libpq`
+# (macOS) or use `docker exec -it lewis-postgres psql ...`.
+
+[env]
+NODE_ENV = "development"
+TZ = "America/Denver"
+_.file = ".env.local"  # gitignored; auto-loaded for all tasks if present
+
+# ----- bootstrap -----
+
+[tasks.install]
+description = "Install workspace deps"
+run = "pnpm install"
+
+# ----- dev servers -----
+
+[tasks.dev]
+description = "Start Docker infra, then run API, workers, and both frontends"
+depends = ["dev:infra"]
+run = "pnpm run dev:all"
+
+[tasks."dev:infra"]
+description = "Start local Docker Postgres and Redis"
+run = "pnpm run dev:infra"
+
+[tasks."dev:app"]
+description = "Sponsor + ETC + internal admin portal"
+run = "pnpm --filter app dev"
+
+[tasks."dev:patient"]
+description = "Patient portal"
+run = "pnpm --filter patient dev"
+
+[tasks."dev:directory"]
+description = "Public patient directory (lewis.health) — anonymous browse + connect-request handoff"
+run = "pnpm --filter directory dev"
+
+[tasks."dev:api"]
+description = "Hono API"
+run = "pnpm --filter api dev"
+
+[tasks."dev:workers"]
+description = "BullMQ workers"
+run = "pnpm --filter workers dev"
+
+[tasks."dev:all"]
+description = "Run API, workers, and both frontends without starting Docker infra"
+run = "pnpm run dev:all"
+
+# ----- static checks -----
+
+[tasks.typecheck]
+description = "tsc --noEmit across workspace"
+run = "pnpm -r typecheck"
+
+[tasks.lint]
+description = "eslint"
+run = "pnpm -r lint"
+
+[tasks."lint:fix"]
+description = "eslint --fix"
+run = "pnpm -r lint:fix"
+
+[tasks.format]
+description = "prettier --write"
+run = "pnpm prettier --write ."
+
+[tasks."format:check"]
+description = "prettier --check (CI)"
+run = "pnpm prettier --check ."
+
+[tasks."secrets:profiles:check"]
+description = "Ensure service-role secrets are absent from regular runtime fnox profiles"
+run = "pnpm run secrets:profiles:check"
+
+[tasks."contracts:openapi:check"]
+description = "Ensure hand-authored OpenAPI paths match Hono route paths"
+run = "pnpm run contracts:openapi:check"
+
+[tasks."config:local-defaults:check"]
+description = "Ensure docker-compose, env examples, and CI workflows match packages/db/src/local-defaults.ts"
+run = "pnpm run config:local-defaults:check"
+
+# ----- tests -----
+
+[tasks.test]
+description = "vitest unit + integration"
+run = "pnpm -r test"
+
+[tasks."test:watch"]
+run = "pnpm -r test:watch"
+
+[tasks."test:e2e"]
+description = "playwright"
+depends = ["db:up"]
+run = "pnpm test:e2e"
+
+[tasks."test:a11y"]
+description = "axe-core via playwright — required for patient portal changes"
+depends = ["db:up"]
+run = "pnpm test:a11y"
+
+# ----- build -----
+
+[tasks.build]
+description = "production builds (all apps)"
+depends = ["typecheck"]
+run = "pnpm -r build"
+
+# ----- database -----
+
+[tasks."db:up"]
+description = "Start local Docker Postgres (waits for healthcheck)"
+# `--wait` blocks until the postgres healthcheck passes; without it, `up -d`
+# returns as soon as the container is *started* and downstream tasks
+# (db:migrate, db:rls:test) race the Postgres init and fail with
+# "Connection terminated unexpectedly" on a cold CI runner.
+run = "docker compose up -d --wait postgres"
+
+[tasks."db:down"]
+description = "Stop local Docker Postgres"
+run = "docker compose stop postgres"
+
+[tasks."db:reset"]
+description = "Wipe and re-migrate local DB"
+run = [
+  "docker compose down -v",
+  "docker compose up -d postgres redis",
+  "pnpm run db:migrate",
+  "pnpm run db:seed",
+]
+
+[tasks."db:migrate"]
+description = "Apply SQL migrations against local Docker Postgres"
+depends = ["db:up"]
+run = "pnpm run db:migrate"
+
+[tasks."db:generate"]
+description = "Generate migration from schema diff"
+run = "pnpm --filter db generate"
+
+[tasks."db:rls:test"]
+description = "Semantic SQL RLS suite — every PHI table must have runtime-role coverage"
+depends = ["db:up"]
+run = "pnpm --filter @lewis/db rls:test"
+
+[tasks."db:rls:coverage"]
+description = "Static check — every RLS-enabled table has FORCE RLS + SELECT + write policies"
+run = "pnpm --filter @lewis/db rls:coverage"
+
+[tasks."db:seed"]
+description = "Seed local dev data — NEVER run against staging or prod"
+depends = ["db:migrate"]
+run = "pnpm run db:seed"
+
+# ----- meta -----
+
+[tasks.ci]
+description = "Pre-merge gate — matches CI exactly"
+depends = [
+  "typecheck",
+  "lint",
+  "format:check",
+  "secrets:profiles:check",
+  "contracts:openapi:check",
+  "config:local-defaults:check",
+  "test",
+  "test:a11y",
+  "db:rls:coverage",
+  "db:rls:test",
+]
+
+[tasks.down]
+description = "Shut everything down — Docker infra and local dev servers"
+run = [
+  "docker compose down || true",
+  "pkill -f 'pnpm.*dev' || true",
+  "pkill -f 'vite' || true",
+  "pkill -f 'tsx.*watch' || true",
+]

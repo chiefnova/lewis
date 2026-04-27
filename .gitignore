@@ -1,0 +1,99 @@
+# === Dependencies ===
+node_modules/
+.pnpm-store/
+
+# === Build output ===
+dist/
+build/
+.vite/
+*.tsbuildinfo
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+stats.html
+
+# === Logs ===
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# === Coverage and test artifacts ===
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# === Caches ===
+.cache/
+.turbo/
+.eslintcache
+.prettiercache
+.cache/puppeteer/
+
+# === Environment + secrets ===
+# fnox.toml IS committed — it holds age-encrypted secrets keyed to [[recipients]].
+# Plaintext .env files and personal overrides are NOT.
+# .env.example and .env.<app>.example ARE committed as templates.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.age.bak
+.fnox/
+
+# === mise ===
+# mise.toml IS committed. Per-user local overrides are not.
+.mise.local.toml
+
+# === Supabase CLI scratch files ===
+supabase/.branches/
+supabase/.temp/
+
+# === Docker volumes (local) ===
+postgres_data/
+redis_data/
+
+# === PHI and patient data — NEVER commit anything that could contain real patient info ===
+# Generated PDFs from Puppeteer worker: patient agreements, AE reports, HFAR forms,
+# ETRB annual reports, DPHHS annual reports, license application packages.
+apps/workers/output/
+apps/api/.data/
+apps/api/scripts/output/
+tmp/pdfs/
+exports/
+# Informed consent video/audio recordings (50-12-105(3)(b))
+recordings/
+tmp/recordings/
+*.recording.webm
+*.recording.mp4
+# Patient fixture data
+patient-fixtures/
+*.phi.json
+*.phi.csv
+
+# === Sentry ===
+.sentryclirc
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+.mcp.json
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === E2E workspace isolation ===
+tests/e2e/node_modules/
+
+# === Claude Code ===
+# CLAUDE.md and team-shared .claude/rules/ + .claude/commands/ ARE committed.
+# Personal settings, lock files, and ephemeral project state are NOT.
+.claude/settings.local.json
+.claude/.lock
+.claude/projects/
+.gstack/

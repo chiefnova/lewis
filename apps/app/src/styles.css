@@ -1,0 +1,54 @@
+/* Lewis staff console — app-specific layout.
+ * Tokens, base resets, paper background, and the .pill button system
+ * come from @lewis/ui. Only put app-specific layout here; never
+ * re-declare buttons or tokens.
+ */
+
+.app-shell {
+  min-height: 100vh;
+  padding: 32px;
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+/* Staff portal nav links. The shared @lewis/ui base.css resets `a` to
+ * `color: inherit; text-decoration: none;` so unstyled links would be
+ * indistinguishable from body copy. Restore an affordance scoped to
+ * .app-shell so it doesn't leak into the auth shell or future sub-views. */
+.app-shell nav a,
+.app-shell ul a {
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 2px;
+  transition: border-color var(--duration-base) var(--ease-out);
+}
+
+.app-shell nav a:hover,
+.app-shell ul a:hover {
+  border-bottom-color: var(--ink);
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 16px;
+  padding: 32px;
+}
+
+.auth-shell h1,
+.auth-shell p {
+  margin: 0;
+}
+
+.user-menu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}

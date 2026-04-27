@@ -1,0 +1,16 @@
+{
+  "name": "@lewis/pdf",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  }
+}

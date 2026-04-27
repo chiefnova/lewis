@@ -1,0 +1,58 @@
+name: PR
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+  push:
+    branches:
+      - main
+      - staging
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://app_api:lewis_app_api@127.0.0.1:15432/lewis_dev
+      MIGRATION_DATABASE_URL: postgres://lewis:lewis@127.0.0.1:15432/lewis_dev
+      REDIS_URL: redis://127.0.0.1:16379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Install toolchain
+        run: mise install
+      - name: Install dependencies
+        run: mise run install
+      - name: TypeScript check
+        run: mise run typecheck
+      - name: ESLint
+        run: mise run lint
+      - name: Prettier check
+        run: mise run format:check
+      - name: Secret profile boundary check
+        run: mise run secrets:profiles:check
+      - name: OpenAPI route drift check
+        run: mise run contracts:openapi:check
+      - name: Local-defaults drift check
+        run: mise run config:local-defaults:check
+      - name: Unit and integration tests
+        run: mise run test
+      # Static RLS-policy completeness check — every RLS-enabled table
+      # must have SELECT + at least one write policy. No DB needed; runs
+      # against migration SQL files. Defense-in-depth: api-ci.yml runs
+      # this too, but pr.yml is the universal gate that fires on every
+      # PR regardless of which paths changed.
+      - name: RLS write-policy coverage
+        run: mise run db:rls:coverage
+      - name: RLS semantic tests
+        # Inherits DATABASE_URL + MIGRATION_DATABASE_URL from the job env
+        # block. mise run db:rls:test brings up Docker Postgres via db:up;
+        # no pre-emptive `docker compose down -v` needed on a fresh runner.
+        run: mise run db:rls:test
+      - name: Production build
+        run: mise run build
