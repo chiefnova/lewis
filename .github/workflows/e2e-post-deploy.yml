@@ -11,6 +11,10 @@ on:
         description: "Patient portal URL to test"
         required: true
         default: "https://patient.staging.lewis.health"
+      directory_url:
+        description: "Public directory URL to smoke-test"
+        required: false
+        default: "https://staging.lewis.health"
       api_origin_url:
         description: "API origin URL used for /healthz and /readyz"
         required: false
@@ -22,6 +26,9 @@ on:
         type: string
       patient_url:
         required: true
+        type: string
+      directory_url:
+        required: false
         type: string
       api_origin_url:
         required: false
@@ -60,6 +67,22 @@ jobs:
           echo "Checking ${API_URL}/readyz"
           curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${API_URL}/readyz"
           echo
+
+      - name: Verify directory smoke
+        if: ${{ inputs.directory_url != '' }}
+        env:
+          DIRECTORY_URL: ${{ inputs.directory_url }}
+        run: |
+          DIR_URL="${DIRECTORY_URL%/}"
+          echo "Checking ${DIR_URL}/ (homepage)"
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${DIR_URL}/" -o /dev/null
+          echo "Checking ${DIR_URL}/browse (SPA rewrite)"
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${DIR_URL}/browse" -o /dev/null
+          echo "Checking ${DIR_URL}/sitemap.xml"
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${DIR_URL}/sitemap.xml" -o /dev/null
+          echo "Checking ${DIR_URL}/robots.txt"
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${DIR_URL}/robots.txt" -o /dev/null
+          echo "directory smoke OK"
 
       - name: Run E2E tests
         env:
