@@ -40,7 +40,7 @@ builder = "RAILPACK"
 # Postgres or Redis is briefly unavailable, which we want to handle via
 # the app's restart loop, not by aborting deploys.
 healthcheckPath = "/healthz"
-healthcheckTimeout = 60
+healthcheckTimeout = 5
 
 # Zero-downtime deploy primitives:
 #   overlapSeconds — old + new instances both serve traffic for this long
