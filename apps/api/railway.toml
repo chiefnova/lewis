@@ -1,0 +1,84 @@
+"$schema" = "https://railway.com/railway.schema.json"
+
+# Railway config-as-code for the Lewis API (Hono + Node).
+#
+# Per-service activation: in the Railway dashboard for each lewis-staging
+# and lewis-prod API service, set Settings → Config-as-Code Path to
+#   /apps/api/railway.toml
+# After redeploy, the deployment details pane shows a file icon next to
+# every setting captured below — confirmation the file is the source of
+# truth (Railway docs: "Configuration defined in code will always
+# override values from the dashboard").
+#
+# What this file does NOT contain by design:
+#   - Env vars / secrets — those live in Railway's per-environment
+#     variable store. See docs/env-vars.md for the API surface.
+#   - Region, numReplicas, multiRegionConfig — env-specific scaling
+#     decisions, intentionally dashboard-managed per environment.
+#   - startCommand — Railpack auto-detects from package.json "start";
+#     when we switch to the DOCKERFILE builder, the Dockerfile CMD owns
+#     it. Pinning it here would create a third source of truth.
+
+[build]
+# RAILPACK is the current builder for this service. Switch to DOCKERFILE
+# when the apps/api/Dockerfile work lands and the team is ready to flip
+# the builder over (Railway docs: "Railway will always build with a
+# Dockerfile if it finds one"; the DOCKERFILE builder makes that
+# explicit and lets us pin dockerfilePath).
+#
+# Migration plan when ready:
+#   builder = "DOCKERFILE"
+#   dockerfilePath = "apps/api/Dockerfile"
+builder = "RAILPACK"
+
+[deploy]
+# /healthz returns {ok: true} with no I/O — see apps/api/src/server.ts:137.
+# Railway probes this after each deploy; passing means traffic shifts
+# to the new instance, failing means the deploy is rolled back.
+# /readyz (apps/api/src/server.ts:141) is the deeper DB+Redis probe and
+# is intentionally NOT used here — it would fail-close any deploy where
+# Postgres or Redis is briefly unavailable, which we want to handle via
+# the app's restart loop, not by aborting deploys.
+healthcheckPath = "/healthz"
+healthcheckTimeout = 5
+
+# Zero-downtime deploy primitives:
+#   overlapSeconds — old + new instances both serve traffic for this long
+#     before the load balancer cuts over.
+#   drainingSeconds — after SIGTERM, how long until the platform sends
+#     SIGKILL. Must outlast the longest in-flight HTTP request. The API's
+#     SIGTERM handler (apps/api/src/index.ts:62) closes the server +
+#     awaits Redis/DB pool drain.
+overlapSeconds = 30
+drainingSeconds = 30
+
+# If the API process crashes, restart up to 10 times before giving up.
+# Boot-time failures (missing env, bad runtime DB role per
+# packages/db/src/runtime-role.ts) will fail closed after 10 retries —
+# desired behavior; an exponentially looping crash is a paging signal.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Migrations run via GitHub Actions, NOT Railway preDeployCommand.
+# See `.github/workflows/deploy-staging.yml` and `deploy-prod.yml`:
+# `drizzle-kit migrate` is invoked between "Production build" and any
+# deploy hook, against MIGRATION_DATABASE_URL (a Supabase session-pool
+# URL authenticated as the schema-owner role).
+#
+# MIGRATION_DATABASE_URL is deliberately ABSENT from this Railway
+# service's env per CLAUDE.md security #1: the API runtime holds only
+# the app_api DSN (NOBYPASSRLS, no schema-modify rights). Putting the
+# migration-owner credential on the API service would let any future
+# RCE / supply-chain compromise escalate from "RLS-bound API session"
+# to "schema owner" with one env read. The GH Actions runner holds
+# the credential for the duration of the deploy step and discards it.
+#
+# Drizzle-kit migrate's idempotency model: each applied migration's
+# SHA-256 hash + `when` timestamp is recorded in the `drizzle.__drizzle_migrations`
+# table. On re-run, the migrator compares each journal entry's `when`
+# against the latest applied row's `created_at`; entries with a `when`
+# greater than that watermark get applied, others are skipped. This
+# means an append-only migration flow is safe and idempotent. Editing
+# an already-applied migration file is a SILENT no-op against the live
+# DB (drizzle does not refuse on hash mismatch) — discipline is "never
+# edit applied migrations; add a new one to change the schema."
