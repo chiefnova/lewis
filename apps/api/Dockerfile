@@ -23,14 +23,26 @@
 # as a type-check gate, so the contract is enforced at build time.
 
 ARG NODE_VERSION=20.19.6
+# Multi-arch manifest list digest for node:20.19.6-bookworm-slim, captured
+# 2026-04-27 via `docker buildx imagetools inspect`. Pinning by digest (per
+# Docker's "Pin base image versions" best practice) means same Dockerfile +
+# same digest = byte-identical base layer, regardless of when Docker Hub
+# republishes the floating tag. Bump deliberately when a new Node patch is
+# desired; CI failure on tag/digest mismatch is the audit signal.
+ARG NODE_DIGEST=sha256:b342de02eb4a57cd6986290a69833d20818508db8078dba0197a024193410aee
 ARG PNPM_VERSION=9.15.9
-ARG TSX_VERSION=4.21.0
+# tsx version is NOT pinned here as an ARG — it is extracted from
+# pnpm-lock.yaml at build time so the lockfile is the single source of
+# truth. apps/api and apps/workers both list tsx as a `^4.19.4` devDep,
+# but the lockfile resolves it to a specific version (4.21.0 at the time
+# of writing). If a future `pnpm update tsx` bumps the lockfile, the next
+# image rebuild picks it up automatically — no Dockerfile edit required.
 
 
 # ============================================================================
 # Stage 1: base — pinned Node + pnpm via corepack. Shared by builder.
 # ============================================================================
-FROM node:${NODE_VERSION}-bookworm-slim AS base
+FROM node:${NODE_VERSION}-bookworm-slim@${NODE_DIGEST} AS base
 
 ARG PNPM_VERSION
 
@@ -51,8 +63,6 @@ WORKDIR /repo
 # tree via `pnpm deploy --prod` for just the api workspace.
 # ============================================================================
 FROM base AS builder
-
-ARG TSX_VERSION
 
 # Copy the workspace shape first so `pnpm install` caches independently of
 # source edits. If a package.json or the lockfile changes, the install layer
@@ -116,18 +126,27 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
 # Install tsx into a separate prefix so the runtime can execute TS
 # directly. Kept out of the deployed package's node_modules because that
 # tree's package.json still uses pnpm `workspace:*` specifiers (resolved
-# locally by pnpm deploy) which npm cannot parse. Pinned to the exact
-# version resolved in pnpm-lock.yaml.
-RUN mkdir -p /opt/tsx \
+# locally by pnpm deploy) which npm cannot parse.
+#
+# tsx version is read directly from pnpm-lock.yaml so dev (pnpm) and prod
+# (this image) always run the same resolved version. The grep matches
+# pnpm v9's snapshot-section format (`  tsx@<version>:`), takes the first
+# match (all entries pin the same version because tsx is a direct devDep
+# of api + workers, not a transitive), and strips the trailing colon.
+# Fails fast with a clear error if the format ever changes.
+RUN TSX_VERSION="$(grep -m1 -E '^  tsx@' pnpm-lock.yaml | sed -E 's/^  tsx@(.+):$/\1/')" \
+ && [ -n "$TSX_VERSION" ] || { echo "ERROR: could not extract tsx version from pnpm-lock.yaml — pnpm lockfile format may have changed"; exit 1; } \
+ && echo "tsx version from pnpm-lock.yaml: $TSX_VERSION" \
+ && mkdir -p /opt/tsx \
  && cd /opt/tsx \
  && npm init -y >/dev/null \
- && npm install --no-save --no-audit --no-fund tsx@${TSX_VERSION}
+ && npm install --no-save --no-audit --no-fund tsx@"$TSX_VERSION"
 
 
 # ============================================================================
 # Stage 3: runtime — slim, non-root, tini for PID 1, no build tooling.
 # ============================================================================
-FROM node:${NODE_VERSION}-bookworm-slim AS runtime
+FROM node:${NODE_VERSION}-bookworm-slim@${NODE_DIGEST} AS runtime
 
 # tini is in the Debian repos. It becomes PID 1 and forwards SIGTERM to
 # Node, which is what the api's `process.once('SIGTERM', ...)` handler in
@@ -136,6 +155,21 @@ FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 # Clerk / Stripe / Plaid / Resend / Sentry from this process. tzdata so the
 # bake-in TZ resolves (America/Denver — see CLAUDE.md gotcha on Montana
 # deadlines being Mountain time, not UTC).
+#
+# Reproducibility note (deliberate non-pin): we intentionally do NOT pin
+# tini, ca-certificates, or tzdata to specific apt versions. The base
+# image is digest-pinned above, which fixes the starting layer. For these
+# three packages, currency is a feature, not a bug:
+#   - tzdata: CLAUDE.md explicitly calls out Montana deadlines + 5-day AE
+#     clock as America/Denver. When IANA pushes a tz update we want it.
+#   - ca-certificates: security-positive to ship the latest CA bundle
+#     (revocations, new roots) on every rebuild.
+#   - tini: upstream is effectively frozen at 0.19.0 in Bookworm; pinning
+#     adds nothing.
+# If full deterministic-build posture is ever required (e.g. Debian
+# Reproducible Builds for SLSA L4), switch this to apt sources rooted at
+# snapshot.debian.org with a baked-in snapshot date — but accept the
+# tzdata/ca-cert staleness cost.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends tini ca-certificates tzdata \
  && rm -rf /var/lib/apt/lists/*
