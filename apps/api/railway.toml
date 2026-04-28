@@ -1,0 +1,79 @@
+"$schema" = "https://railway.com/railway.schema.json"
+
+# Railway config-as-code for the Lewis API (Hono + Node).
+#
+# Per-service activation: in the Railway dashboard for each lewis-staging
+# and lewis-prod API service, set Settings → Config-as-Code Path to
+#   /apps/api/railway.toml
+# After redeploy, the deployment details pane shows a file icon next to
+# every setting captured below — confirmation the file is the source of
+# truth (Railway docs: "Configuration defined in code will always
+# override values from the dashboard").
+#
+# What this file does NOT contain by design:
+#   - Env vars / secrets — those live in Railway's per-environment
+#     variable store. See docs/env-vars.md for the API surface.
+#   - Region, numReplicas, multiRegionConfig — env-specific scaling
+#     decisions, intentionally dashboard-managed per environment.
+#   - startCommand — Railpack auto-detects from package.json "start";
+#     when we switch to the DOCKERFILE builder, the Dockerfile CMD owns
+#     it. Pinning it here would create a third source of truth.
+
+[build]
+# RAILPACK is the current builder for this service. Switch to DOCKERFILE
+# when the apps/api/Dockerfile work lands and the team is ready to flip
+# the builder over (Railway docs: "Railway will always build with a
+# Dockerfile if it finds one"; the DOCKERFILE builder makes that
+# explicit and lets us pin dockerfilePath).
+#
+# Migration plan when ready:
+#   builder = "DOCKERFILE"
+#   dockerfilePath = "apps/api/Dockerfile"
+builder = "RAILPACK"
+
+[deploy]
+# /healthz returns {ok: true} with no I/O — see apps/api/src/server.ts:137.
+# Railway probes this after each deploy; passing means traffic shifts
+# to the new instance, failing means the deploy is rolled back.
+# /readyz (apps/api/src/server.ts:141) is the deeper DB+Redis probe and
+# is intentionally NOT used here — it would fail-close any deploy where
+# Postgres or Redis is briefly unavailable, which we want to handle via
+# the app's restart loop, not by aborting deploys.
+healthcheckPath = "/healthz"
+healthcheckTimeout = 60
+
+# Zero-downtime deploy primitives:
+#   overlapSeconds — old + new instances both serve traffic for this long
+#     before the load balancer cuts over.
+#   drainingSeconds — after SIGTERM, how long until the platform sends
+#     SIGKILL. Must outlast the longest in-flight HTTP request. The API's
+#     SIGTERM handler (apps/api/src/index.ts:62) closes the server +
+#     awaits Redis/DB pool drain.
+overlapSeconds = 30
+drainingSeconds = 30
+
+# If the API process crashes, restart up to 10 times before giving up.
+# Boot-time failures (missing env, bad runtime DB role per
+# packages/db/src/runtime-role.ts) will fail closed after 10 retries —
+# desired behavior; an exponentially looping crash is a paging signal.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Migration strategy: GitHub Actions, NOT Railway preDeployCommand.
+# Decision rationale: MIGRATION_DATABASE_URL must NOT live on this
+# Railway service's env. The API runtime holds only the app_api DSN
+# (NOBYPASSRLS, no schema-modify rights) per CLAUDE.md security #1.
+# Putting the migration-owner credential on the API service would let
+# a future RCE / supply-chain compromise escalate from "RLS-bound API
+# session" to "schema owner" with one env read.
+#
+# Implementation status (2026-04-27): the GH Actions migration step is
+# NOT yet wired up. packages/db/scripts/run-psql-files.ts (the current
+# migration runner) has no idempotency tracking — running it twice
+# against the same DB fails on the second `create table`. The runner
+# needs a `schema_migrations` tracking table + skip-if-applied wrapper
+# before it can run unattended in CI. Until then, migrations are
+# applied manually by a maintainer against MIGRATION_DATABASE_URL
+# (acceptable pre-launch posture; not acceptable post-launch). When
+# the runner is hardened, add the GH Actions step between "Production
+# build" and "Deploy API" in deploy-staging.yml + deploy-prod.yml.

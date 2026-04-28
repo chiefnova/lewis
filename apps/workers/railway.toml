@@ -1,0 +1,58 @@
+"$schema" = "https://railway.com/railway.schema.json"
+
+# Railway config-as-code for the Lewis BullMQ workers (regular fleet,
+# RLS-bound, connects as app_worker Postgres role).
+#
+# Per-service activation: in the Railway dashboard for each lewis-staging
+# and lewis-prod workers service, set Settings → Config-as-Code Path to
+#   /apps/workers/railway.toml
+# After redeploy, the deployment details pane shows a file icon next to
+# every setting captured below — confirmation the file is the source of
+# truth (Railway docs: "Configuration defined in code will always
+# override values from the dashboard").
+#
+# Posture & isolation reminder (CLAUDE.md security #1, #8):
+#   - SUPABASE_SERVICE_ROLE_KEY MUST NOT be set on this service. The
+#     privileged Sprint 4 worker (apps/workers-elevated, separate
+#     Railway service) is the only place that key lives.
+#   - Both staging + prod environments of THIS service connect as the
+#     app_worker NOBYPASSRLS role. The runtime role assertion in
+#     apps/workers/src/index.ts (via packages/db/src/runtime-role.ts)
+#     fail-closes if a misconfigured deploy lands the wrong DSN here.
+#
+# What this file does NOT contain by design:
+#   - Env vars / secrets — Railway per-environment variable store. See
+#     docs/env-vars.md for the workers env surface.
+#   - Region, numReplicas, multiRegionConfig — env-specific, dashboard.
+#   - startCommand — Railpack auto-detects from package.json "start";
+#     when DOCKERFILE builder lands, the Dockerfile CMD owns it.
+#   - healthcheckPath — workers run NO HTTP listener (verified by grep
+#     for `listen|createServer|serve\(` in apps/workers/src — zero
+#     hits). Railway treats absence of healthcheckPath as "skip the
+#     probe", which is what we want for a queue worker.
+
+[build]
+# RAILPACK is the current builder. Switch to DOCKERFILE when the
+# apps/workers/Dockerfile work lands and the team is ready to flip:
+#   builder = "DOCKERFILE"
+#   dockerfilePath = "apps/workers/Dockerfile"
+builder = "RAILPACK"
+
+[deploy]
+# Zero-downtime deploy primitives, tuned for queue worker semantics:
+#   overlapSeconds = 10 — short overlap is fine because both old + new
+#     workers can drain the same Redis queue concurrently without harm
+#     (BullMQ uses Redis-side claim tokens to prevent double-processing).
+#   drainingSeconds = 120 — must outlast the longest in-flight job. PDF
+#     rendering (Sprint 4, Puppeteer for patient agreements + AE
+#     reports per CLAUDE.md gotcha) can take 30-60s; 120s gives margin.
+#     The workers SIGTERM handler (apps/workers/src/index.ts:159) calls
+#     worker.close() on every BullMQ Worker, which waits for currently
+#     processing jobs to complete before resolving.
+overlapSeconds = 10
+drainingSeconds = 120
+
+# Same restart posture as the API: bounded retries on crash, fail-close
+# after 10 so a thrashing worker pages instead of silently looping.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
