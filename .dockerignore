@@ -1,0 +1,92 @@
+# .dockerignore — what does NOT enter the build context.
+#
+# Build context is the repo root (Railway uses repo root so pnpm workspace
+# resolution finds packages/* when building apps/api or apps/workers). Drop
+# everything the API and workers don't need plus everything that could leak
+# secrets or PHI into a layer.
+
+# ---------- Node / pnpm artifacts ----------
+**/node_modules
+**/.pnpm-store
+**/dist
+**/build
+**/.vite
+**/*.tsbuildinfo
+**/vite.config.js.timestamp-*
+**/vite.config.ts.timestamp-*
+**/stats.html
+
+# ---------- Logs and caches ----------
+**/logs
+**/*.log
+**/npm-debug.log*
+**/pnpm-debug.log*
+**/coverage
+**/*.lcov
+**/.nyc_output
+**/test-results
+**/playwright-report
+**/playwright/.cache
+**/.cache
+**/.turbo
+**/.eslintcache
+**/.prettiercache
+
+# ---------- Secrets and env files ----------
+# fnox.toml is age-encrypted in repo and is the local/CI secrets surface; it
+# must NEVER ship in a runtime image. Production and staging secrets come
+# from Railway env vars at runtime — the image is secrets-free by design.
+fnox.toml
+.env
+.env.*
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+
+# ---------- Git / IDE / OS metadata ----------
+.git
+.gitignore
+.gitattributes
+.github
+.gitlab
+.vscode
+.idea
+.cursor
+.claude
+.editorconfig
+**/.DS_Store
+
+# ---------- Frontend apps ----------
+# We need their package.json files for `pnpm install --frozen-lockfile` to
+# validate the workspace topology recorded in pnpm-lock.yaml. Drop the
+# source/assets but keep the manifests.
+apps/app/**
+apps/patient/**
+apps/directory/**
+!apps/app/package.json
+!apps/patient/package.json
+!apps/directory/package.json
+
+# ---------- Docs and design assets ----------
+docs
+*.md
+
+# ---------- Tests, fixtures, e2e ----------
+**/__tests__
+**/__fixtures__
+e2e
+playwright.config.*
+vitest.workspace.*
+# Per-package vitest configs and *.test.ts files stay in context: tsc
+# typecheck in the builder stage walks them. They're stripped out by
+# `pnpm deploy --prod` which only copies `dependencies`-graph files.
+
+# ---------- Dev tooling not used at runtime ----------
+mise.toml
+.mise.toml
+.tool-versions
+.husky
+.changeset
+docker-compose*.yml
+docker-compose*.yaml
