@@ -14,7 +14,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "migrate": "drizzle-kit migrate",
-    "migrate:cloud": "drizzle-kit migrate",
+    "migrate:cloud": "tsx scripts/cloud-migration-preflight.ts && drizzle-kit migrate",
     "migrate:sql": "tsx scripts/run-psql-files.ts migrations",
     "migrate:local": "pnpm run migrate:sql && pnpm run setup:local-roles",
     "migrate:journal": "tsx scripts/regenerate-migration-journal.ts",
