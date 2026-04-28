@@ -88,24 +88,15 @@ jobs:
             exit 1
           fi
           curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy API
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.PROD_API_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "PROD_API_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy workers
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.PROD_WORKERS_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "PROD_WORKERS_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+
+      # Backend services (api, workers) are NOT triggered via deploy-hook
+      # POST. Railway auto-deploys on every push to main via its GitHub
+      # integration, and gates the deploy on this CI workflow's status
+      # (Wait-for-CI). When the production migration step above succeeds
+      # AND the manual approval on the `production` GitHub Environment is
+      # granted, Railway promotes the held deploy. The deploy-hook URL
+      # pattern below was a Vercel-ism that doesn't map to a real Railway
+      # feature. Vercel hooks above are real; Railway needs nothing.
 
   e2e:
     needs: deploy-prod

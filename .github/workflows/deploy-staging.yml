@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging
+  workflow_dispatch:
 
 concurrency:
   group: deploy-staging-${{ github.ref }}
@@ -84,24 +85,14 @@ jobs:
             exit 1
           fi
           curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy API
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.STAGING_API_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "STAGING_API_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy workers
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.STAGING_WORKERS_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "STAGING_WORKERS_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+
+      # Backend services (api, workers) are NOT triggered via deploy-hook
+      # POST. Railway auto-deploys on every push to staging via its GitHub
+      # integration, and gates the deploy on this CI workflow's status
+      # (Wait-for-CI). When the migration step above succeeds, Railway
+      # promotes the held deploy. Any deploy-hook URL we'd POST to here
+      # doesn't exist as a current Railway feature — that pattern is a
+      # Vercel-ism. Vercel hooks above are real; Railway needs nothing.
 
   e2e:
     needs: deploy-staging
