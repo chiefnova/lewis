@@ -15,12 +15,18 @@
  */
 
 import { readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { buildJournal, serializeJournal } from "./regenerate-migration-journal.js";
 
+// Anchor to this script's location so cwd doesn't matter — works the
+// same when invoked via `pnpm --filter @lewis/db migrate:journal:check`
+// (cwd=packages/db) or directly via tsx from any other cwd.
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+
 async function main(): Promise<void> {
-  const migrationsDir = resolve("migrations");
+  const migrationsDir = resolve(scriptDir, "..", "migrations");
   const journalPath = join(migrationsDir, "meta", "_journal.json");
 
   const expected = serializeJournal(await buildJournal(migrationsDir));

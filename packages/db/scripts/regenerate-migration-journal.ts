@@ -44,7 +44,14 @@
  */
 
 import { readdir, mkdir, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+// Anchor migrations dir to this script's location so the resolver is
+// cwd-invariant. Running the script via `pnpm --filter @lewis/db
+// migrate:journal` (cwd=packages/db) and via `tsx packages/db/scripts/...`
+// (cwd=repo root) both resolve to the same migrations folder.
+const scriptDir = dirname(fileURLToPath(import.meta.url));
 
 type JournalEntry = {
   idx: number;
@@ -130,7 +137,7 @@ export function serializeJournal(journal: Journal): string {
 }
 
 async function main(): Promise<void> {
-  const migrationsDir = resolve("migrations");
+  const migrationsDir = resolve(scriptDir, "..", "migrations");
   const metaDir = join(migrationsDir, "meta");
   const journalPath = join(metaDir, "_journal.json");
 
@@ -142,8 +149,12 @@ async function main(): Promise<void> {
   console.warn(`Wrote ${journal.entries.length} entries to ${journalPath}`);
 }
 
-// Only run main() when invoked directly, not when imported by tests.
-const invokedDirectly = process.argv[1]?.endsWith("regenerate-migration-journal.ts");
+// Only run main() when invoked directly (not when imported by tests or
+// by check-migration-journal.ts). Strict file-URL equality survives
+// `.ts` → `.js` compilation and rejects sibling files with a similar
+// suffix; `endsWith` would fail both.
+const entryUrl = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : undefined;
+const invokedDirectly = entryUrl === import.meta.url;
 if (invokedDirectly) {
   main().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : "Unknown error";
