@@ -5,6 +5,35 @@ All notable changes to Lewis are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a 4-digit version format: `MAJOR.MINOR.PATCH.MICRO`.
 
+## [0.0.6.1] - 2026-04-28
+
+Wires up the deployment infrastructure for the API + workers Railway services. Two related workstreams in one release: Railway config-as-code (operational settings now version-controlled and reviewable) and a real production database migration pipeline (drizzle-kit migrate replaces the local-only raw SQL applier, runs in GitHub Actions before each Railway deploy, with the schema-owner credential held only by the CI runner). No frontend, schema, or API surface changes.
+
+### Added
+
+- **Railway config-as-code TOMLs.** [apps/api/railway.toml](apps/api/railway.toml) and [apps/workers/railway.toml](apps/workers/railway.toml) capture every settled operational decision (builder, healthcheck path/timeout, restart policy, overlap, drain) so changing them becomes a code-reviewed PR instead of an unaudited dashboard click. Both files schema-validated against the live `https://railway.com/railway.schema.json`. Per-service activation: set Settings → Config-as-Code Path to `/apps/api/railway.toml` (or `/apps/workers/railway.toml`) for each lewis-staging / lewis-prod service. After redeploy, every captured setting shows a file icon in Railway's Deployment Details pane (Railway's signal that the file is the source of truth, overriding the dashboard).
+- **drizzle-kit migrate cloud pipeline.** Three new `pnpm --filter @lewis/db` scripts: `migrate:cloud` (applies migrations against `MIGRATION_DATABASE_URL` via `drizzle-kit migrate`, with idempotency tracked in the new `drizzle.__drizzle_migrations` table — second run is a clean no-op), `migrate:journal` (regenerates `migrations/meta/_journal.json` from on-disk SQL files), `migrate:journal:check` (CI drift gate). Replaces the broken-on-second-run `run-psql-files.ts` flow for cloud applies; local development continues to use `migrate:local` (raw SQL apply + role provisioning) against the ephemeral Docker volume.
+- **GitHub Actions migration step.** [deploy-staging.yml](.github/workflows/deploy-staging.yml) and [deploy-prod.yml](.github/workflows/deploy-prod.yml) now invoke `drizzle-kit migrate` between "Production build" and the first deploy hook. If migration fails, no deploy hooks fire and the previous deploy keeps serving. Production migrations gate on the existing `production` GitHub Environment (manual-approval required). Two new env-scoped GH Secrets needed: `STAGING_MIGRATION_DATABASE_URL` (env: `staging`) and `PROD_MIGRATION_DATABASE_URL` (env: `production`), each holding the Supabase **session-pooler** URL (port 5432 on the pooler hostname) authenticated as the `postgres` schema-owner role.
+- **Migration journal regenerator** at [packages/db/scripts/regenerate-migration-journal.ts](packages/db/scripts/regenerate-migration-journal.ts), with cwd-invariant path resolution (works from any directory via `dirname(fileURLToPath(import.meta.url))`) and a strict file-URL invokedDirectly check that survives `.ts` → `.js` compilation. Deterministic: re-running on unchanged migrations produces a byte-identical journal. 10 vitest cases lock determinism, monotonic `when` ordering, append-stability, and error cases (gaps, malformed filenames, empty dir).
+- **Migration drift CI gate** in [api-ci.yml](.github/workflows/api-ci.yml): `migrate:journal:check` byte-compares the committed journal against what the regenerator would produce. A new SQL migration without a regenerated journal fails the PR with a one-command fix message, instead of silently skipping the migration at deploy time.
+- **Cloud-migration preflight guard** at [packages/db/scripts/cloud-migration-preflight.ts](packages/db/scripts/cloud-migration-preflight.ts): `migrate:cloud` now refuses to invoke `drizzle-kit migrate` unless `MIGRATION_DATABASE_URL` is explicitly set. Defense-in-depth alongside the workflow-level `if [ -z "$MIGRATION_DATABASE_URL" ]` guard — protects callers outside the deploy workflow path. 5 vitest cases cover unset, empty string, whitespace-only, no-fallback-to-DATABASE_URL (locks the security intent), and a valid value.
+- **Migration journal artifact** at [packages/db/migrations/meta/\_journal.json](packages/db/migrations/meta/_journal.json) — 17 entries covering every existing SQL migration. Committed as the source of truth for `drizzle-kit migrate`.
+
+### Changed
+
+- **`drizzle.config.ts` resolves `MIGRATION_DATABASE_URL` instead of runtime `DATABASE_URL`.** Was using `resolveDatabaseConnectionConfig` (runtime app_api credentials), now uses `resolveMigrationDatabaseConnectionConfig` (schema-owner credentials, with permissive fallback to DATABASE_URL preserved for `drizzle-kit studio` / `introspect` in local dev). The `migrate:cloud` preflight ensures the fallback never applies to cloud migration runs.
+- **API healthcheck timeout** in [apps/api/railway.toml](apps/api/railway.toml) tightened from 60s to 5s. `/healthz` returns synchronously with no I/O ([apps/api/src/server.ts:137](apps/api/src/server.ts#L137)) — either responds in milliseconds or it's not responding at all. 5s gives Railway much faster signal when the process is hung.
+
+### Documentation
+
+- **CLAUDE.md gotchas** — two new entries: (1) regenerating the migration journal after adding a SQL file, (2) `MIGRATION_DATABASE_URL` posture (GH Actions only, never on a Railway service env per security #1).
+- **docs/env-vars.md** — `STAGING_MIGRATION_DATABASE_URL` / `PROD_MIGRATION_DATABASE_URL` added to the CI-only secrets table; source-code references for `MIGRATION_DATABASE_URL` expanded to cite the new files; 2026-04-28 entry added to the change log.
+- **docs/runbooks/local-development.md** — new "Adding A New Migration" section documenting the local vs cloud apply paths and the 5-step procedure (author → regenerate journal → reset → RLS test → commit both).
+
+### Tooling
+
+- **Workspace-aware ship discipline** — this release is the first to use the `staging` integration branch as the base for both feature-branch PRs and the deploy workflows. Both `deploy-staging.yml` and `deploy-prod.yml` continue to fire from their respective branches; no workflow trigger changes.
+
 ## [0.0.6.0] - 2026-04-26
 
 Introduces the `@lewis/ui` shared design system. Each app now imports a single stylesheet that wires Tailwind v4, the Big Sky · Mineral paper tokens, the `.pill` button system, and self-hosted brand fonts. The directory homepage gets responsive mobile layouts and a rotating search placeholder. No backend, schema, or API changes.

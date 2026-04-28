@@ -144,6 +144,8 @@ PHI is in scope from day one. Lewis is a Business Associate.
 - H&P older than 12 months blocks treatment (RULE 12(2)(b)(iii)). Validate at treatment-schedule time, not just upload time.
 - Puppeteer PDF rendering runs in a worker, not the API request path — patient agreement generation is async.
 - Running any `dev:*` task without an age private key whose public key is in `fnox.toml` `[providers.age].recipients` will fail at decryption. Get added as a recipient first.
+- Adding a new SQL migration to `packages/db/migrations/` requires regenerating the journal: `pnpm --filter @lewis/db migrate:journal` then commit `migrations/meta/_journal.json`. CI gate `migrate:journal:check` fails the PR if the disk journal drifts from the regenerated output. Without this, `drizzle-kit migrate` (the production migration runner in `deploy-staging.yml` / `deploy-prod.yml`) silently skips the new file.
+- `MIGRATION_DATABASE_URL` is the schema-owner DSN and lives ONLY on the GitHub Actions runner (env-scoped GH Secrets `STAGING_MIGRATION_DATABASE_URL` / `PROD_MIGRATION_DATABASE_URL`). Never on a Railway service env per security #1. The runtime `app_api` / `app_worker` DSNs cannot apply migrations (NOBYPASSRLS, no schema-modify rights).
 
 ## References
 

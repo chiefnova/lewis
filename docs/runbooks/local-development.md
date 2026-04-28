@@ -92,3 +92,34 @@ Wipe local Docker volumes, re-run migrations, and re-seed synthetic data:
 ```sh
 mise run db:reset
 ```
+
+## Adding A New Migration
+
+Lewis uses raw SQL migrations under `packages/db/migrations/` (filenames `<NNNN>_<snake_name>.sql`, sequential). The local and cloud apply paths are deliberately different:
+
+- **Local dev** (`mise run db:migrate`) wraps `pnpm --filter @lewis/db migrate:local`, which runs `migrate:sql` (a thin psql wrapper applying every file unconditionally) plus `setup:local-roles`. Designed for ephemeral Docker volumes — `db:reset` wipes and reapplies cleanly each time.
+- **Staging / production** uses `drizzle-kit migrate` invoked from GitHub Actions (`deploy-staging.yml`, `deploy-prod.yml`). It tracks applied migrations in the `drizzle.__drizzle_migrations` table and skips ones already recorded. Idempotent across re-runs.
+
+When you add a SQL file, both paths must stay in sync:
+
+```sh
+# 1. Author the new migration file
+$EDITOR packages/db/migrations/0018_<feature>.sql
+
+# 2. Regenerate the journal so drizzle-kit migrate sees the new entry
+pnpm --filter @lewis/db migrate:journal
+
+# 3. Apply locally to verify it parses + behaves as intended
+mise run db:reset
+
+# 4. Add an RLS test if the migration touches policies (CLAUDE.md security #1)
+$EDITOR packages/db/test/rls/<NNNN>_<descriptive>.sql
+mise run db:rls:test
+
+# 5. Commit BOTH the SQL file and the regenerated journal
+git add packages/db/migrations/0018_<feature>.sql packages/db/migrations/meta/_journal.json
+```
+
+CI gate `migrate:journal:check` (in `api-ci.yml`) compares the disk journal byte-for-byte against what the regenerator would produce. Skipping step 2 fails the PR with a one-command fix message — you cannot accidentally ship a migration that the cloud applier silently skips.
+
+The migration command on staging/prod requires `MIGRATION_DATABASE_URL` (the Supabase session-pooler URL with the `postgres` schema-owner role). It is held only by the GitHub Actions runner via env-scoped secrets and is intentionally absent from every Railway service env per CLAUDE.md security #1.

@@ -196,6 +196,8 @@ Env vars that were referenced in source but not declared in any template or fnox
 | ☐ | `PROD_PATIENT_DEPLOY_HOOK_URL` | secret | Vercel deploy trigger (patient) |
 | ☐ | `STAGING_APP_DEPLOY_HOOK_URL` | secret | Staging Vercel deploy trigger (app) |
 | ☐ | `STAGING_PATIENT_DEPLOY_HOOK_URL` | secret | Staging Vercel deploy trigger (patient) |
+| ☐ | `STAGING_MIGRATION_DATABASE_URL` | secret (env-scoped: `staging`) | Supabase staging session-pooler URL with `postgres` (schema-owner) role. Used by `drizzle-kit migrate` step in `deploy-staging.yml`. NEVER on a Railway service env. |
+| ☐ | `PROD_MIGRATION_DATABASE_URL` | secret (env-scoped: `production`) | Supabase prod session-pooler URL with `postgres` (schema-owner) role. Used by `drizzle-kit migrate` step in `deploy-prod.yml`. The `production` GH Environment requires manual approval. NEVER on a Railway service env. |
 | ☐ | `PHI_AUDIT_RETENTION_HOOK_URL` | secret | Nightly audit retention job trigger |
 | ☐ | `PROD_APP_URL` | var | E2E target — staff/business app prod URL |
 | ☐ | `PROD_PATIENT_URL` | var | E2E target — patient portal prod URL |
@@ -300,7 +302,7 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 | `STRIPE_SECRET_KEY` | [apps/api/src/webhooks/stripe.ts](../apps/api/src/webhooks/stripe.ts) |
 | `DATABASE_URL` and `DB_*` fallbacks | [packages/db/src/config.ts](../packages/db/src/config.ts) |
 | `WORKER_DATABASE_URL` and `WORKER_DB_*` fallbacks | [apps/workers/src/database-env.ts](../apps/workers/src/database-env.ts) |
-| `MIGRATION_DATABASE_URL` | [packages/db/src/config.ts](../packages/db/src/config.ts) |
+| `MIGRATION_DATABASE_URL` | [packages/db/src/config.ts](../packages/db/src/config.ts) (resolver), [packages/db/drizzle.config.ts](../packages/db/drizzle.config.ts) (drizzle-kit migrate), [packages/db/scripts/cloud-migration-preflight.ts](../packages/db/scripts/cloud-migration-preflight.ts) (preflight guard) |
 | `REDIS_URL`, `REDIS_HOST`, `REDIS_PORT` | [packages/shared/src/redis-config.ts](../packages/shared/src/redis-config.ts) |
 | `NODE_ENV`, `LOG_LEVEL` | [apps/api/src/logger.ts](../apps/api/src/logger.ts), [apps/workers/src/logger.ts](../apps/workers/src/logger.ts) |
 | `PORT` | [apps/api/src/index.ts](../apps/api/src/index.ts) |
@@ -322,4 +324,5 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 
 ### Change log
 
+- **2026-04-28** — Added `STAGING_MIGRATION_DATABASE_URL` (env-scoped `staging`) and `PROD_MIGRATION_DATABASE_URL` (env-scoped `production`) GH Secrets. These hold the Supabase session-pooler URL with the schema-owner credential and are consumed by the new `drizzle-kit migrate` step in `deploy-staging.yml` / `deploy-prod.yml`. Defense-in-depth: the runtime preflight in [packages/db/scripts/cloud-migration-preflight.ts](../packages/db/scripts/cloud-migration-preflight.ts) refuses to invoke `drizzle-kit migrate` if `MIGRATION_DATABASE_URL` is absent. Schema-owner credential is intentionally never present on any Railway service env per CLAUDE.md security #1.
 - **2026-04-25** — Initial end-to-end audit. 5 code-vs-config gaps closed: `WORKER_ELEVATED`, `WORKER_RUNTIME_ROLE_OPT_OUT`, `API_RUNTIME_ROLE_OPT_OUT`, `LEWIS_SEED_ALLOW_NON_LOCAL` documented in templates; `RESEND_WEBHOOK_SECRET` restored to `api_dev` fnox profile.
