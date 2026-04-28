@@ -34,6 +34,29 @@ jobs:
         run: mise run test
       - name: Production build
         run: mise run build
+
+      # Database migrations run BEFORE any deploy hooks fire. Order:
+      #   1. journal drift check (fail fast on stale journal)
+      #   2. drizzle-kit migrate against the staging Supabase project
+      #
+      # MIGRATION_DATABASE_URL must be the Supabase SESSION pooler URL
+      # (port 5432 on the pooler hostname) authenticated as the schema-
+      # owner role — NEVER the runtime app_api credential. This secret
+      # is held only by the GitHub Actions runner for the duration of
+      # this step; it is intentionally absent from every Railway service
+      # env per CLAUDE.md security #1.
+      - name: Verify migration journal in sync
+        run: pnpm --filter @lewis/db migrate:journal:check
+      - name: Run database migrations (staging)
+        env:
+          MIGRATION_DATABASE_URL: ${{ secrets.STAGING_MIGRATION_DATABASE_URL }}
+        run: |
+          if [ -z "$MIGRATION_DATABASE_URL" ]; then
+            echo "STAGING_MIGRATION_DATABASE_URL is not configured."
+            exit 1
+          fi
+          pnpm --filter @lewis/db migrate:cloud
+
       - name: Deploy directory
         env:
           DEPLOY_HOOK_URL: ${{ secrets.STAGING_DIRECTORY_DEPLOY_HOOK_URL }}
