@@ -59,21 +59,26 @@ drainingSeconds = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# Migration strategy: GitHub Actions, NOT Railway preDeployCommand.
-# Decision rationale: MIGRATION_DATABASE_URL must NOT live on this
-# Railway service's env. The API runtime holds only the app_api DSN
-# (NOBYPASSRLS, no schema-modify rights) per CLAUDE.md security #1.
-# Putting the migration-owner credential on the API service would let
-# a future RCE / supply-chain compromise escalate from "RLS-bound API
-# session" to "schema owner" with one env read.
+# Migrations run via GitHub Actions, NOT Railway preDeployCommand.
+# See `.github/workflows/deploy-staging.yml` and `deploy-prod.yml`:
+# `drizzle-kit migrate` is invoked between "Production build" and any
+# deploy hook, against MIGRATION_DATABASE_URL (a Supabase session-pool
+# URL authenticated as the schema-owner role).
 #
-# Implementation status (2026-04-27): the GH Actions migration step is
-# NOT yet wired up. packages/db/scripts/run-psql-files.ts (the current
-# migration runner) has no idempotency tracking — running it twice
-# against the same DB fails on the second `create table`. The runner
-# needs a `schema_migrations` tracking table + skip-if-applied wrapper
-# before it can run unattended in CI. Until then, migrations are
-# applied manually by a maintainer against MIGRATION_DATABASE_URL
-# (acceptable pre-launch posture; not acceptable post-launch). When
-# the runner is hardened, add the GH Actions step between "Production
-# build" and "Deploy API" in deploy-staging.yml + deploy-prod.yml.
+# MIGRATION_DATABASE_URL is deliberately ABSENT from this Railway
+# service's env per CLAUDE.md security #1: the API runtime holds only
+# the app_api DSN (NOBYPASSRLS, no schema-modify rights). Putting the
+# migration-owner credential on the API service would let any future
+# RCE / supply-chain compromise escalate from "RLS-bound API session"
+# to "schema owner" with one env read. The GH Actions runner holds
+# the credential for the duration of the deploy step and discards it.
+#
+# Drizzle-kit migrate's idempotency model: each applied migration's
+# SHA-256 hash + `when` timestamp is recorded in the `drizzle.__drizzle_migrations`
+# table. On re-run, the migrator compares each journal entry's `when`
+# against the latest applied row's `created_at`; entries with a `when`
+# greater than that watermark get applied, others are skipped. This
+# means an append-only migration flow is safe and idempotent. Editing
+# an already-applied migration file is a SILENT no-op against the live
+# DB (drizzle does not refuse on hash mismatch) — discipline is "never
+# edit applied migrations; add a new one to change the schema."
