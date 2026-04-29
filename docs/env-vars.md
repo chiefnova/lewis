@@ -163,6 +163,8 @@ Env vars that were referenced in source but not declared in any template or fnox
 | ☐ | `REDIS_URL` | api, workers, workers-elev | BullMQ + idempotency cache |
 | ☐ | `REDIS_HOST` / `REDIS_PORT` | all | Fallback when `REDIS_URL` unset |
 
+> **Supabase pooler password URL-encoding gotcha** (caught in v0.0.6.2). Pooler-generated passwords occasionally contain `/` characters that break standard URL parsing — zod's `.url()` validation rejects the value with `path: ["DATABASE_URL"], invalid_string`. Fix: URL-encode the slash to `%2F` in the env var value. Same credential at the Postgres protocol level. Apply to any pooler-sourced `DATABASE_URL` / `WORKER_DATABASE_URL` / `MIGRATION_DATABASE_URL` whose password contains `/`.
+
 ### Local infra / runtime defaults (`.env.local` only)
 
 | Status | Variable | Default | Purpose |
@@ -196,6 +198,8 @@ Env vars that were referenced in source but not declared in any template or fnox
 | ☐ | `PROD_PATIENT_DEPLOY_HOOK_URL` | secret | Vercel deploy trigger (patient) |
 | ☐ | `STAGING_APP_DEPLOY_HOOK_URL` | secret | Staging Vercel deploy trigger (app) |
 | ☐ | `STAGING_PATIENT_DEPLOY_HOOK_URL` | secret | Staging Vercel deploy trigger (patient) |
+| ☐ | `STAGING_MIGRATION_DATABASE_URL` | secret (env-scoped: `staging`) | Supabase staging session-pooler URL with `postgres` (schema-owner) role. Used by `drizzle-kit migrate` step in `deploy-staging.yml`. NEVER on a Railway service env. |
+| ☐ | `PROD_MIGRATION_DATABASE_URL` | secret (env-scoped: `production`) | Supabase prod session-pooler URL with `postgres` (schema-owner) role. Used by `drizzle-kit migrate` step in `deploy-prod.yml`. The `production` GH Environment requires manual approval. NEVER on a Railway service env. |
 | ☐ | `PHI_AUDIT_RETENTION_HOOK_URL` | secret | Nightly audit retention job trigger |
 | ☐ | `PROD_APP_URL` | var | E2E target — staff/business app prod URL |
 | ☐ | `PROD_PATIENT_URL` | var | E2E target — patient portal prod URL |
@@ -215,6 +219,20 @@ Env vars that were referenced in source but not declared in any template or fnox
 | ☐ | `VANTA_API_KEY` | 6 | SOC 2 evidence collection (off-platform) |
 | ☐ | `DRATA_API_KEY` | 6 | Alternative to Vanta |
 | ☐ | `FEATURE_FLAG_PROVIDER` keys | 6 | LaunchDarkly **or** in-house (plan recommends in-house for tenant scoping) |
+
+### Pre-launch password gate (Vercel only — TEMPORARY, removed before public launch)
+
+Set on each of the six Vercel projects (`lewis-directory-{staging,production}`, `lewis-app-{staging,production}`, `lewis-patient-{staging,production}`), Production + Preview scope, NOT Development. **Not in fnox** — production secrets live only in Vercel/Railway env per the security rule. Read by [packages/gate/src/index.ts](../packages/gate/src/index.ts).
+
+| Status | Variable | Where | Purpose |
+|---|---|---|---|
+| ✅ staging | `LEWIS_GATE_PASSWORD` | Vercel project env (×6) | Access password (current staging value: `WST-057`) |
+| ✅ staging | `LEWIS_GATE_SECRET` | Vercel project env (×6) | 32-byte random hex (`openssl rand -hex 32`), distinct per project so a stolen cookie from one app cannot unlock another |
+| ☐ optional | `LEWIS_GATE_DISABLED` | Vercel project env | Set to `true` to bypass the gate without removing code (kill switch + first step of removal sequence) |
+
+Local dev defaults are baked into [packages/gate/src/vite.ts](../packages/gate/src/vite.ts:74) so `mise run dev:*` works without env setup. Production must NOT use those defaults.
+
+When the gate is removed (cleanup PR after public launch), delete these env vars from all six Vercel projects too.
 
 ---
 
@@ -300,7 +318,7 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 | `STRIPE_SECRET_KEY` | [apps/api/src/webhooks/stripe.ts](../apps/api/src/webhooks/stripe.ts) |
 | `DATABASE_URL` and `DB_*` fallbacks | [packages/db/src/config.ts](../packages/db/src/config.ts) |
 | `WORKER_DATABASE_URL` and `WORKER_DB_*` fallbacks | [apps/workers/src/database-env.ts](../apps/workers/src/database-env.ts) |
-| `MIGRATION_DATABASE_URL` | [packages/db/src/config.ts](../packages/db/src/config.ts) |
+| `MIGRATION_DATABASE_URL` | [packages/db/src/config.ts](../packages/db/src/config.ts) (resolver), [packages/db/drizzle.config.ts](../packages/db/drizzle.config.ts) (drizzle-kit migrate), [packages/db/scripts/cloud-migration-preflight.ts](../packages/db/scripts/cloud-migration-preflight.ts) (preflight guard) |
 | `REDIS_URL`, `REDIS_HOST`, `REDIS_PORT` | [packages/shared/src/redis-config.ts](../packages/shared/src/redis-config.ts) |
 | `NODE_ENV`, `LOG_LEVEL` | [apps/api/src/logger.ts](../apps/api/src/logger.ts), [apps/workers/src/logger.ts](../apps/workers/src/logger.ts) |
 | `PORT` | [apps/api/src/index.ts](../apps/api/src/index.ts) |
@@ -311,6 +329,7 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 | `WORKER_RUNTIME_ROLE_OPT_OUT` | [apps/workers/src/index.ts:107](../apps/workers/src/index.ts#L107) |
 | `LEWIS_SEED_ALLOW_NON_LOCAL` | [packages/db/scripts/seed-dev.ts:9](../packages/db/scripts/seed-dev.ts#L9) (trap) |
 | `VITE_*` vars | `apps/app/src/main.tsx`, `apps/patient/src/main.tsx` (`import.meta.env.VITE_*`) |
+| `LEWIS_GATE_PASSWORD`, `LEWIS_GATE_SECRET`, `LEWIS_GATE_DISABLED` | [packages/gate/src/index.ts](../packages/gate/src/index.ts) (Vercel Edge Middleware), [packages/gate/src/vite.ts](../packages/gate/src/vite.ts) (Vite dev shim with baked-in dev defaults) |
 
 ---
 
@@ -322,4 +341,6 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 
 ### Change log
 
+- **2026-04-29** (v0.0.6.2) — Added `LEWIS_GATE_PASSWORD`, `LEWIS_GATE_SECRET`, `LEWIS_GATE_DISABLED` for the temporary pre-launch password gate. Set on each of the six Vercel projects (`lewis-{directory,app,patient}-{staging,production}`), Production + Preview scope, NOT in fnox per the security rule. Read by [packages/gate/src/index.ts](../packages/gate/src/index.ts). Local dev defaults baked into the Vite shim. Removed entirely with the gate before public launch. Also documented the **Supabase pooler `/`-in-password URL-encoding gotcha** under the Database / Redis section — encode `/` to `%2F` if the pooler-generated password contains it; otherwise zod's URL validation rejects the value at boot.
+- **2026-04-28** — Added `STAGING_MIGRATION_DATABASE_URL` (env-scoped `staging`) and `PROD_MIGRATION_DATABASE_URL` (env-scoped `production`) GH Secrets. These hold the Supabase session-pooler URL with the schema-owner credential and are consumed by the new `drizzle-kit migrate` step in `deploy-staging.yml` / `deploy-prod.yml`. Defense-in-depth: the runtime preflight in [packages/db/scripts/cloud-migration-preflight.ts](../packages/db/scripts/cloud-migration-preflight.ts) refuses to invoke `drizzle-kit migrate` if `MIGRATION_DATABASE_URL` is absent. Schema-owner credential is intentionally never present on any Railway service env per CLAUDE.md security #1.
 - **2026-04-25** — Initial end-to-end audit. 5 code-vs-config gaps closed: `WORKER_ELEVATED`, `WORKER_RUNTIME_ROLE_OPT_OUT`, `API_RUNTIME_ROLE_OPT_OUT`, `LEWIS_SEED_ALLOW_NON_LOCAL` documented in templates; `RESEND_WEBHOOK_SECRET` restored to `api_dev` fnox profile.

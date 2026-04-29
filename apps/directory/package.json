@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@clerk/react": "^6.4.5",
+    "@lewis/gate": "workspace:*",
     "@lewis/shared": "workspace:*",
     "@lewis/ui": "workspace:*",
     "@vitejs/plugin-react": "^4.4.1",

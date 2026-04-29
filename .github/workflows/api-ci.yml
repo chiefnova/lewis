@@ -143,6 +143,15 @@ jobs:
         # Every RLS-enabled table must have SELECT + (INSERT|UPDATE|DELETE|ALL).
         run: pnpm --filter @lewis/db rls:coverage
 
+      - name: Migration journal drift check
+        # packages/db/migrations/meta/_journal.json must stay in sync with
+        # the SQL files in packages/db/migrations/. Drift means a new SQL
+        # file was added without running `pnpm --filter @lewis/db migrate:journal`,
+        # which would cause `drizzle-kit migrate` (the production migrator
+        # in deploy-staging.yml + deploy-prod.yml) to silently skip the new
+        # migration. Failing here at PR time is the right place.
+        run: pnpm --filter @lewis/db migrate:journal:check
+
       - name: fnox.toml placeholder recipients
         # The placeholder age public keys (age1placeholder...) shipped with
         # the scaffold must be replaced with real recipient keys before any

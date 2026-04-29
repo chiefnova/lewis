@@ -63,6 +63,29 @@ export default [
     },
   },
   {
+    // Vercel Edge runtime globals. packages/gate runs as edge middleware on
+    // Vercel — Web standards only (no Node APIs). It also gets imported by
+    // the per-app middleware.ts at each frontend project root.
+    files: [
+      "packages/gate/**/*.ts",
+      "apps/app/middleware.ts",
+      "apps/patient/middleware.ts",
+      "apps/directory/middleware.ts",
+    ],
+    languageOptions: {
+      globals: {
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        crypto: "readonly",
+        Request: "readonly",
+        Response: "readonly",
+        URL: "readonly",
+        TextEncoder: "readonly",
+        CryptoKey: "readonly",
+      },
+    },
+  },
+  {
     // Browser globals for frontend app code. The base config above only loads
     // a small Node-shaped set; adding the browser surface here keeps app code
     // honest without polluting the API/workers globals (where, e.g., a stray

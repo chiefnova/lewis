@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging
+  workflow_dispatch:
 
 concurrency:
   group: deploy-staging-${{ github.ref }}
@@ -34,6 +35,29 @@ jobs:
         run: mise run test
       - name: Production build
         run: mise run build
+
+      # Database migrations run BEFORE any deploy hooks fire. Order:
+      #   1. journal drift check (fail fast on stale journal)
+      #   2. drizzle-kit migrate against the staging Supabase project
+      #
+      # MIGRATION_DATABASE_URL must be the Supabase SESSION pooler URL
+      # (port 5432 on the pooler hostname) authenticated as the schema-
+      # owner role — NEVER the runtime app_api credential. This secret
+      # is held only by the GitHub Actions runner for the duration of
+      # this step; it is intentionally absent from every Railway service
+      # env per CLAUDE.md security #1.
+      - name: Verify migration journal in sync
+        run: pnpm --filter @lewis/db migrate:journal:check
+      - name: Run database migrations (staging)
+        env:
+          MIGRATION_DATABASE_URL: ${{ secrets.STAGING_MIGRATION_DATABASE_URL }}
+        run: |
+          if [ -z "$MIGRATION_DATABASE_URL" ]; then
+            echo "STAGING_MIGRATION_DATABASE_URL is not configured."
+            exit 1
+          fi
+          pnpm --filter @lewis/db migrate:cloud
+
       - name: Deploy directory
         env:
           DEPLOY_HOOK_URL: ${{ secrets.STAGING_DIRECTORY_DEPLOY_HOOK_URL }}
@@ -61,30 +85,11 @@ jobs:
             exit 1
           fi
           curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy API
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.STAGING_API_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "STAGING_API_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy workers
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.STAGING_WORKERS_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "STAGING_WORKERS_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
 
-  e2e:
-    needs: deploy-staging
-    uses: ./.github/workflows/e2e-post-deploy.yml
-    with:
-      app_url: ${{ vars.STAGING_APP_URL || 'https://app.staging.lewis.health' }}
-      patient_url: ${{ vars.STAGING_PATIENT_URL || 'https://patient.staging.lewis.health' }}
-      directory_url: ${{ vars.STAGING_DIRECTORY_URL || 'https://staging.lewis.health' }}
-      api_origin_url: ${{ vars.STAGING_API_ORIGIN_URL || 'https://api.staging.lewis.health' }}
+      # Backend services (api, workers) are NOT triggered via deploy-hook
+      # POST. Railway auto-deploys on every push to staging via its GitHub
+      # integration, and gates the deploy on this CI workflow's status
+      # (Wait-for-CI). When the migration step above succeeds, Railway
+      # promotes the held deploy. Any deploy-hook URL we'd POST to here
+      # doesn't exist as a current Railway feature — that pattern is a
+      # Vercel-ism. Vercel hooks above are real; Railway needs nothing.

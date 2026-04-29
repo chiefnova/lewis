@@ -429,6 +429,28 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 **Priority:** P1
 **Depends on:** Real maintainer + CI age public keys
 
+### Remove temporary password gate before public launch
+
+**What:** Two-step removal of the temporary password gate added in v0.0.6.2.
+Step 1: set `LEWIS_GATE_DISABLED=true` on each Vercel project (lewis-directory-prod, lewis-app-prod, lewis-patient-prod) and redeploy; verify cold visits hit the apps directly. The kill switch stays in place as a safety net.
+Step 2 (cleanup PR, after a few days of confirmed-public access): delete `apps/{app,directory,patient}/middleware.ts`, delete `packages/gate/`, remove `@lewis/gate: workspace:*` from each app's `package.json`, remove the `gateVitePlugin` import + plugin entry from each app's `vite.config.ts`, remove the `@lewis/gate` paths in `tsconfig.base.json`, remove the Edge-runtime globals block in `eslint.config.js`, remove the three `LEWIS_GATE_*` env vars on each Vercel project. The cleanup PR should explicitly note that the patient-portal copy concession against PRD principle #3 is now resolved.
+
+**Why:** The gate is intentionally temporary deployment infrastructure. The patient portal copy ("Some treatments don't exist anywhere else") violates PRD principle #3 (no urgency/exclusivity in patient surfaces) — accepted because zero real patients see staging or pre-launch prod. Removing the gate before any real patient sees the portal is the resolution.
+
+**Effort:** S
+**Priority:** P2
+**Depends on:** Public launch readiness
+
+### Fix `run-psql-files.ts` ECONNRESET on first migration
+
+**What:** `pnpm --filter @lewis/db migrate:sql` fails with `read ECONNRESET` when applying [packages/db/migrations/0001_security_primitives.sql](packages/db/migrations/0001_security_primitives.sql) via node-pg `pool.query`, even on a clean database. Direct `docker exec psql -f` applies the same file cleanly. Suspected cause: node-pg's simple-query protocol path tripping on something specific in 0001 (size, an embedded statement, or a default timeout). Investigate and fix so `mise run db:reset` works end-to-end without dropping to docker exec.
+
+**Why:** `mise run db:reset` is the documented recovery path when local Postgres state goes bad. A solo dev hitting a broken DB has to manually `docker exec psql -f` each migration file in order, then `mise exec -- pnpm --filter @lewis/db setup:local-roles`. Recovery should be one command.
+
+**Effort:** S
+**Priority:** P2
+**Depends on:** None
+
 ---
 
 ## PRD remediation backlog (per implementation.md § 2.1 + § 2.2)

@@ -5,6 +5,95 @@ All notable changes to Lewis are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a 4-digit version format: `MAJOR.MINOR.PATCH.MICRO`.
 
+## [0.0.6.2] - 2026-04-28
+
+Temporary password gate in front of `lewis.health`, `app.lewis.health`, and `patient.lewis.health` while the apps are still being built. The gate is intentionally minimal and removed via a follow-up cleanup PR before public launch — kill switch via `LEWIS_GATE_DISABLED=true` for instant rollback.
+
+### Added
+
+- **`@lewis/gate` shared package** ([packages/gate/](packages/gate/)) — Vercel Edge Middleware backed by Web-Crypto-only HMAC-SHA256 signed cookies (no Node deps, runs on V8 isolates). Cookie format `${expiryMs}.${hex(HMAC)}` with server-enforced 7-day expiry. Constant-time password compare via XOR-OR over equal-length hex digests. CSRF guard via `Origin`/`Referer` host check. 800ms throttle on wrong password. Fail-closed 503 on missing env vars (`LEWIS_GATE_PASSWORD` / `LEWIS_GATE_SECRET`). Kill switch via `LEWIS_GATE_DISABLED=true`. Variant-A gate HTML inlined and server-rendered; client-side fetch intercepts the form post and shows inline error / smooth fade-to-loading without page reload, with no-JS fallback that uses native form post + Loading interstitial.
+- **Per-app middleware** ([apps/directory/middleware.ts](apps/directory/middleware.ts), [apps/app/middleware.ts](apps/app/middleware.ts), [apps/patient/middleware.ts](apps/patient/middleware.ts)) — one-line re-exports of `gateMiddleware` and `gateConfig`. The `gateConfig.matcher` excludes static assets, `/robots.txt`, `/sitemap.xml`, `/favicon.ico`, `/apple-touch-icon*`, and the `_next/_vercel` paths so SEO crawlers and asset routes aren't disrupted by the gate.
+- **`gateVitePlugin`** ([packages/gate/src/vite.ts](packages/gate/src/vite.ts)) — Vite dev-server shim that bridges Node's connect middleware to the same `gateMiddleware` Web-standards function. Defaults the gate ON in dev so `mise run dev:*` mirrors production behavior; `LEWIS_GATE_DISABLED=true` is the same kill switch in dev. Strips the `Secure` cookie attribute over plain HTTP localhost so the 7-day session cookie persists across reloads.
+- **Tests** — 9 cases in [packages/gate/src/crypto.test.ts](packages/gate/src/crypto.test.ts) (HMAC round-trip, expiry rejection, tampered signature, different-secret rejection, malformed values, password match/mismatch/empty/near-miss) and 15 cases in [packages/gate/src/index.test.ts](packages/gate/src/index.test.ts) (misconfig 503, kill switch, cold visit headers, cookie verification, CSRF guard, JSON success path, HTML loading interstitial, 401 throttle timing, GET → 303 redirect). 24/24 passing.
+- **Edge-runtime ESLint scope** ([eslint.config.js](eslint.config.js)) — new globals block for `packages/gate/**/*.ts` and the per-app `middleware.ts` files exposing the Web-standards globals (`crypto`, `Request`, `Response`, `URL`, `TextEncoder`, `setTimeout`, `clearTimeout`, `CryptoKey`).
+
+### Changed
+
+- **Workspace dependencies** — [apps/directory/package.json](apps/directory/package.json), [apps/app/package.json](apps/app/package.json), and [apps/patient/package.json](apps/patient/package.json) all add `@lewis/gate: workspace:*`. The respective `vite.config.ts` files register `gateVitePlugin()` and the `tsconfig.json` `include` arrays now cover `middleware.ts`. [tsconfig.base.json](tsconfig.base.json) adds the `@lewis/gate` path entries.
+
+### Fixed
+
+- **Vercel Edge bundler couldn't resolve `@lewis/gate` workspace specifier.** The Edge Function bundler externalizes node_modules and treats pnpm-symlinked workspace packages the same way, so the deploy errored with `The Edge Function "middleware" is referencing unsupported modules: @lewis/gate`. Switched each app's `middleware.ts` to a relative import (`../../packages/gate/src/index.js`) so esbuild walks into the actual source instead. Same trick the `vite.config.ts` already uses for `gateVitePlugin`.
+- **Railway Dockerfiles failed `pnpm install --frozen-lockfile` topology validation** because `pnpm-lock.yaml` listed `packages/gate` as a workspace package but the API and workers Dockerfiles enumerate every workspace manifest explicitly (the `pnpm-workspace.yaml` glob is `apps/* + packages/*`). Added a single `COPY packages/gate/package.json packages/gate/` line to both Dockerfiles. The api and workers never import `@lewis/gate` at runtime, so only the manifest is needed (source is excluded).
+- **Railway BuildKit policy rejected the Dockerfile cache mounts** with `Cache mount ID is not prefixed with cache key` (logged at error level, fatal). Railway requires cache mount IDs to be hardcoded as `s/<service-id>-<target>` per service ([Railway docs](https://docs.railway.com/guides/dockerfiles)) and explicitly disallows env vars / ARGs in cache IDs. Hardcoding service IDs would break future production deploys, so the cache mounts in [apps/api/Dockerfile](apps/api/Dockerfile) and [apps/workers/Dockerfile](apps/workers/Dockerfile) are removed entirely. Cold-build cost ~30–60s per service; portability across staging and production was prioritised.
+- **Gate matcher hardened** in [packages/gate/src/index.ts](packages/gate/src/index.ts) to exclude static assets, `/robots.txt`, `/sitemap.xml`, `/favicon.ico`, `/apple-touch-icon*`, `_next/`, and `_vercel/` paths. Without this, Googlebot would have received the gate HTML in place of crawl directives (poisoning SEO once the gate lifts), every static asset would have billed an extra Edge invocation, and visitors would have seen a broken favicon. Trade-off: the SPA's JS/CSS bundle is fetchable by URL even with the gate up — acceptable for a temporary gate over WIP code (the index.html that boots the SPA IS gated, and API auth at api.lewis.health is independent).
+- **Gate XSS hardening** in [packages/gate/src/html.ts](packages/gate/src/html.ts): switched the inline JS error renderer from `errorEl.innerHTML = msg` to `errorEl.textContent = msg`. Functionally equivalent today (only literal strings are passed) but defends against any future change that pipes server input through the same path.
+- **Wrong-password feedback dropped from 2000ms → 800ms.** The original throttle was real brute-force protection but felt broken in the UI. The client-side fetch now shows an immediate "Checking…" state during the server check, so the perceived latency masks the throttle. Strong password + 800ms × 1000 concurrent Edge isolates is still impractical to brute-force a 7-character random password.
+
+### Operational — Vercel
+
+Set per Vercel project (Production + Preview scope, **not** Development) on `lewis-directory-{staging,production}`, `lewis-app-{staging,production}`, and `lewis-patient-{staging,production}`:
+
+- `LEWIS_GATE_PASSWORD` — the access password (e.g. `WST-057` for current staging)
+- `LEWIS_GATE_SECRET` — 32-byte random hex, **distinct per project** (`openssl rand -hex 32`)
+- `LEWIS_GATE_DISABLED` — leave unset; flip to `true` later as the kill switch
+
+Without these, the gate returns 503 fail-closed. The dev defaults (`WST-057` + a non-secret dev secret) are baked into [packages/gate/src/vite.ts](packages/gate/src/vite.ts) so `mise run dev:*` works locally without env setup; production MUST NOT use those defaults.
+
+### Operational — Railway
+
+Three dashboard cleanups were required on `lewis-api` (staging environment) before the Dockerfile build would succeed. `lewis-worker` was already clean. None of these settings are exposable in `railway.toml` ([schema](https://backboard.railway.app/railway.schema.json) does not include `rootDirectory`, `buildCommand`, or `startCommand`); they MUST be cleared in the dashboard.
+
+| Service     | Dashboard field                              | Was                                                                     | Should be                                              |
+| ----------- | -------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| `lewis-api` | Settings → Source → **Root Directory**       | `/apps/api`                                                             | (blank — repo root)                                    |
+| `lewis-api` | Settings → Build → **Build Command**         | `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter api build` | (blank — Dockerfile drives the build)                  |
+| `lewis-api` | Settings → Deploy → **Custom Start Command** | `/apps/api/Dockerfile`                                                  | (blank — Dockerfile's `ENTRYPOINT`/`CMD` owns startup) |
+
+Symptoms each one produced:
+
+- **Root Directory `/apps/api`** restricts Docker's build context to that subdirectory; every `COPY pnpm-lock.yaml`, `COPY packages/...`, etc. fails with "not found".
+- **Build Command set with `builder: DOCKERFILE`** is ignored by Railway but signals dashboard config drift from the Railpack era.
+- **Start Command `/apps/api/Dockerfile`** makes the container try to exec the Dockerfile as a binary at runtime and fail with `The executable /apps/api/dockerfile could not be found.`
+
+### Operational — Worker DSN URL encoding
+
+Supabase pooler-generated passwords occasionally contain `/` characters that break standard URL parsing. The worker's zod env validation catches this with `path: ["DATABASE_URL"], invalid_string`. URL-encode the slash to `%2F` in `WORKER_DATABASE_URL` (same credential at the Postgres protocol level — it's just escaped for URL parsers). Same fix applies to the API's `DATABASE_URL` if its pooler password ever contains a `/`.
+
+### Removal sequence (when public launch arrives)
+
+1. Set `LEWIS_GATE_DISABLED=true` on all three Vercel projects, redeploy, verify public access.
+2. Cleanup PR deletes [packages/gate/](packages/gate/), the three `middleware.ts` files, the `@lewis/gate` workspace dep entries, the `gateVitePlugin` registration in each `vite.config.ts`, the `@lewis/gate` paths in `tsconfig.base.json`, and the Edge-runtime globals block in `eslint.config.js`. The PR description should also note the patient-portal copy concession against PRD principle #3 is now resolved (gate gone before any real patient saw it).
+
+## [0.0.6.1] - 2026-04-28
+
+Wires up the deployment infrastructure for the API + workers Railway services. Two related workstreams in one release: Railway config-as-code (operational settings now version-controlled and reviewable) and a real production database migration pipeline (drizzle-kit migrate replaces the local-only raw SQL applier, runs in GitHub Actions before each Railway deploy, with the schema-owner credential held only by the CI runner). No frontend, schema, or API surface changes.
+
+### Added
+
+- **Railway config-as-code TOMLs.** [apps/api/railway.toml](apps/api/railway.toml) and [apps/workers/railway.toml](apps/workers/railway.toml) capture every settled operational decision (builder, healthcheck path/timeout, restart policy, overlap, drain) so changing them becomes a code-reviewed PR instead of an unaudited dashboard click. Both files schema-validated against the live `https://railway.com/railway.schema.json`. Per-service activation: set Settings → Config-as-Code Path to `/apps/api/railway.toml` (or `/apps/workers/railway.toml`) for each lewis-staging / lewis-prod service. After redeploy, every captured setting shows a file icon in Railway's Deployment Details pane (Railway's signal that the file is the source of truth, overriding the dashboard).
+- **drizzle-kit migrate cloud pipeline.** Three new `pnpm --filter @lewis/db` scripts: `migrate:cloud` (applies migrations against `MIGRATION_DATABASE_URL` via `drizzle-kit migrate`, with idempotency tracked in the new `drizzle.__drizzle_migrations` table — second run is a clean no-op), `migrate:journal` (regenerates `migrations/meta/_journal.json` from on-disk SQL files), `migrate:journal:check` (CI drift gate). Replaces the broken-on-second-run `run-psql-files.ts` flow for cloud applies; local development continues to use `migrate:local` (raw SQL apply + role provisioning) against the ephemeral Docker volume.
+- **GitHub Actions migration step.** [deploy-staging.yml](.github/workflows/deploy-staging.yml) and [deploy-prod.yml](.github/workflows/deploy-prod.yml) now invoke `drizzle-kit migrate` between "Production build" and the first deploy hook. If migration fails, no deploy hooks fire and the previous deploy keeps serving. Production migrations gate on the existing `production` GitHub Environment (manual-approval required). Two new env-scoped GH Secrets needed: `STAGING_MIGRATION_DATABASE_URL` (env: `staging`) and `PROD_MIGRATION_DATABASE_URL` (env: `production`), each holding the Supabase **session-pooler** URL (port 5432 on the pooler hostname) authenticated as the `postgres` schema-owner role.
+- **Migration journal regenerator** at [packages/db/scripts/regenerate-migration-journal.ts](packages/db/scripts/regenerate-migration-journal.ts), with cwd-invariant path resolution (works from any directory via `dirname(fileURLToPath(import.meta.url))`) and a strict file-URL invokedDirectly check that survives `.ts` → `.js` compilation. Deterministic: re-running on unchanged migrations produces a byte-identical journal. 10 vitest cases lock determinism, monotonic `when` ordering, append-stability, and error cases (gaps, malformed filenames, empty dir).
+- **Migration drift CI gate** in [api-ci.yml](.github/workflows/api-ci.yml): `migrate:journal:check` byte-compares the committed journal against what the regenerator would produce. A new SQL migration without a regenerated journal fails the PR with a one-command fix message, instead of silently skipping the migration at deploy time.
+- **Cloud-migration preflight guard** at [packages/db/scripts/cloud-migration-preflight.ts](packages/db/scripts/cloud-migration-preflight.ts): `migrate:cloud` now refuses to invoke `drizzle-kit migrate` unless `MIGRATION_DATABASE_URL` is explicitly set. Defense-in-depth alongside the workflow-level `if [ -z "$MIGRATION_DATABASE_URL" ]` guard — protects callers outside the deploy workflow path. 5 vitest cases cover unset, empty string, whitespace-only, no-fallback-to-DATABASE_URL (locks the security intent), and a valid value.
+- **Migration journal artifact** at [packages/db/migrations/meta/\_journal.json](packages/db/migrations/meta/_journal.json) — 17 entries covering every existing SQL migration. Committed as the source of truth for `drizzle-kit migrate`.
+
+### Changed
+
+- **`drizzle.config.ts` resolves `MIGRATION_DATABASE_URL` instead of runtime `DATABASE_URL`.** Was using `resolveDatabaseConnectionConfig` (runtime app_api credentials), now uses `resolveMigrationDatabaseConnectionConfig` (schema-owner credentials, with permissive fallback to DATABASE_URL preserved for `drizzle-kit studio` / `introspect` in local dev). The `migrate:cloud` preflight ensures the fallback never applies to cloud migration runs.
+- **API healthcheck timeout** in [apps/api/railway.toml](apps/api/railway.toml) tightened from 60s to 5s. `/healthz` returns synchronously with no I/O ([apps/api/src/server.ts:137](apps/api/src/server.ts#L137)) — either responds in milliseconds or it's not responding at all. 5s gives Railway much faster signal when the process is hung.
+
+### Documentation
+
+- **CLAUDE.md gotchas** — two new entries: (1) regenerating the migration journal after adding a SQL file, (2) `MIGRATION_DATABASE_URL` posture (GH Actions only, never on a Railway service env per security #1).
+- **docs/env-vars.md** — `STAGING_MIGRATION_DATABASE_URL` / `PROD_MIGRATION_DATABASE_URL` added to the CI-only secrets table; source-code references for `MIGRATION_DATABASE_URL` expanded to cite the new files; 2026-04-28 entry added to the change log.
+- **docs/runbooks/local-development.md** — new "Adding A New Migration" section documenting the local vs cloud apply paths and the 5-step procedure (author → regenerate journal → reset → RLS test → commit both).
+
+### Tooling
+
+- **Workspace-aware ship discipline** — this release is the first to use the `staging` integration branch as the base for both feature-branch PRs and the deploy workflows. Both `deploy-staging.yml` and `deploy-prod.yml` continue to fire from their respective branches; no workflow trigger changes.
+
 ## [0.0.6.0] - 2026-04-26
 
 Introduces the `@lewis/ui` shared design system. Each app now imports a single stylesheet that wires Tailwind v4, the Big Sky · Mineral paper tokens, the `.pill` button system, and self-hosted brand fonts. The directory homepage gets responsive mobile layouts and a rotating search placeholder. No backend, schema, or API changes.

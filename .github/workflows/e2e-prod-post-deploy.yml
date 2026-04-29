@@ -1,0 +1,29 @@
+name: Production E2E Post-Deploy
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-post-deploy-e2e-${{ github.event.deployment.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.deployment_status.state == 'success' &&
+        github.event.deployment.creator.login == 'railway-app[bot]' &&
+        github.event.deployment.environment == 'Lewis Health / production' &&
+        github.event.deployment.payload.environmentId == '086037da-a3a6-446b-9081-4e8591a87133'
+      )
+    uses: ./.github/workflows/e2e-post-deploy.yml
+    with:
+      app_url: ${{ vars.PROD_APP_URL || 'https://app.lewis.health' }}
+      patient_url: ${{ vars.PROD_PATIENT_URL || 'https://patient.lewis.health' }}
+      directory_url: ${{ vars.PROD_DIRECTORY_URL || 'https://lewis.health' }}
+      api_origin_url: ${{ vars.PROD_API_ORIGIN_URL || 'https://api.lewis.health' }}

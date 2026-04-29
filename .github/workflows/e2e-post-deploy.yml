@@ -61,12 +61,30 @@ jobs:
           API_ORIGIN_URL: ${{ inputs.api_origin_url }}
         run: |
           API_URL="${API_ORIGIN_URL%/}"
-          echo "Checking ${API_URL}/healthz"
-          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${API_URL}/healthz"
-          echo
-          echo "Checking ${API_URL}/readyz"
-          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${API_URL}/readyz"
-          echo
+
+          wait_for_endpoint() {
+            local url="$1"
+            local attempts=40
+            local delay=10
+
+            for attempt in $(seq 1 "$attempts"); do
+              echo "Checking ${url} (attempt ${attempt}/${attempts})"
+              if curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "$url"; then
+                echo
+                return 0
+              fi
+
+              if [ "$attempt" -lt "$attempts" ]; then
+                sleep "$delay"
+              fi
+            done
+
+            echo "Timed out waiting for ${url}"
+            return 1
+          }
+
+          wait_for_endpoint "${API_URL}/healthz"
+          wait_for_endpoint "${API_URL}/readyz"
 
       - name: Verify directory smoke
         if: ${{ inputs.directory_url != '' }}

@@ -36,6 +36,31 @@ jobs:
         run: mise run test
       - name: Production build
         run: mise run build
+
+      # Database migrations run BEFORE any deploy hooks fire. The job's
+      # `environment: production` block at the top of this workflow gates
+      # this step on the manual approval configured in the GitHub
+      # Environments UI — production schema changes never apply without
+      # an explicit reviewer click.
+      #
+      # MIGRATION_DATABASE_URL must be the Supabase SESSION pooler URL
+      # (port 5432 on the pooler hostname) authenticated as the schema-
+      # owner role — NEVER the runtime app_api credential. This secret
+      # is held only by the GitHub Actions runner for the duration of
+      # this step; it is intentionally absent from every Railway service
+      # env per CLAUDE.md security #1.
+      - name: Verify migration journal in sync
+        run: pnpm --filter @lewis/db migrate:journal:check
+      - name: Run database migrations (production)
+        env:
+          MIGRATION_DATABASE_URL: ${{ secrets.PROD_MIGRATION_DATABASE_URL }}
+        run: |
+          if [ -z "$MIGRATION_DATABASE_URL" ]; then
+            echo "PROD_MIGRATION_DATABASE_URL is not configured."
+            exit 1
+          fi
+          pnpm --filter @lewis/db migrate:cloud
+
       - name: Deploy directory
         env:
           DEPLOY_HOOK_URL: ${{ secrets.PROD_DIRECTORY_DEPLOY_HOOK_URL }}
@@ -63,31 +88,12 @@ jobs:
             exit 1
           fi
           curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy API
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.PROD_API_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "PROD_API_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
-      - name: Deploy workers
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.PROD_WORKERS_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$DEPLOY_HOOK_URL" ]; then
-            echo "PROD_WORKERS_DEPLOY_HOOK_URL is not configured."
-            exit 1
-          fi
-          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
 
-  e2e:
-    needs: deploy-prod
-    if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/e2e-post-deploy.yml
-    with:
-      app_url: ${{ vars.PROD_APP_URL || 'https://app.lewis.health' }}
-      patient_url: ${{ vars.PROD_PATIENT_URL || 'https://patient.lewis.health' }}
-      directory_url: ${{ vars.PROD_DIRECTORY_URL || 'https://lewis.health' }}
-      api_origin_url: ${{ vars.PROD_API_ORIGIN_URL || 'https://api.lewis.health' }}
+      # Backend services (api, workers) are NOT triggered via deploy-hook
+      # POST. Railway auto-deploys on every push to main via its GitHub
+      # integration, and gates the deploy on this CI workflow's status
+      # (Wait-for-CI). When the production migration step above succeeds
+      # AND the manual approval on the `production` GitHub Environment is
+      # granted, Railway promotes the held deploy. The deploy-hook URL
+      # pattern below was a Vercel-ism that doesn't map to a real Railway
+      # feature. Vercel hooks above are real; Railway needs nothing.

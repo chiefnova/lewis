@@ -42,10 +42,13 @@ jobs:
       - name: Build frontend portals
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_CLERK_PUBLISHABLE_KEY_PROD || secrets.VITE_CLERK_PUBLISHABLE_KEY_STAGING }}
-          VITE_STRIPE_PUBLISHABLE_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_STRIPE_PUBLISHABLE_KEY_PROD || secrets.VITE_STRIPE_PUBLISHABLE_KEY_STAGING }}
           VITE_API_BASE_URL: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_API_BASE_URL_PROD || secrets.VITE_API_BASE_URL_STAGING }}
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          VITE_POSTHOG_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_POSTHOG_KEY_PROD || secrets.VITE_POSTHOG_KEY_STAGING }}
+          # DEFERRED — Stripe (PRD § 14). Uncomment + set GH secret once Stripe is wired.
+          # VITE_STRIPE_PUBLISHABLE_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_STRIPE_PUBLISHABLE_KEY_PROD || secrets.VITE_STRIPE_PUBLISHABLE_KEY_STAGING }}
+          # DEFERRED — Sentry (PRD § 18). Uncomment + set VITE_SENTRY_DSN GH secret once Sentry projects exist.
+          # VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          # DEFERRED — PostHog (PRD § 18.4). Uncomment + set GH secret once PostHog projects exist.
+          # VITE_POSTHOG_KEY: ${{ github.event.inputs.deploy_target == 'production' && secrets.VITE_POSTHOG_KEY_PROD || secrets.VITE_POSTHOG_KEY_STAGING }}
         run: pnpm --filter app --filter patient --filter directory build
 
       - name: Remove source maps from app + patient artifacts

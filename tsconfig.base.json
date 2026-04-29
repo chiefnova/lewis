@@ -26,7 +26,9 @@
       "@lewis/pdf": ["packages/pdf/src/index.ts"],
       "@lewis/pdf/*": ["packages/pdf/src/*"],
       "@lewis/ui": ["packages/ui/src/index.ts"],
-      "@lewis/ui/*": ["packages/ui/src/*"]
+      "@lewis/ui/*": ["packages/ui/src/*"],
+      "@lewis/gate": ["packages/gate/src/index.ts"],
+      "@lewis/gate/*": ["packages/gate/src/*"]
     }
   }
 }
