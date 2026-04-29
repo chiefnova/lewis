@@ -131,6 +131,17 @@ describe("SearchPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Go ALS" }));
     expect(screen.queryByText("WST-057")).toBeNull();
 
+    // Enforce the AbortController contract: the navigation away from the
+    // first query must have aborted the first signal, and the second query
+    // must have received its own distinct signal.
+    const firstSignal = apiMock.searchPublic.mock.calls[0]?.[1]?.signal as AbortSignal;
+    const secondSignal = apiMock.searchPublic.mock.calls[1]?.[1]?.signal as AbortSignal;
+    expect(firstSignal).toBeInstanceOf(AbortSignal);
+    expect(secondSignal).toBeInstanceOf(AbortSignal);
+    expect(firstSignal.aborted).toBe(true);
+    expect(secondSignal.aborted).toBe(false);
+    expect(firstSignal).not.toBe(secondSignal);
+
     neuropathy.resolve({
       query: "neuropathy",
       sections: {
@@ -150,8 +161,10 @@ describe("SearchPage", () => {
       },
       totals: { conditions: 0, treatments: 1, etcs: 0 },
     });
-    await Promise.resolve();
-    expect(screen.queryByText("WST-057")).toBeNull();
+    // Stale-response sentinel must STAY null even after React has had every
+    // chance to flush effects. waitFor polls until the assertion holds for
+    // a stable window — robust against React 18's async effect timing.
+    await waitFor(() => expect(screen.queryByText("WST-057")).toBeNull());
 
     als.resolve({
       query: "ALS",

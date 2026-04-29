@@ -27,6 +27,13 @@ import { useSeo, siteUrl } from "../seo/useSeo";
  */
 
 type SearchSections = PublicSearchResponse["sections"];
+type ConditionState = PublicSearchResponse["sections"]["conditions"][number]["state"];
+
+const CONDITION_STATE_MESSAGE_ID: Record<ConditionState, string> = {
+  live: "directory.search.results.row.live",
+  coming_soon: "directory.search.results.row.coming-soon",
+  not_offered: "directory.search.results.row.not-offered",
+};
 
 export function SearchPage() {
   const [params] = useSearchParams();
@@ -122,6 +129,10 @@ export function SearchPage() {
 }
 
 function SearchResults({ q, sections }: { q: string; sections: SearchSections }) {
+  const intl = useIntl();
+  const conditionMeta = (state: ConditionState): string =>
+    intl.formatMessage({ id: CONDITION_STATE_MESSAGE_ID[state] });
+
   const totalCount = sections.conditions.length + sections.treatments.length + sections.etcs.length;
 
   if (totalCount === 0) {
@@ -146,9 +157,7 @@ function SearchResults({ q, sections }: { q: string; sections: SearchSections })
             key={hit.slug}
             label={hit.name}
             href={hit.href}
-            meta={
-              hit.state === "live" ? "Available now" : `Status: ${hit.state.replace(/_/g, " ")}`
-            }
+            meta={conditionMeta(hit.state)}
           />
         ))}
         {sections.conditions.length === 0 && <EmptySection />}
@@ -269,7 +278,7 @@ function RecentList({ headingId = "directory.search.empty.heading" }: { headingI
                 color: "var(--ink)",
               }}
             >
-              {entry.label}
+              <FormattedMessage id={entry.labelId} />
             </Link>
           </li>
         ))}
