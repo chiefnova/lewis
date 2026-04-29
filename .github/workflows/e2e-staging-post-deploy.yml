@@ -1,0 +1,29 @@
+name: Staging E2E Post-Deploy
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-post-deploy-e2e-${{ github.event.deployment.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.deployment_status.state == 'success' &&
+        github.event.deployment.creator.login == 'railway-app[bot]' &&
+        github.event.deployment.environment == 'Lewis Health / staging' &&
+        github.event.deployment.payload.environmentId == '75c1e25b-be55-4f48-b49a-2fc403da09cb'
+      )
+    uses: ./.github/workflows/e2e-post-deploy.yml
+    with:
+      app_url: ${{ vars.STAGING_APP_URL || 'https://app.staging.lewis.health' }}
+      patient_url: ${{ vars.STAGING_PATIENT_URL || 'https://patient.staging.lewis.health' }}
+      directory_url: ${{ vars.STAGING_DIRECTORY_URL || 'https://staging.lewis.health' }}
+      api_origin_url: ${{ vars.STAGING_API_ORIGIN_URL || 'https://api.staging.lewis.health' }}

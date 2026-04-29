@@ -97,13 +97,3 @@ jobs:
       # granted, Railway promotes the held deploy. The deploy-hook URL
       # pattern below was a Vercel-ism that doesn't map to a real Railway
       # feature. Vercel hooks above are real; Railway needs nothing.
-
-  e2e:
-    needs: deploy-prod
-    if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/e2e-post-deploy.yml
-    with:
-      app_url: ${{ vars.PROD_APP_URL || 'https://app.lewis.health' }}
-      patient_url: ${{ vars.PROD_PATIENT_URL || 'https://patient.lewis.health' }}
-      directory_url: ${{ vars.PROD_DIRECTORY_URL || 'https://lewis.health' }}
-      api_origin_url: ${{ vars.PROD_API_ORIGIN_URL || 'https://api.lewis.health' }}

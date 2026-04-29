@@ -93,12 +93,3 @@ jobs:
       # promotes the held deploy. Any deploy-hook URL we'd POST to here
       # doesn't exist as a current Railway feature — that pattern is a
       # Vercel-ism. Vercel hooks above are real; Railway needs nothing.
-
-  e2e:
-    needs: deploy-staging
-    uses: ./.github/workflows/e2e-post-deploy.yml
-    with:
-      app_url: ${{ vars.STAGING_APP_URL || 'https://app.staging.lewis.health' }}
-      patient_url: ${{ vars.STAGING_PATIENT_URL || 'https://patient.staging.lewis.health' }}
-      directory_url: ${{ vars.STAGING_DIRECTORY_URL || 'https://staging.lewis.health' }}
-      api_origin_url: ${{ vars.STAGING_API_ORIGIN_URL || 'https://api.staging.lewis.health' }}
