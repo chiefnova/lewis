@@ -41,11 +41,12 @@ Toolchain and tasks are managed by [mise](https://mise.jdx.dev). After clone, `m
 mise install              # provision pinned toolchain
 mise run install          # pnpm install workspace deps
 
-mise run dev              # Docker infra + API + workers + both frontends
+mise run dev              # Docker infra + API + workers + all three frontends
 mise run dev:infra        # Docker Postgres + Redis
-mise run dev:all          # API + workers + both frontends, without starting Docker
+mise run dev:all          # API + workers + all three frontends, without starting Docker
 mise run dev:app          # staff/business console: sponsor + ETC + admin
 mise run dev:patient      # patient portal
+mise run dev:directory    # public directory (lewis.health)
 mise run dev:api          # Hono API
 mise run dev:workers      # BullMQ workers
 
