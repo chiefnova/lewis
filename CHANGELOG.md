@@ -51,6 +51,19 @@ First user-facing slice of the public directory at `lewis.health`: anonymous, co
 - **`StaticPages.SearchPage`** ([apps/directory/src/pages/StaticPages.tsx](apps/directory/src/pages/StaticPages.tsx)) — placeholder removed; `/search` route now points at the real `SearchPage`.
 - **Hero rotating-placeholder machinery** — `RotatingPlaceholder` component, `usePrefersReducedMotion` hook, `SEARCH_PROMPT_IDS` array, and the 5 `directory.home.search.placeholder.*` i18n keys were all removed in favor of one static placeholder. Saves ~80 lines of motion/animation code that wasn't earning its keep.
 
+### Review-driven refinements
+
+These follow the v0.0.7.0 review pass and ship in the same release wave:
+
+- **Search overlay combobox/listbox a11y** — input now declares `role="combobox"` with `aria-controls`, `aria-expanded`, `aria-autocomplete`, and `aria-activedescendant`. Results container is `role="listbox"` with a stable id; each suggestion row is `role="option"` with a stable per-suggestion id and `aria-selected`. Replaces the ad-hoc `aria-current` pattern. Focus stays on the input as the user arrows through options; screen readers announce each active option by descendant id rather than via focus moves.
+- **Lazy-loaded routes** — every non-Home route in [apps/directory/src/main.tsx](apps/directory/src/main.tsx) now ships in its own chunk via `React.lazy` + `<Suspense fallback={null}>`. HomePage stays eager. Keeps the initial JS payload under the 120KB above-the-fold budget per [§ 28.2](docs/directoryprd.md).
+- **Stale-tsvector cascade verified live** — RLS test 0018 grew from 16 to 22 assertions; new "stale-tenant defense" block pairs the anonymous role with non-null tenant context and re-runs every count + search-relevance assertion to prove anonymous reads can't widen visibility through stale `app.user_id`/`app.active_tenant_id` session vars.
+- **Coming-soon vs not-offered differentiation** — `/conditions/:slug` for a `coming_soon` condition no longer renders the ClinicalTrials.gov fallback link. Lewis is actively pursuing those listings; redirecting visitors to a competitor sponsor's trial registry while we wait for the PPA was the wrong default. `not_offered` keeps the ClinicalTrials.gov pointer.
+- **`sanitizeAccessLogMessage` extracted** to its own pure-function module ([apps/api/src/access-log-message.ts](apps/api/src/access-log-message.ts)) so unit tests can import it without triggering server bootstrap side effects.
+- **Full intl coverage on Slice 1 surfaces** — every user-facing string in `SearchPage`, `SearchOverlay`, `ConditionDetailPage`, and the curated "Recent on Lewis" list now flows through react-intl message ids. No more inline `"Available now"` / `Status: ${state}` concatenation.
+- **AbortController contract pinned in tests** — `SearchPage.test.tsx` now asserts that the first signal is `aborted === true` after a query change, the second signal is a distinct fresh `AbortSignal`, and the stale-result non-render is wrapped in `waitFor` so the assertion is robust against React's async effect timing.
+- **Lint + housekeeping** — Footer wordmark mirrors the TopNav (lowercase `lewis.`), `Georgia` → `georgia` in `tokens.css`, blank line separating custom-property declarations from regular declarations in `.hero-section` (`stylelint custom-property-empty-line-before`).
+
 ## [0.0.6.2] - 2026-04-28
 
 Temporary password gate in front of `lewis.health`, `app.lewis.health`, and `patient.lewis.health` while the apps are still being built. The gate is intentionally minimal and removed via a follow-up cleanup PR before public launch — kill switch via `LEWIS_GATE_DISABLED=true` for instant rollback.
