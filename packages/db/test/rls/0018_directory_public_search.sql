@@ -10,7 +10,7 @@
 
 begin;
 
-select plan(16);
+select plan(22);
 
 -- ---------------------------------------------------------------------------
 -- Setup. The migration's seed data already populates the catalog. We add one
@@ -153,6 +153,64 @@ select isnt(
        and search_vector @@ websearch_to_tsquery('english', 'neuropathy')),
   0,
   'on-topic: neuropathy query reaches Big Sky ETC via linked PPA catalog terms'
+);
+
+-- ---------------------------------------------------------------------------
+-- Stale tenant context defense.
+--
+-- A pooled connection might have leftover app.user_id / app.active_tenant_id
+-- session variables from a prior tenant-scoped request. Pair the anonymous
+-- role with non-null tenant context and verify nothing leaks: the public-read
+-- policies must AND on app.role = 'directory_anonymous' AND the published
+-- flag, so stale tenant vars never widen anonymous visibility into
+-- tenant-private rows.
+--
+-- Use the seeded WinSanTor tenant (a sponsor with active rows) as the
+-- "stale" identity. Counts must match the prior anonymous-read block exactly
+-- (same 9/1/1/11/4 numbers) — the role string is the only authoritative
+-- gate.
+-- ---------------------------------------------------------------------------
+
+select set_config('app.role', 'directory_anonymous', true);
+select set_config('app.active_tenant_id', 'a0000000-0000-0000-0000-000000000001', true);
+select set_config('app.user_id', '10000000-0000-0000-0000-000000000099', true);
+
+select is(
+  (select count(*)::int from conditions where published = true),
+  9,
+  'stale-tenant: anonymous role still sees exactly 9 published conditions'
+);
+
+select is(
+  (select count(*)::int from programs),
+  1,
+  'stale-tenant: anonymous role still sees exactly 1 published program (no tenant rows leak)'
+);
+
+select is(
+  (select count(*)::int from etcs),
+  1,
+  'stale-tenant: anonymous role still sees exactly 1 published ETC (no tenant rows leak)'
+);
+
+select is(
+  (select count(*)::int from search_index_documents
+    where visibility_classification = 'public'),
+  11,
+  'stale-tenant: anonymous role still sees exactly 11 public search index rows'
+);
+
+select is_empty(
+  $$ select 1 from search_index_documents
+       where source_table = 'programs'
+         and visibility_classification = 'public'
+         and search_vector @@ websearch_to_tsquery('english', 'ALS') $$,
+  'stale-tenant: ALS query still has zero treatment matches under stale tenant context'
+);
+
+select is_empty(
+  $$ select 1 from conditions where slug = 'rls-test-draft-condition' $$,
+  'stale-tenant: unpublished draft condition stays invisible under stale tenant context'
 );
 
 select * from finish();
