@@ -84,6 +84,11 @@ COPY packages/ui/package.json packages/ui/
 COPY apps/app/package.json apps/app/
 COPY apps/patient/package.json apps/patient/
 COPY apps/directory/package.json apps/directory/
+# packages/gate is the temporary password gate consumed only by the three
+# frontend apps. The api never imports it, but pnpm-lock.yaml lists it as a
+# workspace package, so its manifest must exist for `pnpm install
+# --frozen-lockfile` topology validation. The source is excluded.
+COPY packages/gate/package.json packages/gate/
 
 # Install only the backend dep graph (api + transitive workspace deps,
 # devDeps included for the typecheck gate below). Use a BuildKit cache

@@ -78,6 +78,9 @@ COPY packages/ui/package.json packages/ui/
 COPY apps/app/package.json apps/app/
 COPY apps/patient/package.json apps/patient/
 COPY apps/directory/package.json apps/directory/
+# packages/gate manifest is needed for pnpm-lock.yaml topology validation
+# (workers never import it). Source is excluded.
+COPY packages/gate/package.json packages/gate/
 
 # workers depends on @lewis/db, @lewis/notifications, @lewis/pdf,
 # @lewis/shared (see apps/workers/package.json). It does NOT depend on
