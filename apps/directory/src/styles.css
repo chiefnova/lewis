@@ -324,6 +324,7 @@ section {
 .hero-section {
   --directory-announcement-height: 50px;
   --directory-nav-height: 80px;
+
   height: calc(100svh - var(--directory-announcement-height) - var(--directory-nav-height));
   padding: 0;
 }

@@ -39,7 +39,7 @@
    * consoles, per the PHI/subprocessor rule) silently fall through to the
    * self-hosted "Fraunces Variable" build via @fontsource-variable. */
   --font-sans: "Inter Tight Variable", "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif;
-  --font-serif: "Fraunces", "Fraunces Variable", "Tiempos Headline", Georgia, serif;
+  --font-serif: "Fraunces", "Fraunces Variable", "Tiempos Headline", georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
   /* ---- Border radius scale ---------------------------------- */

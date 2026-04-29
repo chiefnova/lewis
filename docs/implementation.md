@@ -6,9 +6,9 @@
 | **Author** | Founding principal engineer |
 | **Status** | Draft for engineering review |
 | **Last updated** | 2026-04-24 |
-| **Companion to** | [b2bprd.md](b2bprd.md) v1.0 |
+| **Companion to** | [b2bprd.md](b2bprd.md) v1.0 + [directoryprd.md](directoryprd.md) v1.1 |
 
-This document operationalizes [b2bprd.md](b2bprd.md). It does not duplicate the PRD — it **commits to the order, dependencies, and acceptance criteria** that take Lewis from empty repo to first-patient-dosed at WinSanTor's launch ETC, then through the first 90 days post-launch.
+This document operationalizes [b2bprd.md](b2bprd.md) (the regulated operating platform spec) and [directoryprd.md](directoryprd.md) (the public anonymous directory at `lewis.health`). It does not duplicate either PRD — it **commits to the order, dependencies, and acceptance criteria** that take Lewis from empty repo to first-patient-dosed at WinSanTor's launch ETC, then through the first 90 days post-launch. Visibility rules and search/indexing behavior trace to `directoryprd.md` (especially § 13 search, § 14 conditions, § 26 SEO); regulatory + portal sequencing trace to `b2bprd.md`.
 
 The B2B PRD's existing sprint plan (§ 22.2) is the skeleton. This plan is the meat: every PRD section is covered, every feature traces to a rule (per Principle 2), every cross-cutting concern is sequenced into the right phase rather than dumped on Sprint 6, and every phase has hard acceptance criteria that gate the next.
 

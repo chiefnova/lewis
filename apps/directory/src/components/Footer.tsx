@@ -52,7 +52,7 @@ export function Footer() {
                   lineHeight: 1,
                 }}
               >
-                Lewis.
+                lewis.
               </span>
               <span
                 className="serif italic"
