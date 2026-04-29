@@ -43,6 +43,16 @@ const MIN_RANK = 0.05;
 const SECTION_LIMIT = 10;
 const TOTAL_LIMIT = 60; // SECTION_LIMIT × 3 (conditions, treatments, etcs) ×2 headroom
 
+// At MVP-0 the entire public catalog is ~11 rows (9 conditions + 1 program +
+// 1 ETC), so a global LIMIT 60 after ranking can never starve a section. As
+// the catalog grows past ~30 rows per section the global cap could let one
+// table dominate the top-N before we bucket. When that happens, switch to a
+// window-function shape:
+//   row_number() OVER (PARTITION BY source_table ORDER BY rank DESC) AS rn
+// + a per-section filter (rn <= SECTION_LIMIT) to enforce the per-section
+// cap inside SQL rather than in JS post-processing. Tracked as a Phase 2/3
+// follow-up — not worth the SQL complexity at current scale.
+
 type SearchIndexRow = {
   source_table: string;
   source_id: string;

@@ -9,6 +9,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { apiReference } from "@scalar/hono-api-reference";
 
+import { sanitizeAccessLogMessage } from "./access-log-message.js";
 import { boardRoutes } from "./domains/boards/routes.js";
 import { etcRoutes } from "./domains/etcs/routes.js";
 import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
@@ -37,15 +38,8 @@ type ApiVariables = {
 };
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,128}$/;
-const HTTP_METHOD_WITH_URL_PATTERN =
-  /\b(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+([^\s?]+)\?[^\s]*/g;
 
 export const app = new Hono<{ Variables: ApiVariables }>();
-
-export function sanitizeAccessLogMessage(message: string): string {
-  const withoutQueryStrings = message.replace(HTTP_METHOD_WITH_URL_PATTERN, "$1 $2");
-  return redactPhi(withoutQueryStrings);
-}
 
 // ---------------------------------------------------------------------------
 // Foundation middleware (runs for every route, including /healthz and /readyz)

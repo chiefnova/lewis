@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { sanitizeAccessLogMessage } from "./server.js";
+import { sanitizeAccessLogMessage } from "./access-log-message.js";
 
 describe("sanitizeAccessLogMessage", () => {
   it("strips query strings from access logs", () => {
