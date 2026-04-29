@@ -1,8 +1,10 @@
-# Lewis Deploy State Tracking — LOCAL ONLY
+# Lewis Deploy State Tracking
 
-**This file is not committed. Do not `git add` it.** It's a personal audit trail of every deployment-related identifier, secret, variable, and external-service config we set up. Updated by hand each time something changes.
+This is the audit trail of every deployment-related identifier, dashboard setting, secret name, env-var location, and external-service config that has been provisioned for Lewis. Update by hand each time something is set, changed, or moved. Names and locations are committed; **never paste actual secret values here** — those live in fnox / GitHub / Vercel / Railway only.
 
-Last updated: 2026-04-27 (directory Vercel env vars set on both staging + prod projects)
+Originally drafted as a personal LOCAL-only file; promoted to a tracked repo doc in v0.0.6.2 because the gate rollout produced enough multi-platform operational state (Railway dashboard cleanups, Vercel gate env vars, worker DSN encoding) that an off-repo file was no longer the right home.
+
+Last updated: 2026-04-29 (v0.0.6.2 — gate env vars, Railway dashboard cleanups, worker DSN URL-encoding fix)
 
 ## 🟡 DEFERRED — Stripe, Plaid, Resend, Sentry, PostHog
 
@@ -255,9 +257,85 @@ TLS is auto-issued by Vercel (Let's Encrypt). Railway also auto-issues. Usually 
 
 ---
 
+---
+
+## ✅ SET — Pre-launch password gate (v0.0.6.2)
+
+Vercel Edge Middleware that gates `lewis.health`, `app.lewis.health`, and `patient.lewis.health` while the apps are being built. Lives in [packages/gate/](../packages/gate/). Removed via cleanup PR before public launch.
+
+### Vercel env vars (per project, Production + Preview scope)
+
+Set on each of the six Vercel projects (`lewis-directory-{staging,production}`, `lewis-app-{staging,production}`, `lewis-patient-{staging,production}`):
+
+| Variable | Value | Notes |
+|---|---|---|
+| `LEWIS_GATE_PASSWORD` | `WST-057` (current staging) | The access password. Rotate by changing this and redeploying. |
+| `LEWIS_GATE_SECRET` | 32-byte random hex (`openssl rand -hex 32`) | **Distinct per project** so a stolen cookie from one app cannot unlock the others. |
+| `LEWIS_GATE_DISABLED` | unset (will be `true` later) | Kill switch — set to `true` to bypass the gate without removing code. First step of the removal sequence. |
+
+NOT in `fnox.toml` per CLAUDE.md security rule #1 ("Production and staging secrets live in Vercel/Railway env vars only — never in fnox").
+
+Local dev defaults are baked into [packages/gate/src/vite.ts](../packages/gate/src/vite.ts:74) (`DEV_DEFAULT_PASSWORD = "WST-057"`, `DEV_DEFAULT_SECRET = "dev-only-non-secret-do-not-use-in-prod"`) so `mise run dev:*` works with no env setup. Production must NOT use those defaults.
+
+### Verifying via MCP
+
+```bash
+mcp__Railway__list-variables   # check Railway service env (gate vars NOT expected here — frontend-only)
+mcp__vercel__list_projects     # find the 6 Vercel project IDs
+# Vercel env vars: dashboard or `vercel env ls` from a linked project dir
+```
+
+---
+
+## ✅ SET — Railway dashboard cleanups (v0.0.6.2)
+
+These settings are dashboard-only — not exposable in `railway.toml` ([schema](https://backboard.railway.app/railway.schema.json) does not include `rootDirectory`, `buildCommand`, or `startCommand`). They MUST be cleared in the dashboard. Pre-existing dashboard values were leftovers from the Railpack era that broke Dockerfile builds in v0.0.6.2.
+
+| Service (env) | Field (dashboard path) | Was | Set to | Symptom if wrong |
+|---|---|---|---|---|
+| `lewis-api` (staging) | Settings → Source → **Root Directory** | `/apps/api` | (blank) | Every `COPY pnpm-lock.yaml` etc. fails: "not found" |
+| `lewis-api` (staging) | Settings → Build → **Build Command** | `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter api build` | (blank) | Ignored for Dockerfile builds, but signals dashboard drift |
+| `lewis-api` (staging) | Settings → Deploy → **Custom Start Command** | `/apps/api/Dockerfile` | (blank) | `The executable /apps/api/dockerfile could not be found.` at container start |
+| `lewis-worker` (staging) | (already clean) | — | — | — |
+| `lewis-api` (production) | (no service yet) | — | — | When the production env is wired up later, repeat the same cleanup checklist before the first Dockerfile deploy |
+| `lewis-worker` (production) | (no service yet) | — | — | Same |
+
+The Railway service IDs (per staging environment) are useful for log queries:
+- `lewis-api`: `bd865e67-8fa3-4904-a22c-5e5df40700a2`
+- `lewis-worker`: `589784a9-3049-47e1-8822-5bb0677f7344`
+- `Redis`: `1f694f37-b978-4d16-897d-93420855c56a`
+
+Project ID: `983fe394-60b4-4b9c-966a-5fb25850e0d6` ([dashboard](https://railway.com/project/983fe394-60b4-4b9c-966a-5fb25850e0d6)).
+
+### Railway BuildKit cache mount policy
+
+Removed from both [apps/api/Dockerfile](../apps/api/Dockerfile) and [apps/workers/Dockerfile](../apps/workers/Dockerfile) in v0.0.6.2. Railway's BuildKit requires cache mount IDs to be hardcoded as `s/<service-id>-<target>` per service ([Railway docs](https://docs.railway.com/guides/dockerfiles)) and explicitly disallows env vars / ARGs in cache IDs. Hardcoding service IDs would break future production deploys, so the cache mounts are removed entirely. Cold-build cost ~30–60s per service; portability across staging and production was the priority.
+
+If you ever decide to re-add cache mounts (faster CI/Railway rebuilds), use the actual service IDs above and remember to update them when the production env spins up its own services.
+
+---
+
+## ✅ SET — Worker DSN URL encoding (v0.0.6.2)
+
+Supabase pooler-generated passwords occasionally contain `/` characters that break standard URL parsing. The worker's zod env validation catches this with `path: ["DATABASE_URL"], invalid_string`.
+
+Fix: URL-encode the slash to `%2F` in `WORKER_DATABASE_URL`. Same credential at the Postgres protocol level — it's just escaped for URL parsers. The api's `DATABASE_URL` doesn't need the same fix today (its password happens to not contain `/`) but apply the same workaround if Supabase regenerates with a `/`-containing password.
+
+```
+# BEFORE (zod rejects):
+WORKER_DATABASE_URL=postgres://app_worker.<id>:<pw>/<more>=@aws-1-us-west-2.pooler.supabase.com:6543/postgres
+
+# AFTER (works):
+WORKER_DATABASE_URL=postgres://app_worker.<id>:<pw>%2F<more>=@aws-1-us-west-2.pooler.supabase.com:6543/postgres
+```
+
+The trailing `=` characters in passwords are URL-safe in the userinfo portion; only `/` needs encoding for current parsers.
+
+---
+
 ## How to update this file
 
-When you set a new variable / secret / domain / service config, find its section above, mark it ✅ (move from PENDING → SET), record the value or value-pattern, and the date. Don't commit this file.
+When you set a new variable / secret / domain / service config, find its section above, mark it ✅ (move from PENDING → SET), record the value-pattern (NOT the actual value) and the date.
 
 If you need to inspect what's actually set, the verifying commands:
 

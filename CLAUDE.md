@@ -27,7 +27,7 @@ flowchart LR
 
 `apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Lewis internal admin workflows. `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
 
-Monorepo layout: `apps/app`, `apps/patient`, `apps/api`, `apps/workers`, `packages/shared` (zod schemas, types), `packages/db` (migrations, RLS policies).
+Monorepo layout: `apps/app`, `apps/patient`, `apps/directory` (anonymous public directory), `apps/api`, `apps/workers`, `packages/shared` (zod schemas, types), `packages/db` (migrations, RLS policies), `packages/ui` (design tokens + shared components), `packages/notifications`, `packages/pdf`, `packages/rbac`, plus `packages/gate` (TEMPORARY — Vercel Edge Middleware password gate in front of all three frontends; deleted before public launch per the cleanup sequence in [packages/gate/README.md](packages/gate/README.md)).
 
 ## Stack (reference)
 

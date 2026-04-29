@@ -21,9 +21,49 @@ Temporary password gate in front of `lewis.health`, `app.lewis.health`, and `pat
 
 - **Workspace dependencies** — [apps/directory/package.json](apps/directory/package.json), [apps/app/package.json](apps/app/package.json), and [apps/patient/package.json](apps/patient/package.json) all add `@lewis/gate: workspace:*`. The respective `vite.config.ts` files register `gateVitePlugin()` and the `tsconfig.json` `include` arrays now cover `middleware.ts`. [tsconfig.base.json](tsconfig.base.json) adds the `@lewis/gate` path entries.
 
-### Operational
+### Fixed
 
-- **Required Vercel env vars per project** (Production + Preview scope, **not** Development): `LEWIS_GATE_PASSWORD`, `LEWIS_GATE_SECRET` (32-byte random, distinct per project — generate via `openssl rand -hex 32`), and optionally `LEWIS_GATE_DISABLED=true` as the kill switch. Local dev defaults to `WST-057` plus a non-secret dev SECRET; production must NOT use those defaults. Removal sequence: flip `LEWIS_GATE_DISABLED=true` first to verify public access works, then a follow-up cleanup PR deletes `packages/gate/`, the three `middleware.ts` files, the workspace dep entries, the `gateVitePlugin` import in each `vite.config.ts`, the `@lewis/gate` paths in `tsconfig.base.json`, and the Edge-runtime globals block in `eslint.config.js`.
+- **Vercel Edge bundler couldn't resolve `@lewis/gate` workspace specifier.** The Edge Function bundler externalizes node_modules and treats pnpm-symlinked workspace packages the same way, so the deploy errored with `The Edge Function "middleware" is referencing unsupported modules: @lewis/gate`. Switched each app's `middleware.ts` to a relative import (`../../packages/gate/src/index.js`) so esbuild walks into the actual source instead. Same trick the `vite.config.ts` already uses for `gateVitePlugin`.
+- **Railway Dockerfiles failed `pnpm install --frozen-lockfile` topology validation** because `pnpm-lock.yaml` listed `packages/gate` as a workspace package but the API and workers Dockerfiles enumerate every workspace manifest explicitly (the `pnpm-workspace.yaml` glob is `apps/* + packages/*`). Added a single `COPY packages/gate/package.json packages/gate/` line to both Dockerfiles. The api and workers never import `@lewis/gate` at runtime, so only the manifest is needed (source is excluded).
+- **Railway BuildKit policy rejected the Dockerfile cache mounts** with `Cache mount ID is not prefixed with cache key` (logged at error level, fatal). Railway requires cache mount IDs to be hardcoded as `s/<service-id>-<target>` per service ([Railway docs](https://docs.railway.com/guides/dockerfiles)) and explicitly disallows env vars / ARGs in cache IDs. Hardcoding service IDs would break future production deploys, so the cache mounts in [apps/api/Dockerfile](apps/api/Dockerfile) and [apps/workers/Dockerfile](apps/workers/Dockerfile) are removed entirely. Cold-build cost ~30–60s per service; portability across staging and production was prioritised.
+- **Gate matcher hardened** in [packages/gate/src/index.ts](packages/gate/src/index.ts) to exclude static assets, `/robots.txt`, `/sitemap.xml`, `/favicon.ico`, `/apple-touch-icon*`, `_next/`, and `_vercel/` paths. Without this, Googlebot would have received the gate HTML in place of crawl directives (poisoning SEO once the gate lifts), every static asset would have billed an extra Edge invocation, and visitors would have seen a broken favicon. Trade-off: the SPA's JS/CSS bundle is fetchable by URL even with the gate up — acceptable for a temporary gate over WIP code (the index.html that boots the SPA IS gated, and API auth at api.lewis.health is independent).
+- **Gate XSS hardening** in [packages/gate/src/html.ts](packages/gate/src/html.ts): switched the inline JS error renderer from `errorEl.innerHTML = msg` to `errorEl.textContent = msg`. Functionally equivalent today (only literal strings are passed) but defends against any future change that pipes server input through the same path.
+- **Wrong-password feedback dropped from 2000ms → 800ms.** The original throttle was real brute-force protection but felt broken in the UI. The client-side fetch now shows an immediate "Checking…" state during the server check, so the perceived latency masks the throttle. Strong password + 800ms × 1000 concurrent Edge isolates is still impractical to brute-force a 7-character random password.
+
+### Operational — Vercel
+
+Set per Vercel project (Production + Preview scope, **not** Development) on `lewis-directory-{staging,production}`, `lewis-app-{staging,production}`, and `lewis-patient-{staging,production}`:
+
+- `LEWIS_GATE_PASSWORD` — the access password (e.g. `WST-057` for current staging)
+- `LEWIS_GATE_SECRET` — 32-byte random hex, **distinct per project** (`openssl rand -hex 32`)
+- `LEWIS_GATE_DISABLED` — leave unset; flip to `true` later as the kill switch
+
+Without these, the gate returns 503 fail-closed. The dev defaults (`WST-057` + a non-secret dev secret) are baked into [packages/gate/src/vite.ts](packages/gate/src/vite.ts) so `mise run dev:*` works locally without env setup; production MUST NOT use those defaults.
+
+### Operational — Railway
+
+Three dashboard cleanups were required on `lewis-api` (staging environment) before the Dockerfile build would succeed. `lewis-worker` was already clean. None of these settings are exposable in `railway.toml` ([schema](https://backboard.railway.app/railway.schema.json) does not include `rootDirectory`, `buildCommand`, or `startCommand`); they MUST be cleared in the dashboard.
+
+| Service     | Dashboard field                              | Was                                                                     | Should be                                              |
+| ----------- | -------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| `lewis-api` | Settings → Source → **Root Directory**       | `/apps/api`                                                             | (blank — repo root)                                    |
+| `lewis-api` | Settings → Build → **Build Command**         | `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter api build` | (blank — Dockerfile drives the build)                  |
+| `lewis-api` | Settings → Deploy → **Custom Start Command** | `/apps/api/Dockerfile`                                                  | (blank — Dockerfile's `ENTRYPOINT`/`CMD` owns startup) |
+
+Symptoms each one produced:
+
+- **Root Directory `/apps/api`** restricts Docker's build context to that subdirectory; every `COPY pnpm-lock.yaml`, `COPY packages/...`, etc. fails with "not found".
+- **Build Command set with `builder: DOCKERFILE`** is ignored by Railway but signals dashboard config drift from the Railpack era.
+- **Start Command `/apps/api/Dockerfile`** makes the container try to exec the Dockerfile as a binary at runtime and fail with `The executable /apps/api/dockerfile could not be found.`
+
+### Operational — Worker DSN URL encoding
+
+Supabase pooler-generated passwords occasionally contain `/` characters that break standard URL parsing. The worker's zod env validation catches this with `path: ["DATABASE_URL"], invalid_string`. URL-encode the slash to `%2F` in `WORKER_DATABASE_URL` (same credential at the Postgres protocol level — it's just escaped for URL parsers). Same fix applies to the API's `DATABASE_URL` if its pooler password ever contains a `/`.
+
+### Removal sequence (when public launch arrives)
+
+1. Set `LEWIS_GATE_DISABLED=true` on all three Vercel projects, redeploy, verify public access.
+2. Cleanup PR deletes [packages/gate/](packages/gate/), the three `middleware.ts` files, the `@lewis/gate` workspace dep entries, the `gateVitePlugin` registration in each `vite.config.ts`, the `@lewis/gate` paths in `tsconfig.base.json`, and the Edge-runtime globals block in `eslint.config.js`. The PR description should also note the patient-portal copy concession against PRD principle #3 is now resolved (gate gone before any real patient saw it).
 
 ## [0.0.6.1] - 2026-04-28
 
