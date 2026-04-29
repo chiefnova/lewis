@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useIntl } from "react-intl";
 import {
   Capsule,
@@ -16,78 +16,9 @@ import { ArrowRight, Magnifier, PlusIcon } from "../components/icons";
 import { FEATURED_HOMEPAGE } from "../data/catalog";
 import { useSeo, siteUrl } from "../seo/useSeo";
 
-const SEARCH_PROMPT_IDS = [
-  "directory.home.search.placeholder.find",
-  "directory.home.search.placeholder.condition",
-  "directory.home.search.placeholder.treatment",
-  "directory.home.search.placeholder.etc",
-  "directory.home.search.placeholder.symptom",
-] as const;
-
-const SEARCH_PROMPT_INTERVAL_MS = 2800;
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return true;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return reduced;
-}
-
-function RotatingPlaceholder({ visible, paused }: { visible: boolean; paused: boolean }) {
-  const intl = useIntl();
-  const reducedMotion = usePrefersReducedMotion();
-  const prompts = useMemo(
-    () =>
-      SEARCH_PROMPT_IDS.map((id) =>
-        intl.formatMessage({ id, defaultMessage: id.split(".").pop() ?? "" }),
-      ),
-    [intl],
-  );
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (!visible || paused || reducedMotion) return;
-    const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % prompts.length);
-    }, SEARCH_PROMPT_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [visible, paused, reducedMotion, prompts.length]);
-
-  return (
-    <span
-      className={`rotating-placeholder${visible ? "" : "rotating-placeholder--hidden"}`}
-      aria-hidden="true"
-    >
-      {prompts.map((prompt, i) => (
-        <span
-          key={prompt}
-          className={
-            i === index
-              ? "rotating-placeholder__item rotating-placeholder__item--current"
-              : "rotating-placeholder__item"
-          }
-        >
-          {prompt}
-        </span>
-      ))}
-    </span>
-  );
-}
-
 function Hero({ onSearch }: { onSearch: (q: string) => void }) {
   const intl = useIntl();
   const [q, setQ] = useState("");
-  const [focused, setFocused] = useState(false);
-  const empty = q.length === 0;
   return (
     <section
       className="hero-section"
@@ -130,10 +61,18 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
             }}
           >
             Find experimental{" "}
-            <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
+            <span
+              className="serif italic"
+              style={{
+                fontWeight: 300,
+                fontStyle: "italic",
+                letterSpacing: "-0.025em",
+                color: "var(--accent)",
+              }}
+            >
               treatments
-            </span>{" "}
-            available in Montana.
+            </span>
+            .
           </h1>
         </div>
 
@@ -146,8 +85,8 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
             lineHeight: 1.55,
           }}
         >
-          Lewis connects patients to Montana's licensed Experimental Treatment Centers offering
-          investigational treatments under the state's Right to Try framework.
+          Lewis Health connects patients to Montana's licensed Experimental Treatment Centers
+          offering investigational treatments under the state's Right to Try framework.
         </p>
 
         <div style={{ maxWidth: 620, margin: "40px auto 0" }}>
@@ -166,14 +105,15 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
+                placeholder={intl.formatMessage({
+                  id: "directory.home.search.placeholder",
+                  defaultMessage: "Search by your condition",
+                })}
                 aria-label={intl.formatMessage({
                   id: "directory.home.search.aria",
-                  defaultMessage: "Search treatments",
+                  defaultMessage: "Search by your condition",
                 })}
               />
-              <RotatingPlaceholder visible={empty && !focused} paused={focused} />
             </div>
             <button type="submit" className="pill pill-primary">
               Browse

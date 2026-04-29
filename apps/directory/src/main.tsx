@@ -11,6 +11,8 @@ import { TreatmentDetailPage } from "./pages/TreatmentDetailPage";
 import { EtcProfilePage } from "./pages/EtcProfilePage";
 import { EligibilityPage } from "./pages/EligibilityPage";
 import { ConnectPage } from "./pages/ConnectPage";
+import { SearchPage } from "./pages/SearchPage";
+import { ConditionDetailPage } from "./pages/conditions/ConditionDetailPage";
 import {
   ConditionsIndexPage,
   CookiesPage,
@@ -23,9 +25,9 @@ import {
   HowItWorksPage,
   NotFoundPage,
   PrivacyPage,
-  SearchPage,
   TermsPage,
 } from "./pages/StaticPages";
+import { SearchOverlayProvider } from "./search/SearchContext";
 import "@lewis/ui/styles.css";
 import "./styles.css";
 
@@ -39,15 +41,26 @@ import "./styles.css";
 // the user into patient.lewis.health. Both flows go through
 // packages/auth (when scaffolded) so the import boundary is auditable.
 
+// Layout wrapper that hosts the search overlay context. The overlay code
+// itself is lazy-loaded inside SearchOverlayProvider — the Radix Dialog
+// chunk only ships when the user opens the overlay for the first time.
+function DirectoryLayoutWithSearch() {
+  return (
+    <SearchOverlayProvider>
+      <DirectoryLayout />
+    </SearchOverlayProvider>
+  );
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <DirectoryLayout />,
+    element: <DirectoryLayoutWithSearch />,
     children: [
       { index: true, element: <HomePage /> },
       { path: "browse", element: <BrowsePage /> },
       { path: "conditions", element: <ConditionsIndexPage /> },
-      { path: "conditions/:slug", element: <ConditionsIndexPage /> },
+      { path: "conditions/:slug", element: <ConditionDetailPage /> },
       { path: "programs/:slug", element: <TreatmentDetailPage /> },
       { path: "etcs", element: <EtcsIndexPage /> },
       { path: "etcs/:slug", element: <EtcProfilePage /> },

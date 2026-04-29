@@ -136,16 +136,6 @@ export function NotFoundPage() {
   );
 }
 
-export function SearchPage() {
-  return (
-    <StaticShell
-      title="Search"
-      path="/search"
-      body="Cross-content search across programs, ETCs, and conditions is wired up server-side once the public API surface lands. Until then, use the browse catalog filters."
-    />
-  );
-}
-
 export function ConditionsIndexPage() {
   return (
     <StaticShell
