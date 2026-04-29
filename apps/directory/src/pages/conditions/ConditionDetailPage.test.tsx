@@ -52,4 +52,22 @@ describe("ConditionDetailPage", () => {
     expect(screen.queryByText(/WST-057/)).toBeNull();
     expect(screen.getByRole("link", { name: "Search ClinicalTrials.gov" })).toBeTruthy();
   });
+
+  it("renders coming-soon conditions with the wait copy and no off-topic fallback", () => {
+    mount("/conditions/ptsd");
+
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toContain(
+      "Post-traumatic stress disorder (PTSD)",
+    );
+    expect(screen.getByText("Coming soon to Montana.")).toBeTruthy();
+    // coming_soon copy is differentiated from not_offered (PRD § 14.2): no
+    // ClinicalTrials.gov fallback that would steer the user to a competitor
+    // sponsor's trial registry while Lewis is actively pursuing this listing.
+    expect(
+      screen.getByText(/Lewis is tracking this condition\. New programs are added/),
+    ).toBeTruthy();
+    expect(screen.queryByText("Available now in Montana.")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Search ClinicalTrials.gov" })).toBeNull();
+    expect(screen.queryByText(/WST-057/)).toBeNull();
+  });
 });
