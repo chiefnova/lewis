@@ -91,11 +91,16 @@ COPY apps/directory/package.json apps/directory/
 COPY packages/gate/package.json packages/gate/
 
 # Install only the backend dep graph (api + transitive workspace deps,
-# devDeps included for the typecheck gate below). Use a BuildKit cache
-# mount so the pnpm content store survives between builds — drastically
-# faster CI/Railway rebuilds when only source changes.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm install \
+# devDeps included for the typecheck gate below).
+#
+# BuildKit cache mounts intentionally omitted: Railway requires cache mount
+# IDs to be hardcoded as `s/<service-id>-<target>` per service, and env vars
+# / ARGs aren't allowed in cache IDs (Railway docs:
+# https://docs.railway.com/guides/dockerfiles). Hardcoding the staging
+# service ID would break future production deploys, so we accept the slower
+# cold-build cost for portability across environments. Re-add scoped cache
+# mounts in a follow-up if/when build time becomes a real bottleneck.
+RUN pnpm install \
       --frozen-lockfile \
       --filter=api... \
       --filter=@lewis/db... \
@@ -124,9 +129,9 @@ RUN pnpm --filter api --filter @lewis/db --filter @lewis/shared --filter @lewis/
 
 # Produce a self-contained tree at /out/api with the api package + all
 # transitive workspace deps copied as REAL packages (not symlinks) and
-# external prod deps installed. devDeps are stripped.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm deploy --filter=api --prod /out/api
+# external prod deps installed. devDeps are stripped. (Cache mount omitted
+# — see rationale on the install step above.)
+RUN pnpm deploy --filter=api --prod /out/api
 
 # Install tsx into a separate prefix so the runtime can execute TS
 # directly. Kept out of the deployed package's node_modules because that

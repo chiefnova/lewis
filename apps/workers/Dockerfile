@@ -86,8 +86,11 @@ COPY packages/gate/package.json packages/gate/
 # @lewis/shared (see apps/workers/package.json). It does NOT depend on
 # @lewis/rbac, but tests in @lewis/db transitively reference rbac so the
 # typecheck gate needs it.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm install \
+#
+# BuildKit cache mounts omitted — see apps/api/Dockerfile for the full
+# rationale (Railway requires hardcoded service-scoped cache IDs;
+# portability across staging/prod takes priority over build speed).
+RUN pnpm install \
       --frozen-lockfile \
       --filter=workers... \
       --filter=@lewis/db... \
@@ -108,8 +111,7 @@ COPY packages/ui ./packages/ui
 # Type-check gate.
 RUN pnpm --filter workers --filter @lewis/db --filter @lewis/shared --filter @lewis/notifications --filter @lewis/pdf --filter @lewis/rbac typecheck
 
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm deploy --filter=workers --prod /out/workers
+RUN pnpm deploy --filter=workers --prod /out/workers
 
 # Install tsx into a separate prefix so the runtime can execute TS
 # directly. Kept out of the deployed package's node_modules because that
