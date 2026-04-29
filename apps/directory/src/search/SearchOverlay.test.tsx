@@ -127,7 +127,7 @@ describe("SearchOverlay", () => {
     apiMock.searchPublic.mockResolvedValue(searchResponse());
 
     mount();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search by your condition" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Search by your condition" }), {
       target: { value: "neuro" },
     });
 
@@ -157,7 +157,7 @@ describe("SearchOverlay", () => {
   it("submits free text to the search page and closes", () => {
     const { onClose } = mount();
 
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search by your condition" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Search by your condition" }), {
       target: { value: "ALS" },
     });
     fireEvent.submit(screen.getByRole("search"));
@@ -170,7 +170,7 @@ describe("SearchOverlay", () => {
     vi.useFakeTimers();
     const { onClose } = mount();
     apiMock.searchPublic.mockResolvedValue(searchResponse());
-    const input = screen.getByRole("searchbox", { name: "Search by your condition" });
+    const input = screen.getByRole("combobox", { name: "Search by your condition" });
 
     fireEvent.change(input, { target: { value: "neuro" } });
     await settleDebouncedSearch();
@@ -190,7 +190,7 @@ describe("SearchOverlay", () => {
     apiMock.searchPublic.mockReturnValueOnce(neuropathy.promise).mockReturnValueOnce(als.promise);
 
     mount();
-    const input = screen.getByRole("searchbox", { name: "Search by your condition" });
+    const input = screen.getByRole("combobox", { name: "Search by your condition" });
     fireEvent.change(input, { target: { value: "neuropathy" } });
     await settleDebouncedSearch();
     expect(apiMock.searchPublic).toHaveBeenCalledWith(

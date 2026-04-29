@@ -39,7 +39,7 @@ describe("SearchOverlayProvider", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Search" }));
 
-    expect(await screen.findByRole("searchbox", { name: "Search by your condition" })).toBeTruthy();
+    expect(await screen.findByRole("combobox", { name: "Search by your condition" })).toBeTruthy();
     expect(apiMock.searchPublic).not.toHaveBeenCalled();
   });
 });

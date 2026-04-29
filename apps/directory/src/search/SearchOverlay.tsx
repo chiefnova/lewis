@@ -39,8 +39,20 @@ import { useDebouncedValue } from "./use-debounced-value";
  */
 
 type SearchSections = PublicSearchResponse["sections"];
+type ConditionState = SearchSections["conditions"][number]["state"];
 
 const DEBOUNCE_MS = 150;
+const LISTBOX_ID = "lewis-search-listbox";
+
+const CONDITION_STATE_MESSAGE_ID: Record<ConditionState, string> = {
+  live: "directory.search.results.row.live",
+  coming_soon: "directory.search.results.row.coming-soon",
+  not_offered: "directory.search.results.row.not-offered",
+};
+
+function optionIdFor(key: string): string {
+  return `lewis-search-option-${key.replace(/:/g, "-")}`;
+}
 
 interface SearchOverlayProps {
   open: boolean;
@@ -192,6 +204,15 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     );
   }, [sections, totalCount, intl]);
 
+  // Combobox/listbox pattern: focus stays on the input, screen readers
+  // announce the active option via aria-activedescendant. Clears when no
+  // option is highlighted (activeIndex < 0) or when no results are listed.
+  const activeOptionId = useMemo(() => {
+    if (activeIndex < 0 || activeIndex >= flatSuggestions.length) return undefined;
+    const target = flatSuggestions[activeIndex];
+    return target ? optionIdFor(target.key) : undefined;
+  }, [activeIndex, flatSuggestions]);
+
   return (
     <Dialog.Root open={open} onOpenChange={(next) => (next ? null : onClose())}>
       <Dialog.Portal>
@@ -254,7 +275,12 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
+              role="combobox"
               aria-label={intl.formatMessage({ id: "directory.search.placeholder" })}
+              aria-autocomplete="list"
+              aria-expanded={sections !== null && totalCount > 0}
+              aria-controls={LISTBOX_ID}
+              {...(activeOptionId ? { "aria-activedescendant": activeOptionId } : {})}
               placeholder={intl.formatMessage({ id: "directory.search.placeholder" })}
               style={{
                 flex: 1,
@@ -312,7 +338,7 @@ function RecentOnLewis({ onClick }: { onClick(href: string): void }) {
         {RECENT_ON_LEWIS.map((entry) => (
           <li key={entry.href}>
             <button type="button" onClick={() => onClick(entry.href)} style={resultButtonStyle()}>
-              {entry.label}
+              <FormattedMessage id={entry.labelId} />
             </button>
           </li>
         ))}
@@ -341,7 +367,7 @@ function NoResults({ q, onClick }: { q: string; onClick(href: string): void }) {
         {RECENT_ON_LEWIS.map((entry) => (
           <li key={entry.href}>
             <button type="button" onClick={() => onClick(entry.href)} style={resultButtonStyle()}>
-              {entry.label}
+              <FormattedMessage id={entry.labelId} />
             </button>
           </li>
         ))}
@@ -359,6 +385,7 @@ function SectionedResults({
   activeIndex: number;
   onSelect(href: string): void;
 }) {
+  const intl = useIntl();
   // Compute virtual-focus offsets to map activeIndex to a single highlighted
   // row across the merged Conditions → Treatments → ETCs list.
   const conditionsOffset = 0;
@@ -366,14 +393,17 @@ function SectionedResults({
   const etcsOffset = treatmentsOffset + sections.treatments.length;
 
   return (
-    <div>
+    // Listbox container — focus stays on the combobox input above; the
+    // input's aria-activedescendant points at one option id in this list.
+    <div role="listbox" id={LISTBOX_ID}>
       {sections.conditions.length > 0 && (
         <Section headingId="directory.search.section.conditions" count={sections.conditions.length}>
           {sections.conditions.map((hit, i) => (
             <SuggestionButton
               key={hit.slug}
+              optionKey={`condition:${hit.slug}`}
               label={hit.name}
-              meta={hit.state === "live" ? "Available now" : "Status: " + hit.state}
+              meta={intl.formatMessage({ id: CONDITION_STATE_MESSAGE_ID[hit.state] })}
               active={activeIndex === conditionsOffset + i}
               onClick={() => onSelect(hit.href)}
             />
@@ -386,6 +416,7 @@ function SectionedResults({
           {sections.treatments.map((hit, i) => (
             <SuggestionButton
               key={hit.slug}
+              optionKey={`treatment:${hit.slug}`}
               label={hit.name}
               meta={hit.drug ?? null}
               active={activeIndex === treatmentsOffset + i}
@@ -400,6 +431,7 @@ function SectionedResults({
           {sections.etcs.map((hit, i) => (
             <SuggestionButton
               key={hit.slug}
+              optionKey={`etc:${hit.slug}`}
               label={hit.name}
               meta={hit.city}
               active={activeIndex === etcsOffset + i}
@@ -448,11 +480,14 @@ function SectionHeading({ children }: { children: ReactNode }) {
 }
 
 function SuggestionButton({
+  optionKey,
   label,
   meta,
   active,
   onClick,
 }: {
+  /** Stable key (e.g. "condition:diabetic-pn") used to derive the option id. */
+  optionKey: string;
   label: string;
   meta: string | null;
   active: boolean;
@@ -462,9 +497,11 @@ function SuggestionButton({
     <li>
       <button
         type="button"
+        id={optionIdFor(optionKey)}
+        role="option"
+        aria-selected={active}
         onClick={onClick}
         style={resultButtonStyle(active)}
-        aria-current={active ? "true" : undefined}
       >
         <span style={{ fontSize: 15, color: "var(--ink)" }}>{label}</span>
         {meta ? (
