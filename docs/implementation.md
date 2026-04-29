@@ -6,11 +6,11 @@
 | **Author** | Founding principal engineer |
 | **Status** | Draft for engineering review |
 | **Last updated** | 2026-04-24 |
-| **Companion to** | [prd.md](prd.md) v1.0 |
+| **Companion to** | [b2bprd.md](b2bprd.md) v1.0 |
 
-This document operationalizes [prd.md](prd.md). It does not duplicate the PRD — it **commits to the order, dependencies, and acceptance criteria** that take Lewis from empty repo to first-patient-dosed at WinSanTor's launch ETC, then through the first 90 days post-launch.
+This document operationalizes [b2bprd.md](b2bprd.md). It does not duplicate the PRD — it **commits to the order, dependencies, and acceptance criteria** that take Lewis from empty repo to first-patient-dosed at WinSanTor's launch ETC, then through the first 90 days post-launch.
 
-The PRD's existing sprint plan (§ 22.2) is the skeleton. This plan is the meat: every PRD section is covered, every feature traces to a rule (per Principle 2), every cross-cutting concern is sequenced into the right phase rather than dumped on Sprint 6, and every phase has hard acceptance criteria that gate the next.
+The B2B PRD's existing sprint plan (§ 22.2) is the skeleton. This plan is the meat: every PRD section is covered, every feature traces to a rule (per Principle 2), every cross-cutting concern is sequenced into the right phase rather than dumped on Sprint 6, and every phase has hard acceptance criteria that gate the next.
 
 A coverage matrix at the end of this document cross-references every PRD section against the phase that delivers it. If you want to verify completeness, jump to § 14.
 
@@ -20,7 +20,7 @@ A coverage matrix at the end of this document cross-references every PRD section
 
 ### 0.1 Team shape and capacity
 
-Plan assumes the team profile in [prd.md § 24.3](prd.md): one founding product, one lead engineer (concurrent hire), one designer (parallel brand work), counsel on retainer. Realistic engineering capacity for MVP 1 is **2 full-time engineers** (the lead + one early hire) for 12 weeks of build, plus the founding product wearing a "PM/QA/half-engineer" hat.
+Plan assumes the team profile in [b2bprd.md § 24.3](b2bprd.md): one founding product, one lead engineer (concurrent hire), one designer (parallel brand work), counsel on retainer. Realistic engineering capacity for MVP 1 is **2 full-time engineers** (the lead + one early hire) for 12 weeks of build, plus the founding product wearing a "PM/QA/half-engineer" hat.
 
 That is **~80–100 engineering days** for a scope that the PRD candidly calls "the largest portal in MVP 1 by surface area" plus three other portals plus 13 worker classes plus HIPAA posture plus a pen test. **The 6-sprint plan is aggressive.** Phase 4 (patient flow) and Phase 6 (hardening + admin portal completion) are the most likely to slip. Slip safely by deferring Phase 2 workflow activation (RULE 25, RULE 21 device depth, inpatient validation, HFAR Path A) — never by deferring Sprint 1 schema stubs, compliance, or HIPAA.
 
@@ -509,7 +509,8 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
     pdf/            # React-Email + Puppeteer templates
     notifications/  # email template definitions
   docs/
-    prd.md
+    b2bprd.md
+    directoryprd.md
     implementation.md
     subprocessors.md
     runbooks/

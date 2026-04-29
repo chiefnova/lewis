@@ -1,6 +1,6 @@
 # Lewis
 
-Operating platform for Montana's Experimental Treatment Center (ETC) regime under SB 535 + MAR 2026-427.1. Serves sponsors/biotech manufacturers, ETCs, patients, boards, and Lewis internal users through two deployable frontend products over one RLS'd data layer. See [prd.md](docs/prd.md) for the canonical spec — **every feature must trace to a section of SB 535 or a RULE in MAR 2026-427.1**.
+Operating platform for Montana's Experimental Treatment Center (ETC) regime under SB 535 + MAR 2026-427.1. Serves sponsors/biotech manufacturers, ETCs, patients, boards, Lewis internal users, and anonymous public-directory visitors over one RLS'd data layer. See [b2bprd.md](docs/b2bprd.md) for the regulated operating platform spec and [directoryprd.md](docs/directoryprd.md) for the public directory spec — **every feature must trace to a section of SB 535, a RULE in MAR 2026-427.1, or the applicable directory PRD section**.
 
 ## Architecture
 
@@ -101,7 +101,7 @@ PHI is in scope from day one. Lewis is a Business Associate.
 1. **RLS is the tenant-isolation mechanism.** Every PHI-bearing table must have an RLS policy keyed off transaction-local application context (`app.user_id`, `app.active_tenant_id`, `app.role`, `app.request_id`, optional `app.support_ticket_id`) set by the Hono API after Clerk verification. App runtimes connect as non-owner `app_api`/`app_worker` roles with `NOBYPASSRLS`; migrations and seed use `MIGRATION_DATABASE_URL`. IMPORTANT: never write a user-facing code path that uses a Supabase service-role, table owner, or admin database role to bypass tenant RLS. Any new RLS table must have `FORCE ROW LEVEL SECURITY`, policy coverage, and a matching semantic SQL test in `db:rls:test`.
 2. **Audit log is append-only.** Every state change writes to `audit_log` (tenant, actor, action, target, before, after, ip, ua, ts). A Postgres trigger blocks UPDATE/DELETE on `audit_log`. Do not add code paths that skip the audit write.
 3. **No PHI in logs, Sentry breadcrumbs, analytics events, error messages, or URLs.** PostHog events go through a redaction layer; patient identifiers are tokenized. API and worker runtime code must use the structured pino logger with redaction; `console.*` is banned outside scripts by ESLint/CI. If you need to log for debugging, use the tenant + object ID only.
-4. **No PHI to unapproved subprocessors.** The approved list is in [prd.md § 17.9](docs/prd.md). Adding a new third-party dependency that will see PHI requires a BAA before it reaches staging, let alone prod.
+4. **No PHI to unapproved subprocessors.** The approved list is in [b2bprd.md § 17.9](docs/b2bprd.md). Adding a new third-party dependency that will see PHI requires a BAA before it reaches staging, let alone prod.
 5. **File uploads go to the HIPAA-eligible Supabase bucket** with SHA-256 on write. Regulated objects (patient agreements, informed consent recordings, ETRB approvals, AE reports) are immutable — replacement creates a new version, never overwrites.
 6. **Retention locks are enforced in the database**, not application code: patient files 5 years post-discharge (RULE 12(4)), ETRB records 5 years (RULE 16(6)(d)), QAPI minutes 3 years (RULE 15(5)), audit log 7 years. Do not add delete paths that bypass retention.
 7. **TLS 1.3 only.** Clerk MFA is required for sponsor and ETC users. Break-glass admin access requires a ticket reference and is audit-logged.
@@ -121,7 +121,7 @@ PHI is in scope from day one. Lewis is a Business Associate.
 - Unit tests for business logic colocated as `*.test.ts`.
 - Integration tests for API handlers hit real local Docker Postgres. Do not mock the database.
 - RLS policies are tested via the semantic SQL suite in `packages/db/test/rls` — a new RLS policy without a test is not complete.
-- E2E tests cover the full patient intake flow (Stage 1 → Stage 8 in [prd.md § 10.5](docs/prd.md)), AE 5-day workflow, and ETRB protocol review.
+- E2E tests cover the full patient intake flow (Stage 1 → Stage 8 in [b2bprd.md § 10.5](docs/b2bprd.md)), AE 5-day workflow, and ETRB protocol review.
 - A11y: patient portal targets WCAG 2.1 AA. `pnpm test:a11y` gates patient-portal PRs.
 
 ## Git and repo etiquette
@@ -149,7 +149,8 @@ PHI is in scope from day one. Lewis is a Business Associate.
 
 ## References
 
-- [prd.md](docs/prd.md) — full PRD. The compliance mapping in § 19 is the authoritative feature-to-rule trace.
+- [b2bprd.md](docs/b2bprd.md) — regulated operating platform PRD. The compliance mapping in § 19 is the authoritative feature-to-rule trace.
+- [directoryprd.md](docs/directoryprd.md) — anonymous public directory PRD for `lewis.health`.
 - SB 535 (69th Montana Legislature, 2025).
 - MAR Notice 2026-427.1 (April 10, 2026).
 
