@@ -5,6 +5,26 @@ All notable changes to Lewis are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a 4-digit version format: `MAJOR.MINOR.PATCH.MICRO`.
 
+## [0.0.6.2] - 2026-04-28
+
+Temporary password gate in front of `lewis.health`, `app.lewis.health`, and `patient.lewis.health` while the apps are still being built. The gate is intentionally minimal and removed via a follow-up cleanup PR before public launch — kill switch via `LEWIS_GATE_DISABLED=true` for instant rollback.
+
+### Added
+
+- **`@lewis/gate` shared package** ([packages/gate/](packages/gate/)) — Vercel Edge Middleware backed by Web-Crypto-only HMAC-SHA256 signed cookies (no Node deps, runs on V8 isolates). Cookie format `${expiryMs}.${hex(HMAC)}` with server-enforced 7-day expiry. Constant-time password compare via XOR-OR over equal-length hex digests. CSRF guard via `Origin`/`Referer` host check. 800ms throttle on wrong password. Fail-closed 503 on missing env vars (`LEWIS_GATE_PASSWORD` / `LEWIS_GATE_SECRET`). Kill switch via `LEWIS_GATE_DISABLED=true`. Variant-A gate HTML inlined and server-rendered; client-side fetch intercepts the form post and shows inline error / smooth fade-to-loading without page reload, with no-JS fallback that uses native form post + Loading interstitial.
+- **Per-app middleware** ([apps/directory/middleware.ts](apps/directory/middleware.ts), [apps/app/middleware.ts](apps/app/middleware.ts), [apps/patient/middleware.ts](apps/patient/middleware.ts)) — one-line re-exports of `gateMiddleware` and `gateConfig`. The `gateConfig.matcher` excludes static assets, `/robots.txt`, `/sitemap.xml`, `/favicon.ico`, `/apple-touch-icon*`, and the `_next/_vercel` paths so SEO crawlers and asset routes aren't disrupted by the gate.
+- **`gateVitePlugin`** ([packages/gate/src/vite.ts](packages/gate/src/vite.ts)) — Vite dev-server shim that bridges Node's connect middleware to the same `gateMiddleware` Web-standards function. Defaults the gate ON in dev so `mise run dev:*` mirrors production behavior; `LEWIS_GATE_DISABLED=true` is the same kill switch in dev. Strips the `Secure` cookie attribute over plain HTTP localhost so the 7-day session cookie persists across reloads.
+- **Tests** — 9 cases in [packages/gate/src/crypto.test.ts](packages/gate/src/crypto.test.ts) (HMAC round-trip, expiry rejection, tampered signature, different-secret rejection, malformed values, password match/mismatch/empty/near-miss) and 15 cases in [packages/gate/src/index.test.ts](packages/gate/src/index.test.ts) (misconfig 503, kill switch, cold visit headers, cookie verification, CSRF guard, JSON success path, HTML loading interstitial, 401 throttle timing, GET → 303 redirect). 24/24 passing.
+- **Edge-runtime ESLint scope** ([eslint.config.js](eslint.config.js)) — new globals block for `packages/gate/**/*.ts` and the per-app `middleware.ts` files exposing the Web-standards globals (`crypto`, `Request`, `Response`, `URL`, `TextEncoder`, `setTimeout`, `clearTimeout`, `CryptoKey`).
+
+### Changed
+
+- **Workspace dependencies** — [apps/directory/package.json](apps/directory/package.json), [apps/app/package.json](apps/app/package.json), and [apps/patient/package.json](apps/patient/package.json) all add `@lewis/gate: workspace:*`. The respective `vite.config.ts` files register `gateVitePlugin()` and the `tsconfig.json` `include` arrays now cover `middleware.ts`. [tsconfig.base.json](tsconfig.base.json) adds the `@lewis/gate` path entries.
+
+### Operational
+
+- **Required Vercel env vars per project** (Production + Preview scope, **not** Development): `LEWIS_GATE_PASSWORD`, `LEWIS_GATE_SECRET` (32-byte random, distinct per project — generate via `openssl rand -hex 32`), and optionally `LEWIS_GATE_DISABLED=true` as the kill switch. Local dev defaults to `WST-057` plus a non-secret dev SECRET; production must NOT use those defaults. Removal sequence: flip `LEWIS_GATE_DISABLED=true` first to verify public access works, then a follow-up cleanup PR deletes `packages/gate/`, the three `middleware.ts` files, the workspace dep entries, the `gateVitePlugin` import in each `vite.config.ts`, the `@lewis/gate` paths in `tsconfig.base.json`, and the Edge-runtime globals block in `eslint.config.js`.
+
 ## [0.0.6.1] - 2026-04-28
 
 Wires up the deployment infrastructure for the API + workers Railway services. Two related workstreams in one release: Railway config-as-code (operational settings now version-controlled and reviewable) and a real production database migration pipeline (drizzle-kit migrate replaces the local-only raw SQL applier, runs in GitHub Actions before each Railway deploy, with the schema-owner credential held only by the CI runner). No frontend, schema, or API surface changes.
