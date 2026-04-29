@@ -13,6 +13,7 @@ import { boardRoutes } from "./domains/boards/routes.js";
 import { etcRoutes } from "./domains/etcs/routes.js";
 import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
 import { patientRoutes } from "./domains/patients/routes.js";
+import { publicSearchRoutes } from "./domains/public-search/routes.js";
 import { searchRoutes } from "./domains/search/routes.js";
 import { sponsorRoutes } from "./domains/sponsors/routes.js";
 import { webhookRoutes } from "./domains/webhooks/routes.js";
@@ -21,6 +22,7 @@ import { ApiError } from "./middleware/errors.js";
 import { requireClerkAuth } from "./middleware/auth.js";
 import { resolveTenant } from "./middleware/tenant.js";
 import { withDbContext } from "./middleware/db-context.js";
+import { withPublicDbContext } from "./middleware/public-context.js";
 import { rateLimit } from "./middleware/rate-limit.js";
 import {
   bodyLimitMiddleware,
@@ -35,8 +37,15 @@ type ApiVariables = {
 };
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,128}$/;
+const HTTP_METHOD_WITH_URL_PATTERN =
+  /\b(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+([^\s?]+)\?[^\s]*/g;
 
 export const app = new Hono<{ Variables: ApiVariables }>();
+
+export function sanitizeAccessLogMessage(message: string): string {
+  const withoutQueryStrings = message.replace(HTTP_METHOD_WITH_URL_PATTERN, "$1 $2");
+  return redactPhi(withoutQueryStrings);
+}
 
 // ---------------------------------------------------------------------------
 // Foundation middleware (runs for every route, including /healthz and /readyz)
@@ -65,7 +74,9 @@ app.use("*", bodyLimitMiddleware);
 // message through pino at info level so it lands in the structured stream.
 app.use(
   "*",
-  honoLogger((message) => appLogger.info({ source: "hono.logger" }, redactPhi(message))),
+  honoLogger((message) =>
+    appLogger.info({ source: "hono.logger" }, sanitizeAccessLogMessage(message)),
+  ),
 );
 
 // ---------------------------------------------------------------------------
@@ -182,6 +193,20 @@ v1Public.get(
 // limiting legitimate traffic.
 v1Public.use("/webhooks/*", rateLimit({ bucket: "webhooks", max: 120, windowSeconds: 60 }));
 v1Public.route("/webhooks", webhookRoutes);
+
+// Public directory search — anonymous, condition-first, FTS over
+// search_index_documents. See docs/directoryprd.md § 13 and
+// plans/immutable-squishing-sprout.md.
+//
+// Per-IP rate limit (30/min/IP per § 28.5) layered on top of the coarse
+// 600/min public bucket above. withPublicDbContext sets
+// app.role = 'directory_anonymous' inside a transaction; the public-read
+// RLS policies on search_index_documents/programs/conditions/etcs all
+// gate on that role string. NOT a service-role bypass — runtime role
+// stays app_api (NOBYPASSRLS, see migration 0011).
+v1Public.use("/public/search", rateLimit({ bucket: "public_search", max: 30, windowSeconds: 60 }));
+v1Public.use("/public/search", withPublicDbContext);
+v1Public.route("/public/search", publicSearchRoutes);
 
 // ---------------------------------------------------------------------------
 // /v1 — authed sub-router (every route below this gate requires Clerk auth +
