@@ -21,9 +21,10 @@ export function Footer() {
           }}
         >
           <div className="footer-attribution">
-            {/* Flag + wordmark mirror the header treatment: serif "Lewis", accent
-                period, italic ink-soft "health". Inherits the footer's 12.5px so
-                it stays a quiet attribution mark, not a second brand banner. */}
+            {/* Flag + wordmark mirror the header treatment exactly:
+                serif "lewis." + italic ink-soft "health". Footer keeps the
+                smaller 18px size so it stays a quiet attribution mark, not
+                a second brand banner. */}
             <img
               src={montanaFlag}
               alt=""
@@ -40,17 +41,30 @@ export function Footer() {
                 display: "inline-flex",
                 alignItems: "baseline",
                 textTransform: "none",
-                letterSpacing: "-0.015em",
-                fontSize: 18,
               }}
             >
-              <span className="serif" style={{ color: "var(--ink)" }}>
-                Lewis
+              <span
+                className="serif"
+                style={{
+                  fontSize: 18,
+                  fontWeight: 400,
+                  letterSpacing: "-0.025em",
+                  lineHeight: 1,
+                }}
+              >
+                Lewis.
               </span>
-              <span className="serif" style={{ color: "var(--accent)" }} aria-hidden="true">
-                .
-              </span>
-              <span className="serif italic" style={{ color: "var(--ink-soft)", fontWeight: 300 }}>
+              <span
+                className="serif italic"
+                style={{
+                  fontSize: 18,
+                  fontWeight: 300,
+                  fontStyle: "italic",
+                  letterSpacing: "-0.025em",
+                  lineHeight: 1,
+                  color: "var(--ink-soft)",
+                }}
+              >
                 health
               </span>
             </span>

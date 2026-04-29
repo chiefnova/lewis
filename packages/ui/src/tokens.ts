@@ -43,8 +43,8 @@ export const radii = {
 } as const;
 
 export const fonts = {
-  serif: '"Fraunces", "Tiempos Headline", Georgia, serif',
-  sans: '"Inter Tight", "Söhne", -apple-system, system-ui, sans-serif',
+  serif: '"Fraunces", "Fraunces Variable", "Tiempos Headline", Georgia, serif',
+  sans: '"Inter Tight Variable", "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif',
   mono: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
 } as const;
 

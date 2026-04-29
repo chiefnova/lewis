@@ -16,6 +16,16 @@ body {
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Lock Fraunces' opsz (optical-size) axis at 56 — the value the gate
+   * page wordmark gets at 56px font-size. Without this, browsers default
+   * to font-optical-sizing: auto and interpolate opsz to the rendered
+   * font-size, so a 120px hero h1 renders with Display-style decorative
+   * glyphs while a 24px nav renders Text-style — neither matching the
+   * gate's character. Set on html/body so EVERY element inherits it
+   * (incl. inline-style fontFamily="var(--serif)" and CSS-only var(--serif)
+   * uses that don't go through the .serif class). Inter Tight has no
+   * opsz axis, so this is silently ignored on sans-serif text. */
+  font-variation-settings: "opsz" 56;
 }
 
 body {
@@ -44,7 +54,9 @@ a {
 }
 
 /* Type helpers — apply Lewis serif for headings, italic accent for
- * the project's signature italicized brand voice. */
+ * the project's signature italicized brand voice. The opsz axis lock
+ * lives on html/body above so every var(--serif) consumer inherits it
+ * regardless of whether they use this class. */
 .serif {
   font-family: var(--serif);
   font-weight: 400;

@@ -7,7 +7,7 @@
    Why self-hosted: the patient portal handles PHI. Loading fonts
    from fonts.googleapis.com would route patient IPs/UAs through
    Google, which is not on the approved subprocessor list in
-   prd.md § 17.9. Self-hosting closes that vector entirely and
+   b2bprd.md § 17.9. Self-hosting closes that vector entirely and
    also makes the brand font available offline for dev.
 
    Inter Tight: variable wght axis, 100-900. We use 300, 400, 500, 600.
@@ -15,5 +15,12 @@
    ============================================================== */
 
 @import "@fontsource-variable/inter-tight";
-@import "@fontsource-variable/fraunces";
-@import "@fontsource-variable/fraunces/wght-italic.css";
+/* The default `@fontsource-variable/fraunces` import (wght axis only) bakes
+ * the opsz axis at a fixed default, so italic glyphs render with the wrong
+ * optical-size design at small sizes — visibly different from the gate
+ * page (which uses Google Fonts Fraunces with opsz exposed). Switching to
+ * `standard` exposes both wght AND opsz so font-optical-sizing: auto
+ * (browser default) interpolates the right glyph design at every size,
+ * matching the gate. */
+@import "@fontsource-variable/fraunces/standard.css";
+@import "@fontsource-variable/fraunces/standard-italic.css";

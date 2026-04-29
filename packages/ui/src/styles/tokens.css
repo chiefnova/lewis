@@ -33,8 +33,13 @@
   --color-rule-soft: #e4dcc8;
 
   /* ---- Type ------------------------------------------------- */
-  --font-sans: "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif;
-  --font-serif: "Fraunces", "Tiempos Headline", Georgia, serif;
+  /* "Fraunces" comes first so apps that load Google Fonts (e.g. the public
+   * directory) use the same font source as the gate page and render the
+   * wordmark identically. Apps that don't load Google Fonts (patient + app
+   * consoles, per the PHI/subprocessor rule) silently fall through to the
+   * self-hosted "Fraunces Variable" build via @fontsource-variable. */
+  --font-sans: "Inter Tight Variable", "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif;
+  --font-serif: "Fraunces", "Fraunces Variable", "Tiempos Headline", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
   /* ---- Border radius scale ---------------------------------- */

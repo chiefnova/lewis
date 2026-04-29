@@ -194,7 +194,7 @@ mise run build          # production builds for each app
 
 ## Deliberate non-goals
 
-- **No theme switcher.** Lewis is single-theme by design — the warm cream brand is non-negotiable per [DESIGN review](../../docs/prd.md).
+- **No theme switcher.** Lewis is single-theme by design — the warm cream brand is non-negotiable per the [directory PRD](../../docs/directoryprd.md).
 - **No CSS-in-JS.** Plain CSS + Tailwind utilities. Easier to grep, easier to debug, no runtime cost.
 - **No Storybook (yet).** Wait until @lewis/ui has 5–10 components before bringing it in.
 - **No Radix.** If we add complex primitives (Dialog, Popover, Combobox), reconsider.
