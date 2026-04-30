@@ -75,18 +75,18 @@ export function TopNav() {
           </Link>
           <Link
             to="/browse"
-            className="pill pill-outline pill-sm"
+            className="topnav-link"
             aria-current={isBrowse ? "page" : undefined}
             style={{
-              borderColor: isBrowse ? "var(--ink)" : "rgba(27,24,20,0.25)",
+              fontSize: 14,
+              color: isBrowse ? "var(--ink)" : "var(--ink-soft)",
+              textDecoration: "none",
+              borderBottom: isBrowse ? "1px solid var(--ink)" : "1px solid transparent",
+              paddingBottom: 2,
+              transition: "color 120ms ease, border-color 120ms ease",
             }}
           >
-            <span className="topnav-browse-full">
-              <FormattedMessage id="directory.nav.browse" defaultMessage="Browse Treatments" />
-            </span>
-            <span className="topnav-browse-short">
-              <FormattedMessage id="directory.nav.browse.short" defaultMessage="Browse" />
-            </span>
+            <FormattedMessage id="directory.nav.browse" defaultMessage="Browse Treatments" />
           </Link>
           <button
             type="button"
