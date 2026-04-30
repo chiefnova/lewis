@@ -49,6 +49,48 @@ html {
   width: 100%;
 }
 
+/* Hero typeahead — Surface 1.5 per directoryprd.md § 13. The container
+ * scopes click-outside detection to the search-pill. The popover itself is
+ * rendered via React Portal into <body> so it escapes the hero <section>'s
+ * overflow:hidden boundary (the hero clips its decorative pill graphics;
+ * an in-flow popover would get cropped at the section edge). The component
+ * sets top/left/width inline from the input's bounding rect. */
+.hero-typeahead {
+  position: relative;
+}
+
+.hero-typeahead-popover {
+  position: absolute;
+  background: var(--paper);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(27, 24, 20, 0.18);
+  /* Cap the dropdown height so a long suggestion list scrolls inside the
+   * popover instead of pushing other hero content downward. 60vh leaves
+   * comfortable room above and below on most laptop viewports. */
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  z-index: 1000;
+  /* Light fade-up — feels smooth without animating layout. */
+  animation: hero-typeahead-in 140ms var(--ease-out) both;
+}
+
+@keyframes hero-typeahead-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-typeahead-popover {
+    animation: none;
+  }
+}
+
 .rotating-placeholder {
   position: absolute;
   inset: 0;
@@ -1429,6 +1471,29 @@ section.hero-section {
   }
   50% {
     opacity: 0.65;
+  }
+}
+
+/* Search overlay polish — the dialog frame itself uses anchored auto-height
+ * so the bottom edge grows downward with content. To avoid a hard "pop"
+ * when results stream in, suggestion rows fade in subtly. The frame stays
+ * stable; only the new rows animate. Skipped under prefers-reduced-motion. */
+.search-overlay-results {
+  animation: search-overlay-fade-in 120ms var(--ease-out) both;
+}
+
+@keyframes search-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-overlay-results {
+    animation: none;
   }
 }
 

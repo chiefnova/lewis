@@ -113,7 +113,7 @@ function mount(onClose = vi.fn()) {
 
 async function settleDebouncedSearch() {
   await act(async () => {
-    vi.advanceTimersByTime(150);
+    vi.advanceTimersByTime(80);
     await Promise.resolve();
   });
   await act(async () => {
@@ -132,7 +132,7 @@ describe("SearchOverlay", () => {
     });
 
     await act(async () => {
-      vi.advanceTimersByTime(149);
+      vi.advanceTimersByTime(79);
     });
     expect(apiMock.searchPublic).not.toHaveBeenCalled();
 

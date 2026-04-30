@@ -4,20 +4,23 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type CSSProperties,
   type FormEvent,
   type KeyboardEvent,
-  type ReactNode,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { useNavigate } from "react-router-dom";
 
-import type { PublicSearchResponse } from "@lewis/shared/api/search";
-import { ApiNetworkError, ApiSchemaError, publicApi } from "../api/client";
 import { Magnifier } from "../components/icons";
-import { RECENT_ON_LEWIS } from "./recent-on-lewis";
-import { useDebouncedValue } from "./use-debounced-value";
+import {
+  LISTBOX_ID,
+  NoResults,
+  RecentOnLewis,
+  SectionedResults,
+  SkeletonRow,
+  optionIdFor,
+} from "./SearchSuggestions";
+import { useTypeaheadSearch } from "./use-typeahead-search";
 
 /**
  * In-place search overlay (Surface 1 per directoryprd.md § 13.1).
@@ -26,129 +29,60 @@ import { useDebouncedValue } from "./use-debounced-value";
  *  - Radix Dialog provides focus trap, scroll lock, ARIA roles, and Esc-to-
  *    close. Lazy-loaded by SearchContext so it doesn't ship in the
  *    above-the-fold bundle.
- *  - Debounced live-suggest (150ms). Each query goes through an
- *    AbortController; .abort() fires on the next keystroke so a slow
- *    response doesn't clobber a faster newer one.
- *  - Section order: Conditions → Treatments → ETCs (server-enforced; this
- *    component renders the array in shipped order without re-sorting).
+ *  - Search-fetching machinery is shared with HeroSearchTypeahead via
+ *    useTypeaheadSearch (debounce, AbortController, latest-query-wins).
+ *  - Section order: Conditions → Treatments → ETCs (server-enforced; the
+ *    SectionedResults helper renders the array in shipped order).
  *  - Keyboard nav: ArrowDown/Up moves a virtual focus through the merged
  *    suggestion list, Enter activates, Esc closes (delegated to Dialog).
  *  - Submitting an unselected query routes to /search?q=… (Surface 2).
  *  - aria-live polite region announces result-count changes for screen
  *    readers (§ 29.3).
+ *
+ * Initial query: callers can pass `initialQuery` to seed the input — used by
+ * the homepage hero typeahead's mobile branch which forwards the typed value
+ * into the overlay so the patient doesn't lose their first character.
  */
-
-type SearchSections = PublicSearchResponse["sections"];
-type ConditionState = SearchSections["conditions"][number]["state"];
-
-const DEBOUNCE_MS = 150;
-const LISTBOX_ID = "lewis-search-listbox";
-
-const CONDITION_STATE_MESSAGE_ID: Record<ConditionState, string> = {
-  live: "directory.search.results.row.live",
-  coming_soon: "directory.search.results.row.coming-soon",
-  not_offered: "directory.search.results.row.not-offered",
-};
-
-function optionIdFor(key: string): string {
-  return `lewis-search-option-${key.replace(/:/g, "-")}`;
-}
 
 interface SearchOverlayProps {
   open: boolean;
   onClose(): void;
+  /** Optional seed value for the input. Applied on next open. */
+  initialQuery?: string;
 }
 
-export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
+export function SearchOverlay({ open, onClose, initialQuery }: SearchOverlayProps) {
   const intl = useIntl();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
-  const latestQueryRef = useRef("");
 
-  const [q, setQ] = useState("");
-  const [sections, setSections] = useState<SearchSections | null>(null);
-  const [activeIndex, setActiveIndex] = useState<number>(-1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    q,
+    setQ,
+    debouncedQ,
+    sections,
+    loading,
+    error,
+    activeIndex,
+    setActiveIndex,
+    flatSuggestions,
+    totalCount,
+    announcement,
+  } = useTypeaheadSearch({ enabled: open });
 
-  const debouncedQ = useDebouncedValue(q.trim(), DEBOUNCE_MS);
-
-  // Reset internal state every time the overlay closes so the next open
-  // starts at the empty-query state.
+  // Seed the input from `initialQuery` on every transition into the open state.
+  // Only writes once per open; subsequent edits go through setQ.
+  const seededRef = useRef(false);
   useEffect(() => {
-    if (!open) {
-      setQ("");
-      setSections(null);
-      setActiveIndex(-1);
-      setError(null);
-      setLoading(false);
-      latestQueryRef.current = "";
+    if (open) {
+      if (!seededRef.current) {
+        if (initialQuery && initialQuery.length > 0) setQ(initialQuery);
+        seededRef.current = true;
+      }
+    } else {
+      seededRef.current = false;
     }
-  }, [open]);
-
-  // Issue the search whenever the debounced query changes. AbortController
-  // ensures a stale response can't overwrite a newer one.
-  useEffect(() => {
-    if (!open) return;
-    if (debouncedQ.length === 0) {
-      setSections(null);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    let active = true;
-    const query = debouncedQ;
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-
-    publicApi
-      .searchPublic(query, { signal: controller.signal })
-      .then((response) => {
-        if (!active || latestQueryRef.current !== query) return;
-        setSections(response.sections);
-        setLoading(false);
-        setActiveIndex(-1);
-      })
-      .catch((err: unknown) => {
-        if (!active || (err instanceof DOMException && err.name === "AbortError")) return;
-        if (err instanceof ApiNetworkError || err instanceof ApiSchemaError) {
-          setError(intl.formatMessage({ id: "directory.search.error" }));
-        } else {
-          setError(intl.formatMessage({ id: "directory.search.error" }));
-        }
-        setLoading(false);
-      });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [debouncedQ, open, intl]);
-
-  const handleQueryChange = useCallback((nextQ: string) => {
-    latestQueryRef.current = nextQ.trim();
-    setQ(nextQ);
-    setSections(null);
-    setActiveIndex(-1);
-    setError(null);
-    setLoading(nextQ.trim().length > 0);
-  }, []);
-
-  // Flatten the section arrays into one merged list to drive arrow-key
-  // navigation. Order matches the visual rendering: conditions → treatments
-  // → etcs. Each entry carries its href so Enter can navigate.
-  const flatSuggestions = useMemo(() => {
-    if (!sections) return [] as Array<{ key: string; href: string }>;
-    return [
-      ...sections.conditions.map((c) => ({ key: `condition:${c.slug}`, href: c.href })),
-      ...sections.treatments.map((t) => ({ key: `treatment:${t.slug}`, href: t.href })),
-      ...sections.etcs.map((e) => ({ key: `etc:${e.slug}`, href: e.href })),
-    ];
-  }, [sections]);
-
-  const totalCount = flatSuggestions.length;
+  }, [open, initialQuery, setQ]);
 
   const handleSubmit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
@@ -183,7 +117,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         });
       }
     },
-    [totalCount],
+    [totalCount, setActiveIndex],
   );
 
   const handleResultClick = useCallback(
@@ -194,19 +128,6 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     [navigate, onClose],
   );
 
-  // ARIA-live count message for screen readers. Updated whenever sections
-  // change so a user pausing on each keystroke hears the new count.
-  const announcement = useMemo(() => {
-    if (sections === null) return "";
-    return intl.formatMessage(
-      { id: "directory.search.aria.results-announcement" },
-      { count: totalCount },
-    );
-  }, [sections, totalCount, intl]);
-
-  // Combobox/listbox pattern: focus stays on the input, screen readers
-  // announce the active option via aria-activedescendant. Clears when no
-  // option is highlighted (activeIndex < 0) or when no results are listed.
   const activeOptionId = useMemo(() => {
     if (activeIndex < 0 || activeIndex >= flatSuggestions.length) return undefined;
     const target = flatSuggestions[activeIndex];
@@ -230,20 +151,41 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             e.preventDefault();
             inputRef.current?.focus();
           }}
-          style={{
-            position: "fixed",
-            top: "8vh",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "min(640px, calc(100vw - 32px))",
-            maxHeight: "84vh",
-            overflowY: "auto",
-            background: "var(--paper)",
-            borderRadius: 8,
-            boxShadow: "0 24px 60px rgba(27,24,20,0.18)",
-            zIndex: 101,
-            padding: 0,
-          }}
+          style={
+            {
+              // Anchored auto-height palette at optical center. The empty
+              // modal (~260px tall) lands so its visual center sits ~60px
+              // above viewport mid — humans perceive "centered" as slightly
+              // above geometric center (long-standing design heuristic; see
+              // Apple, Material Design vertical-rhythm specs). Growth
+              // happens downward only — the input never moves between
+              // renders, so no "jump" between keystrokes. The clamp
+              // `max(8vh, ...)` protects very short viewports where
+              // calc(50vh - 200px) would overlap the top edge. The
+              // max-height cap respects the viewport bottom (32px breathing
+              // room) so the modal can never overflow off-screen — when
+              // content exceeds the cap, the inner content region scrolls
+              // instead. CSS custom property keeps the top expression DRY
+              // between top + max-height.
+              "--lewis-search-top": "max(8vh, calc(50vh - 200px))",
+              position: "fixed",
+              top: "var(--lewis-search-top)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "min(640px, calc(100vw - 32px))",
+              maxHeight: "min(84vh, calc(100vh - var(--lewis-search-top) - 32px))",
+              display: "flex",
+              flexDirection: "column",
+              background: "var(--paper)",
+              borderRadius: 8,
+              boxShadow: "0 24px 60px rgba(27,24,20,0.18)",
+              zIndex: 101,
+              padding: 0,
+              // Outer hidden so the inner content region (the scrollable
+              // flex-1 child) is the only scrollbar surface.
+              overflow: "hidden",
+            } as CSSProperties
+          }
         >
           <Dialog.Title className="visually-hidden">
             <FormattedMessage id="directory.search.overlay.title" />
@@ -256,6 +198,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             onSubmit={handleSubmit}
             role="search"
             style={{
+              flexShrink: 0,
               display: "flex",
               alignItems: "center",
               gap: 12,
@@ -270,7 +213,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               ref={inputRef}
               type="search"
               value={q}
-              onChange={(e) => handleQueryChange(e.target.value)}
+              onChange={(e) => setQ(e.target.value)}
               onKeyDown={handleKeyDown}
               autoComplete="off"
               autoCorrect="off"
@@ -306,238 +249,59 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             {announcement}
           </div>
 
-          <div style={{ padding: "20px 24px 24px" }}>
-            {error ? (
-              <p style={{ color: "var(--ink-soft)", fontSize: 14 }}>{error}</p>
-            ) : q.trim().length === 0 && sections === null ? (
-              <RecentOnLewis onClick={handleResultClick} />
-            ) : sections === null ? null : totalCount === 0 ? (
-              <NoResults q={debouncedQ} onClick={handleResultClick} />
-            ) : (
-              <SectionedResults
-                sections={sections}
-                activeIndex={activeIndex}
-                onSelect={handleResultClick}
-              />
-            )}
-            {loading && sections === null ? <SkeletonRow /> : null}
+          {/* Scrollable content region. flex: 1 fills remaining vertical
+              space inside the fixed-height dialog; min-height: 0 is the
+              standard fix that lets a flex child with overflow shrink below
+              its content's natural height (without it, overflow:auto never
+              engages because the child grows to accommodate content). */}
+          <div
+            style={{
+              flex: "1 1 auto",
+              minHeight: 0,
+              overflowY: "auto",
+              padding: "20px 24px 24px",
+            }}
+          >
+            {/* Keyed on the rendered BUCKET (recent / pending / results /
+                no-results / error), not on the query string. Without this,
+                every keystroke during the pending state remounts the
+                wrapper and re-fires the 120ms fade — visibly janky on
+                rapid typers. Bucket-only keying means the fade triggers
+                on real content transitions (loading → results, results
+                → no-results) and content within a bucket updates in place
+                without re-animating. */}
+            <div
+              key={
+                error
+                  ? "error"
+                  : sections === null
+                    ? q.trim().length === 0
+                      ? "recent"
+                      : "pending"
+                    : totalCount === 0
+                      ? "no-results"
+                      : "results"
+              }
+              className="search-overlay-results"
+            >
+              {error ? (
+                <p style={{ color: "var(--ink-soft)", fontSize: 14 }}>{error}</p>
+              ) : q.trim().length === 0 && sections === null ? (
+                <RecentOnLewis onClick={handleResultClick} />
+              ) : sections === null ? null : totalCount === 0 ? (
+                <NoResults q={debouncedQ} onClick={handleResultClick} />
+              ) : (
+                <SectionedResults
+                  sections={sections}
+                  activeIndex={activeIndex}
+                  onSelect={handleResultClick}
+                />
+              )}
+              {loading && sections === null ? <SkeletonRow /> : null}
+            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );
-}
-
-function RecentOnLewis({ onClick }: { onClick(href: string): void }) {
-  return (
-    <div>
-      <SectionHeading>
-        <FormattedMessage id="directory.search.empty.heading" />
-      </SectionHeading>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {RECENT_ON_LEWIS.map((entry) => (
-          <li key={entry.href}>
-            <button type="button" onClick={() => onClick(entry.href)} style={resultButtonStyle()}>
-              <FormattedMessage id={entry.labelId} />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function NoResults({ q, onClick }: { q: string; onClick(href: string): void }) {
-  return (
-    <div>
-      <p
-        style={{
-          fontSize: 15,
-          color: "var(--ink-soft)",
-          marginBottom: 20,
-          marginTop: 0,
-        }}
-      >
-        <FormattedMessage id="directory.search.no-results.heading" values={{ query: q }} />
-      </p>
-      <SectionHeading>
-        <FormattedMessage id="directory.search.no-results.fallback-heading" />
-      </SectionHeading>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {RECENT_ON_LEWIS.map((entry) => (
-          <li key={entry.href}>
-            <button type="button" onClick={() => onClick(entry.href)} style={resultButtonStyle()}>
-              <FormattedMessage id={entry.labelId} />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function SectionedResults({
-  sections,
-  activeIndex,
-  onSelect,
-}: {
-  sections: SearchSections;
-  activeIndex: number;
-  onSelect(href: string): void;
-}) {
-  const intl = useIntl();
-  // Compute virtual-focus offsets to map activeIndex to a single highlighted
-  // row across the merged Conditions → Treatments → ETCs list.
-  const conditionsOffset = 0;
-  const treatmentsOffset = sections.conditions.length;
-  const etcsOffset = treatmentsOffset + sections.treatments.length;
-
-  return (
-    // Listbox container — focus stays on the combobox input above; the
-    // input's aria-activedescendant points at one option id in this list.
-    <div role="listbox" id={LISTBOX_ID}>
-      {sections.conditions.length > 0 && (
-        <Section headingId="directory.search.section.conditions" count={sections.conditions.length}>
-          {sections.conditions.map((hit, i) => (
-            <SuggestionButton
-              key={hit.slug}
-              optionKey={`condition:${hit.slug}`}
-              label={hit.name}
-              meta={intl.formatMessage({ id: CONDITION_STATE_MESSAGE_ID[hit.state] })}
-              active={activeIndex === conditionsOffset + i}
-              onClick={() => onSelect(hit.href)}
-            />
-          ))}
-        </Section>
-      )}
-
-      {sections.treatments.length > 0 && (
-        <Section headingId="directory.search.section.treatments" count={sections.treatments.length}>
-          {sections.treatments.map((hit, i) => (
-            <SuggestionButton
-              key={hit.slug}
-              optionKey={`treatment:${hit.slug}`}
-              label={hit.name}
-              meta={hit.drug ?? null}
-              active={activeIndex === treatmentsOffset + i}
-              onClick={() => onSelect(hit.href)}
-            />
-          ))}
-        </Section>
-      )}
-
-      {sections.etcs.length > 0 && (
-        <Section headingId="directory.search.section.etcs" count={sections.etcs.length}>
-          {sections.etcs.map((hit, i) => (
-            <SuggestionButton
-              key={hit.slug}
-              optionKey={`etc:${hit.slug}`}
-              label={hit.name}
-              meta={hit.city}
-              active={activeIndex === etcsOffset + i}
-              onClick={() => onSelect(hit.href)}
-            />
-          ))}
-        </Section>
-      )}
-    </div>
-  );
-}
-
-function Section({
-  headingId,
-  count,
-  children,
-}: {
-  headingId: string;
-  count: number;
-  children: ReactNode;
-}) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <SectionHeading>
-        <FormattedMessage id={headingId} /> · {count}
-      </SectionHeading>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>{children}</ul>
-    </div>
-  );
-}
-
-function SectionHeading({ children }: { children: ReactNode }) {
-  return (
-    <div
-      style={{
-        fontSize: 11,
-        textTransform: "uppercase",
-        letterSpacing: "0.08em",
-        color: "var(--ink-soft)",
-        marginBottom: 8,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function SuggestionButton({
-  optionKey,
-  label,
-  meta,
-  active,
-  onClick,
-}: {
-  /** Stable key (e.g. "condition:diabetic-pn") used to derive the option id. */
-  optionKey: string;
-  label: string;
-  meta: string | null;
-  active: boolean;
-  onClick(): void;
-}) {
-  return (
-    <li>
-      <button
-        type="button"
-        id={optionIdFor(optionKey)}
-        role="option"
-        aria-selected={active}
-        onClick={onClick}
-        style={resultButtonStyle(active)}
-      >
-        <span style={{ fontSize: 15, color: "var(--ink)" }}>{label}</span>
-        {meta ? (
-          <span style={{ fontSize: 12.5, color: "var(--ink-soft)", marginLeft: 12 }}>{meta}</span>
-        ) : null}
-      </button>
-    </li>
-  );
-}
-
-function SkeletonRow() {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        height: 14,
-        width: "60%",
-        background: "rgba(27,24,20,0.06)",
-        borderRadius: 4,
-        marginTop: 6,
-      }}
-    />
-  );
-}
-
-function resultButtonStyle(active = false): CSSProperties {
-  return {
-    display: "flex",
-    alignItems: "center",
-    width: "100%",
-    padding: "10px 12px",
-    border: "none",
-    borderRadius: 6,
-    background: active ? "var(--paper-deep)" : "transparent",
-    cursor: "pointer",
-    textAlign: "left",
-    fontFamily: "var(--sans)",
-  };
 }

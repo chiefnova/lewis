@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useIntl } from "react-intl";
 import {
   Capsule,
   IVBag,
@@ -12,13 +11,12 @@ import {
   TopicalTube,
   Vial,
 } from "../components/Products";
-import { ArrowRight, Magnifier, PlusIcon } from "../components/icons";
+import { ArrowRight, PlusIcon } from "../components/icons";
 import { FEATURED_HOMEPAGE } from "../data/catalog";
+import { HeroSearchTypeahead } from "../search/HeroSearchTypeahead";
 import { useSeo, siteUrl } from "../seo/useSeo";
 
 function Hero({ onSearch }: { onSearch: (q: string) => void }) {
-  const intl = useIntl();
-  const [q, setQ] = useState("");
   return (
     <section
       className="hero-section"
@@ -90,35 +88,7 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
         </p>
 
         <div style={{ maxWidth: 620, margin: "40px auto 0" }}>
-          <form
-            className="search-pill"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onSearch(q);
-            }}
-            role="search"
-          >
-            <span className="icon">
-              <Magnifier size={18} />
-            </span>
-            <div className="search-pill__input">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={intl.formatMessage({
-                  id: "directory.home.search.placeholder",
-                  defaultMessage: "Search by your condition",
-                })}
-                aria-label={intl.formatMessage({
-                  id: "directory.home.search.aria",
-                  defaultMessage: "Search by your condition",
-                })}
-              />
-            </div>
-            <button type="submit" className="pill pill-primary">
-              Browse
-            </button>
-          </form>
+          <HeroSearchTypeahead onSearch={onSearch} />
         </div>
       </div>
     </section>
