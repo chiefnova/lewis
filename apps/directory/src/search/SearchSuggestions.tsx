@@ -207,12 +207,13 @@ function SuggestionButton({
       id={optionIdFor(optionKey)}
       role="option"
       aria-selected={active}
-      // Pointer-down (not click) so suggestion activation wins the race
-      // with input blur — without this, on some browsers the popover
-      // closes via blur before the click handler resolves.
+      // preventDefault on mousedown suppresses the browser's default
+      // focus-shift to the button — the search input keeps focus, so
+      // the popover doesn't get torn down by the input's blur handler
+      // before the click event fires. The single onClick prop below
+      // owns the actual selection action.
       onMouseDown={(e) => {
         e.preventDefault();
-        onClick();
       }}
       onClick={onClick}
       style={resultButtonStyle(active)}

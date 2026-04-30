@@ -131,6 +131,13 @@ export function useTypeaheadSearch({
       })
       .catch((err: unknown) => {
         if (!active || (err instanceof DOMException && err.name === "AbortError")) return;
+        // Stale-query guard mirrors the success branch: if the user has
+        // already typed past this query (latestQueryRef advanced), don't
+        // surface this error — the in-flight fetch for the newer query
+        // will set its own state. Without this, a network blip on an
+        // intermediate keystroke flashes an error toast over a popover
+        // that's about to refresh with valid results.
+        if (latestQueryRef.current !== query) return;
         if (err instanceof ApiNetworkError || err instanceof ApiSchemaError) {
           setError(intl.formatMessage({ id: "directory.search.error" }));
         } else {

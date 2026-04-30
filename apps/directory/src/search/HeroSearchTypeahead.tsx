@@ -10,7 +10,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { useIntl } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 import { useNavigate } from "react-router-dom";
 
 import { Magnifier } from "../components/icons";
@@ -107,11 +107,14 @@ export function HeroSearchTypeahead({ onSearch }: HeroSearchTypeaheadProps = {})
 
   // ---- Mobile decoy path ----------------------------------------------------
   // The input is read-only on mobile to avoid the keyboard popping up before
-  // we open the overlay. Tapping (focus) hands off to the overlay.
+  // we open the overlay. Tapping (focus) hands off to the overlay, forwarding
+  // any value the input may already hold (rare on mobile due to readOnly, but
+  // covers desktop→mobile resize-while-typing and external-keyboard input).
   const handleMobileFocus = useCallback(() => {
     if (!isMobile) return;
+    const seed = inputRef.current?.value ?? "";
     inputRef.current?.blur();
-    openOverlay();
+    openOverlay(seed);
   }, [isMobile, openOverlay]);
 
   // ---- Desktop popover behavior --------------------------------------------
@@ -290,7 +293,7 @@ export function HeroSearchTypeahead({ onSearch }: HeroSearchTypeaheadProps = {})
           />
         </div>
         <button type="submit" className="pill pill-primary">
-          Browse
+          <FormattedMessage id="directory.home.search.submit" defaultMessage="Browse" />
         </button>
       </form>
 

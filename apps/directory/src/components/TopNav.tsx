@@ -90,7 +90,10 @@ export function TopNav() {
           </Link>
           <button
             type="button"
-            onClick={open}
+            // Wrapped so the MouseEvent isn't passed to open() as
+            // initialQuery — TopNav's magnifier always opens the
+            // overlay with an empty seed.
+            onClick={() => open()}
             aria-label={intl.formatMessage({
               id: "directory.nav.search.aria",
               defaultMessage: "Search",
