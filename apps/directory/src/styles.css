@@ -253,6 +253,26 @@ section {
   flex-shrink: 0;
 }
 
+/* Footer wordmark — mirrors the header treatment but at the smaller
+ * 18px attribution scale. Pairs with .serif / .serif.italic from
+ * @lewis/ui base styles for family + axis; these classes only own the
+ * size, weight, tracking, and the muted color on "health". */
+.footer-wordmark-primary {
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.footer-wordmark-secondary {
+  font-size: 18px;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+
 .announce-strip__group {
   display: flex;
   align-items: center;

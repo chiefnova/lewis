@@ -43,30 +43,8 @@ export function Footer() {
                 textTransform: "none",
               }}
             >
-              <span
-                className="serif"
-                style={{
-                  fontSize: 18,
-                  fontWeight: 400,
-                  letterSpacing: "-0.025em",
-                  lineHeight: 1,
-                }}
-              >
-                lewis.
-              </span>
-              <span
-                className="serif italic"
-                style={{
-                  fontSize: 18,
-                  fontWeight: 300,
-                  fontStyle: "italic",
-                  letterSpacing: "-0.025em",
-                  lineHeight: 1,
-                  color: "var(--ink-soft)",
-                }}
-              >
-                health
-              </span>
+              <span className="serif footer-wordmark-primary">lewis.</span>
+              <span className="serif footer-wordmark-secondary italic">health</span>
             </span>
           </div>
           <div
