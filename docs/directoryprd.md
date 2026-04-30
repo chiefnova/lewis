@@ -63,7 +63,7 @@ The directory's purpose is threefold:
 2. Serve as a B2B funnel for sponsors and ETC operators considering the Lewis platform.
 3. Provide treating physicians with clinical legitimacy signals and program briefs to support patient referrals.
 
-The directory is currently partially implemented. A homepage, browse/catalog, treatment detail, ETC profile, eligibility self-screen, and connect handoff are functional. A working search page, conditions index, B2B funnels (`/for-sponsors`, `/for-etcs`), patient education, legal pages, and the canonical FAQ are placeholder.
+The directory is currently partially implemented. A homepage, browse/catalog, treatment detail, ETC profile, eligibility self-screen, connect handoff, working search page, and conditions index/detail surfaces are functional or implemented locally pending PR. B2B funnels (`/for-sponsors`, `/for-etcs`), patient education, legal pages, and the canonical FAQ remain placeholder.
 
 This PRD documents what exists, what needs to be built, what needs to be tweaked, and what needs to be removed, in a single end-to-end specification that engineering, design, and copy can execute against.
 
@@ -241,7 +241,7 @@ This section is the canonical record of the directory as of the date of this PRD
 - Programmatic focus reset on every route change.
 - `localStorage` token for anonymous eligibility screens (key: `lewis:eligibility:<slug>`).
 - `robots.txt` disallows `/eligibility/*` and `/connect/*`.
-- `sitemap.xml` indexes: `/`, `/browse`, `/conditions`, `/etcs`, `/how-it-works`, `/faq`, `/for-etcs`, `/for-sponsors`, `/privacy`, `/terms`, `/cookies`, `/programs/wst-057`, `/etcs/big-sky`.
+- `sitemap.xml` indexes: `/`, `/browse`, `/conditions`, nine `/conditions/:slug` entries, `/etcs`, `/how-it-works`, `/faq`, `/for-etcs`, `/for-sponsors`, `/privacy`, `/terms`, `/cookies`, `/programs/wst-057`, `/etcs/big-sky`.
 
 ### 7.2 Global chrome
 
@@ -261,9 +261,9 @@ This section is the canonical record of the directory as of the date of this PRD
 | `/eligibility/:programSlug/result` | Implemented | Pass/fail branches with "Connect" or "Reach out anyway" CTAs. |
 | `/connect/:programSlug` | Implemented | Lead form with name, email, phone, best time to contact, brief situation. POST stubbed. |
 | `/connect/confirmed` | Implemented | Confirmation page with checklist of what to prep. |
-| `/search` | Placeholder | TopNav magnifier links here; page is non-functional. Highest-priority gap. |
-| `/conditions` | Placeholder | Index of conditions. Required for SEO. |
-| `/conditions/:slug` | Placeholder | Per-condition pages. Required for SEO. |
+| `/search` | ✅ Implemented (v0.0.7.0) | Surface 1 (Radix Dialog overlay, lazy-loaded, debounced live-suggest, combobox/listbox a11y) + Surface 2 (results page, three states, `noindex, follow` on query results, canonical strips `?q=`). Sectioned response (Conditions → Treatments → ETCs) enforced server-side. |
+| `/conditions` | 🟡 Implemented locally (Sprint 2 PR pending) | API-driven conditions index grouped by state, alphabetized within each section, ItemList JSON-LD, unit/a11y coverage, and Playwright E2E coverage. |
+| `/conditions/:slug` | 🟡 Implemented locally (Sprint 2 PR pending) | Full three-state condition detail: live program cards, standard-of-care framing where applicable, plain-language explainers, MedicalCondition JSON-LD, coming-soon disabled notify CTA, and not-offered three-path panel (ClinicalTrials.gov, treating physician, disabled notify). |
 | `/etcs` | Placeholder | Index of all licensed ETCs. |
 | `/etcs/:slug/manual` | Placeholder | Public P&P manual rendering (RULE 6(1)). |
 | `/etcs/:slug/etrb-report` | Placeholder | ETRB annual public report (RULE 16(6)(c)). |
@@ -278,11 +278,16 @@ This section is the canonical record of the directory as of the date of this PRD
 | `/cookies` | Placeholder | May fold into `/privacy`. |
 | `*` (NotFound) | Implemented | 404 page. |
 
-### 7.4 Data seed (current)
+### 7.4 Data seed (current — v0.0.8.0 local)
 
-- 1 live program: **WST-057®** (WinSanTor, topical, Phase 2, diabetic peripheral neuropathy, Bozeman MT).
-- 5 muted "Coming soon" programs: ALS infusion, rare hematologic injection, autoimmune oral, oncology solid-tumor injection, rare metabolic oral.
-- 1 live ETC: **Big Sky ETC** (Bozeman, License ETC-2025-001, Dr. Helena Marsh MD).
+- 1 live program: **WST-057®** (WinSanTor, topical, Phase 2, peripheral neuropathy, Bozeman MT) — linked to all 4 PN indications via the `program_conditions` join.
+- 1 live ETC: **Big Sky ETC** (Bozeman, License ETC-2025-001, Dr. Helena Marsh MD) — connected to WinSanTor via an active PPA `tenant_relationships` row that drives the ETC's catalog-term aggregation in `search_index_documents`.
+- 9 conditions in the new `conditions` table per § 27.3:
+  - Live: `diabetic-peripheral-neuropathy`, `chemotherapy-induced-peripheral-neuropathy`, `hiv-induced-peripheral-neuropathy`, `idiopathic-peripheral-neuropathy` — all linked to WST-057.
+  - Coming-soon: `ptsd` (Phase 2 sponsor onboarding next per § 2.4).
+  - Not-offered: `als`, `multiple-sclerosis`, `rare-cancers`, `autoimmune-diseases` — long-tail SEO + graceful fallback per § 14.2 State C.
+- All seed data is FORCE RLS'd; the new `app.role = 'directory_anonymous'` context is the only path that can read the published catalog.
+- The previous frontend condition scaffold has been replaced by the public conditions API. Programs and ETC profiles remain on the local catalog until their later API slices.
 
 ### 7.5 Disabled CTAs (must be wired or removed before public launch)
 
@@ -370,7 +375,7 @@ lewis.health/
 │   │     featured treatments (secondary carousel); abridged FAQ.
 │   │   Nav: primary (wordmark links here)
 │   │
-│   ├── /conditions                          [REWRITE — placeholder today]
+│   ├── /conditions                          [IMPLEMENTED LOCALLY — Sprint 2]
 │   │   H1: Conditions with experimental treatments in *Montana*.
 │   │   Purpose: Primary patient browse surface AND highest-value SEO
 │   │     landing surface; alphabetical/grouped index of every condition
@@ -378,7 +383,7 @@ lewis.health/
 │   │     page is the door; the program page is the conversion.
 │   │   Nav: primary (FIRST in TopNav, before "Browse Treatments")
 │   │
-│   ├── /conditions/:slug                    [REWRITE — placeholder today]
+│   ├── /conditions/:slug                    [IMPLEMENTED LOCALLY — Sprint 2]
 │   │   H1: Experimental treatments for {condition} in *Montana*.
 │   │   Purpose: Primary patient waypoint AND highest-value SEO destination
 │   │     for "{condition} experimental treatment Montana" queries. Lists
@@ -437,7 +442,7 @@ lewis.health/
 │   │     /ae-summary; consolidated here).
 │   │   Nav: linked from /etcs/:slug, indexed.
 │   │
-│   └── /search                              [REWRITE — placeholder today]
+│   └── /search                              [IMPLEMENTED — v0.0.7.0]
 │       H1: Search Lewis.
 │       Purpose: Cross-content search — programs, conditions, ETCs.
 │       Nav: primary (magnifier icon).
@@ -2097,38 +2102,55 @@ Every directory feature must trace to a source statute or rule. Map:
 
 ## 32. Build Plan — Prioritized Work Order
 
+### 32.0 Shipped status
+
+| Sprint | Theme | Status | Version | PR |
+|---|---|---|---|---|
+| Sprint 1 | Search backend FTS endpoint + overlay component foundation | ✅ **Shipped** | v0.0.7.0 (2026-04-29) | [#12](https://github.com/chiefnova/lewis/pull/12) |
+| Sprint 2 | Conditions index + conditions detail templates (three states) | 🟡 Implemented locally; PR pending | v0.0.8.0 local | — |
+| Sprint 3 | Programs page Evidence block + brief.pdf generation | ⏳ Pending | — | — |
+| Sprint 4 | Homepage restructure + nav restructure + footer restructure | ⏳ Pending | — | — |
+| Sprint 5 | Eligibility fail refinement + connect privacy framing + B2B page implementations | ⏳ Pending | — | — |
+| Sprint 6 | Counsel reviews integrated, content finalized, launch readiness | ⏳ Pending | — | — |
+
+**Sprint 1 — what shipped beyond the bare slice spec:**
+- The full `/v1/public/search` API + Surface 1 overlay + Surface 2 results page (the explicit Sprint 1 deliverable).
+- Plus the data layer Sprint 2 composes on top of: new `conditions` table + `program_conditions` join + 9 seeded conditions + RLS policies + trigger architecture (three SECURITY DEFINER `*_by_id` helpers + cascade helpers, no no-op `UPDATE` patterns).
+- Plus a minimal `/conditions/:slug` page so search results land on a real route. Three-state UI (live / coming_soon / not_offered) was differentiated in Sprint 1; full PRD § 14.2 content depth is implemented locally in the Sprint 2 work.
+- Plus PHI hardening (`sanitizeAccessLogMessage`), wordmark + Fraunces typography tightening across all three apps, the v1.1 condition-first PRD reframe (`docs/prd.md` split into `b2bprd.md` + `directoryprd.md`), and Hero static-placeholder per § 11.3.
+
 ### 32.1 P0 — Blocks public launch
 
 These items must ship before any public traffic.
 
 **Engineering (P0):**
 
-- `/conditions` index — the primary patient browse surface
-- `/conditions/:slug` template — three states (live, coming-soon, not-offered) — primary patient waypoint
-- `/conditions/:slug` first 5 condition pages — content + structured data
-- `/search` real implementation — overlay + results page + backend FTS endpoint
-- `/programs/:slug` Clinical Evidence block — new section above "Who this is for"
-- `/programs/:slug/brief.pdf` — server-rendered PDF generation
-- `/programs/wst-057` cost panel real content — clears `[COUNSEL REVIEW]`
-- `/programs/wst-057` evidence link real content — clears `[COUNSEL REVIEW]`
-- `/etcs/:slug` direct medical director contact line — for clinicians
-- `/etcs/:slug/ae-summary` route removal — fold into `/etrb-report`
-- Homepage section reordering — per § 11.1
-- Homepage `FeaturedConditions` block added as primary above-the-fold below hero (condition-first card grid with program sub-lines per § 11.4); existing `FeaturedTreatments` block demoted to secondary carousel below it (drug-first, visually subordinate per § 11.4b)
-- Homepage hero placeholder revision — single static placeholder per § 11.3
-- Homepage AnnouncementStrip CTA wired or removed — per § 11.2
-- Homepage BeginningSection CTA wired or removed — per § 11.9
-- Homepage AbridgedFAQ — reduce 15 questions to 5, link to `/faq` for full
-- TopNav restructure — add "Conditions" + secondary nav drawer
-- Footer restructure — 5-column layout with bottom-bar trust signal
-- All disabled CTAs across site — wired or removed (audit list per § 7.5)
-- Eligibility fail branch refinement — three graceful paths per § 17.4
-- Connect form privacy framing block — per § 18.1
-- Connect form situation field made optional — per § 18.1
-- Account creation gate verification — anonymous submission accepted, account post-conversion only
-- `/for-sponsors` full first-draft content — per § 21.3
-- `/for-etcs` full first-draft content — per § 22.3
-- Build pipeline `[COUNSEL REVIEW]` lint — fails build on found markers
+- 🟡 `/conditions` index — the primary patient browse surface — **implemented locally in Sprint 2; PR pending**
+- 🟡 `/conditions/:slug` template — three states (live, coming-soon, not-offered) — primary patient waypoint — **full Sprint 2 template implemented locally; PR pending**
+- 🟡 `/conditions/:slug` first 5 condition pages — content + structured data — **implemented locally; counsel/editorial review pending**
+- ✅ **`/search` real implementation — overlay + results page + backend FTS endpoint — shipped v0.0.7.0**
+- ⏳ `/programs/:slug` Clinical Evidence block — new section above "Who this is for" — **Sprint 3**
+- ⏳ `/programs/:slug/brief.pdf` — server-rendered PDF generation — **Sprint 3**
+- ⏳ `/programs/wst-057` cost panel real content — clears `[COUNSEL REVIEW]` — **Sprint 3**
+- ⏳ `/programs/wst-057` evidence link real content — clears `[COUNSEL REVIEW]` — **Sprint 3**
+- ⏳ `/etcs/:slug` direct medical director contact line — for clinicians — **Sprint 4**
+- ⏳ `/etcs/:slug/ae-summary` route removal — fold into `/etrb-report` — **Sprint 4**
+- ⏳ Homepage section reordering — per § 11.1 — **Sprint 4**
+- ⏳ Homepage `FeaturedConditions` block added as primary above-the-fold below hero (condition-first card grid with program sub-lines per § 11.4); existing `FeaturedTreatments` block demoted to secondary carousel below it (drug-first, visually subordinate per § 11.4b) — **Sprint 4**
+- ✅ **Homepage hero placeholder revision — single static placeholder per § 11.3 — shipped v0.0.7.0**
+- ⏳ Homepage AnnouncementStrip CTA wired or removed — per § 11.2 — **Sprint 4**
+- ⏳ Homepage BeginningSection CTA wired or removed — per § 11.9 — **Sprint 4**
+- ⏳ Homepage AbridgedFAQ — reduce 15 questions to 5, link to `/faq` for full — **Sprint 4**
+- ⏳ TopNav restructure — add "Conditions" + secondary nav drawer — **Sprint 4**
+- ⏳ Footer restructure — 5-column layout with bottom-bar trust signal — **Sprint 4**
+- ⏳ All disabled CTAs across site — wired or removed (audit list per § 7.5) — **Sprint 4-5**
+- ⏳ Eligibility fail branch refinement — three graceful paths per § 17.4 — **Sprint 5**
+- ⏳ Connect form privacy framing block — per § 18.1 — **Sprint 5**
+- ⏳ Connect form situation field made optional — per § 18.1 — **Sprint 5**
+- ⏳ Account creation gate verification — anonymous submission accepted, account post-conversion only — **Sprint 5**
+- ⏳ `/for-sponsors` full first-draft content — per § 21.3 — **Sprint 5**
+- ⏳ `/for-etcs` full first-draft content — per § 22.3 — **Sprint 5**
+- ⏳ Build pipeline `[COUNSEL REVIEW]` lint — fails build on found markers — **Sprint 6**
 
 **Content (P0):**
 
@@ -2194,12 +2216,12 @@ These items must ship before any public traffic.
 
 Recommended 6-sprint plan to public launch:
 
-- **Sprint 1 (Week 1):** Search backend FTS endpoint + overlay component foundation
-- **Sprint 2 (Week 2):** Conditions index + conditions detail templates (three states)
-- **Sprint 3 (Week 3):** Programs page Evidence block + brief.pdf generation
-- **Sprint 4 (Week 4):** Homepage restructure + nav restructure + footer restructure
-- **Sprint 5 (Week 5):** Eligibility fail refinement + connect privacy framing + B2B page implementations
-- **Sprint 6 (Week 6):** Counsel reviews integrated, content finalized, launch readiness
+- ✅ **Sprint 1 (Week 1) — Shipped v0.0.7.0 (2026-04-29):** Search backend FTS endpoint + overlay component foundation. Plus the data layer (conditions table + RLS + triggers + 9 seeded conditions) and a minimal `/conditions/:slug` route so search hits land on a real page. See § 32.0 for full delivery scope. PR: [#12](https://github.com/chiefnova/lewis/pull/12).
+- 🟡 **Sprint 2 (local implementation in review):** Conditions index + conditions detail templates (three states)
+- ⏳ **Sprint 3:** Programs page Evidence block + brief.pdf generation
+- ⏳ **Sprint 4:** Homepage restructure + nav restructure + footer restructure
+- ⏳ **Sprint 5:** Eligibility fail refinement + connect privacy framing + B2B page implementations
+- ⏳ **Sprint 6:** Counsel reviews integrated, content finalized, launch readiness
 
 **Public launch target:** end of Sprint 6, contingent on counsel sign-off and BAA execution.
 
