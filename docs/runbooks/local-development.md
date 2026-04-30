@@ -19,6 +19,7 @@ Lewis local development uses Docker for infrastructure and host-run Node process
 | Staff/business app | `http://127.0.0.1:13000` |
 | API | `http://127.0.0.1:13001` |
 | Patient app | `http://127.0.0.1:13002` |
+| Public directory (`lewis.health`) | `http://127.0.0.1:13003` |
 | Postgres | `127.0.0.1:15432` |
 | Redis | `127.0.0.1:16379` |
 
@@ -58,6 +59,7 @@ mise run dev:api
 mise run dev:workers
 mise run dev:app
 mise run dev:patient
+mise run dev:directory
 ```
 
 The API and workers both verify Postgres and Redis at startup. The worker runtime registers `notifications`, `pdf`, and `compliance` BullMQ processors. These processors are scaffold handlers and are allowed by default only in local/test; non-local stub execution requires `ENABLE_STUB_WORKERS=true`.
@@ -104,7 +106,7 @@ When you add a SQL file, both paths must stay in sync:
 
 ```sh
 # 1. Author the new migration file
-$EDITOR packages/db/migrations/0018_<feature>.sql
+$EDITOR packages/db/migrations/0019_<feature>.sql
 
 # 2. Regenerate the journal so drizzle-kit migrate sees the new entry
 pnpm --filter @lewis/db migrate:journal
@@ -117,7 +119,7 @@ $EDITOR packages/db/test/rls/<NNNN>_<descriptive>.sql
 mise run db:rls:test
 
 # 5. Commit BOTH the SQL file and the regenerated journal
-git add packages/db/migrations/0018_<feature>.sql packages/db/migrations/meta/_journal.json
+git add packages/db/migrations/0019_<feature>.sql packages/db/migrations/meta/_journal.json
 ```
 
 CI gate `migrate:journal:check` (in `api-ci.yml`) compares the disk journal byte-for-byte against what the regenerator would produce. Skipping step 2 fails the PR with a one-command fix message — you cannot accidentally ship a migration that the cloud applier silently skips.
