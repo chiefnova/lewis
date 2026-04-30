@@ -1,5 +1,5 @@
 import type { ConditionState, PublicConditionDetail } from "@lewis/shared/api/public";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Link, useParams } from "react-router-dom";
 
@@ -33,24 +33,82 @@ export function ConditionDetailPage() {
   const { condition, loading, error, notFound, retry } = useConditionDetail(slug);
   const content = condition ? getConditionContent(condition.slug) : undefined;
 
+  // Move keyboard focus to the page heading on every state transition
+  // (loading → loaded / not-found / error) and on slug change. Without
+  // this, screen-reader and keyboard users land on whatever element had
+  // focus on the previous page after client-side navigation. The h1 is
+  // tabIndex={-1} so it can receive programmatic focus without joining
+  // the natural tab order.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // Coarse state key — flips to a new value whenever the page surface
+  // changes (loading vs loaded vs not-found vs error). Combined with slug
+  // it covers every visible transition.
+  const stateKey = loading
+    ? "loading"
+    : notFound
+      ? "not-found"
+      : error
+        ? "error"
+        : (condition?.slug ?? "loaded");
+  useEffect(() => {
+    if (headingRef.current) headingRef.current.focus();
+  }, [slug, stateKey]);
+
   const indexCanonical = siteUrl("/conditions");
-  const detailCanonical = condition ? siteUrl(`/conditions/${condition.slug}`) : indexCanonical;
+
+  // Resolve SEO metadata by state. While loading we leave title/description/
+  // canonical/jsonLd undefined so the previous page's metadata stays in place
+  // (or, on a fresh navigation, head stays whatever the document shipped with);
+  // emitting "Condition not found" copy during the in-flight fetch was
+  // visible to client-side navigators and to crawlers replaying the route.
+  const seo = (() => {
+    if (condition) {
+      return {
+        title: intl.formatMessage(
+          { id: "directory.conditions.detail.seo.title" },
+          { name: condition.name },
+        ),
+        description: intl.formatMessage(
+          { id: "directory.conditions.detail.seo.description" },
+          { name: condition.name },
+        ),
+        canonical: siteUrl(`/conditions/${condition.slug}`),
+        jsonLd: buildMedicalConditionJsonLd(condition, content),
+        noIndex: false,
+      };
+    }
+    if (notFound || error) {
+      return {
+        title: intl.formatMessage({ id: "directory.conditions.not-found.seo.title" }),
+        description: intl.formatMessage({ id: "directory.conditions.not-found.body" }),
+        canonical: indexCanonical,
+        jsonLd: undefined,
+        noIndex: true,
+      };
+    }
+    // Loading — emit a neutral site-name title with no per-condition claim.
+    // Honest: during the fetch we don't yet know which condition this is.
+    // Avoids leaking "Condition not found" while the API call is in flight.
+    return {
+      title: "Lewis Health",
+      description: undefined,
+      canonical: undefined,
+      jsonLd: undefined,
+      noIndex: false,
+    };
+  })();
 
   useSeo({
-    title: condition
-      ? `${condition.name} — Lewis Health`
-      : intl.formatMessage({ id: "directory.conditions.not-found.title" }) + " — Lewis Health",
-    description: condition
-      ? `Experimental treatments for ${condition.name} in Montana.`
-      : intl.formatMessage({ id: "directory.conditions.not-found.body" }),
-    canonical: detailCanonical,
-    noIndex: notFound || !!error,
-    jsonLd: condition ? buildMedicalConditionJsonLd(condition, content) : undefined,
+    title: seo.title,
+    description: seo.description,
+    canonical: seo.canonical,
+    noIndex: seo.noIndex,
+    jsonLd: seo.jsonLd,
   });
 
-  if (loading) return <ConditionDetailSkeleton />;
-  if (notFound) return <ConditionNotFound />;
-  if (error || !condition) return <ConditionDetailError onRetry={retry} />;
+  if (loading) return <ConditionDetailSkeleton headingRef={headingRef} />;
+  if (notFound) return <ConditionNotFound headingRef={headingRef} />;
+  if (error || !condition) return <ConditionDetailError onRetry={retry} headingRef={headingRef} />;
 
   return (
     <article className="fade-up condition-detail">
@@ -65,7 +123,7 @@ export function ConditionDetailPage() {
           <ConditionStateBadge state={condition.state} />
         </div>
 
-        <h1 className="page-h1">
+        <h1 className="page-h1" ref={headingRef} tabIndex={-1}>
           <FormattedMessage
             id="directory.conditions.detail.h1"
             values={{
@@ -351,10 +409,16 @@ function AboutSection({ explainer }: { explainer: NonNullable<ConditionContent["
         <p key={index}>{paragraph}</p>
       ))}
       <div className="source">
-        Source:{" "}
-        <a href={explainer.sourceUrl} target="_blank" rel="noreferrer">
-          {explainer.sourceLabel}
-        </a>
+        <FormattedMessage
+          id="directory.conditions.detail.source.label"
+          values={{
+            source: (
+              <a href={explainer.sourceUrl} target="_blank" rel="noreferrer">
+                {explainer.sourceLabel}
+              </a>
+            ),
+          }}
+        />
       </div>
     </section>
   );
@@ -383,10 +447,16 @@ function StandardOfCareSection({
       </ul>
       <div className="soc-closing">{standardOfCare.closing}</div>
       <div className="source">
-        Source:{" "}
-        <a href={standardOfCare.sourceUrl} target="_blank" rel="noreferrer">
-          {standardOfCare.sourceLabel}
-        </a>
+        <FormattedMessage
+          id="directory.conditions.detail.source.label"
+          values={{
+            source: (
+              <a href={standardOfCare.sourceUrl} target="_blank" rel="noreferrer">
+                {standardOfCare.sourceLabel}
+              </a>
+            ),
+          }}
+        />
       </div>
       <span className="visually-hidden">{condition.name}</span>
     </section>
@@ -506,10 +576,16 @@ function AdvocacySection({
 
 // ----- Loading + error + not-found states (Round 8 will refine) ----------
 
-function ConditionDetailSkeleton() {
+function ConditionDetailSkeleton({ headingRef }: { headingRef: RefObject<HTMLHeadingElement> }) {
   return (
     <div className="condition-detail" aria-live="polite" aria-busy="true">
       <div className="container-narrow" style={{ padding: "48px 0" }}>
+        {/* Visually hidden heading anchors keyboard/SR focus during the
+            loading state so the focus management effect has a real h1 to
+            land on. The skeleton bars carry the visual weight. */}
+        <h1 ref={headingRef} tabIndex={-1} className="visually-hidden">
+          Loading…
+        </h1>
         <div className="lewis-skeleton" style={{ height: 28, width: 200, marginBottom: 16 }} />
         <div className="lewis-skeleton" style={{ height: 52, width: "85%", marginBottom: 16 }} />
         <div className="lewis-skeleton" style={{ height: 22, width: "60%", marginBottom: 28 }} />
@@ -525,12 +601,20 @@ function ConditionDetailSkeleton() {
   );
 }
 
-function ConditionDetailError({ onRetry }: { onRetry: () => void }) {
+function ConditionDetailError({
+  onRetry,
+  headingRef,
+}: {
+  onRetry: () => void;
+  headingRef: RefObject<HTMLHeadingElement>;
+}) {
   return (
     <div className="condition-detail">
       <div className="container-narrow">
         <div className="lewis-error-block" role="alert">
-          <h2>
+          {/* The error heading anchors focus on the loaded → error transition
+              so screen-reader and keyboard users land on the alert region. */}
+          <h2 ref={headingRef} tabIndex={-1}>
             <FormattedMessage id="directory.conditions.detail.error.heading" />
           </h2>
           <p>
@@ -544,17 +628,29 @@ function ConditionDetailError({ onRetry }: { onRetry: () => void }) {
           >
             <FormattedMessage id="directory.conditions.detail.error.retry" />
           </button>
+          {/* Per directoryprd.md § 29.3: 5xx error pages render a contact line
+              for support@lewis.health. */}
+          <p className="error-support">
+            <FormattedMessage
+              id="directory.conditions.detail.error.support"
+              values={{
+                a: (chunks) => <a href="mailto:support@lewis.health">{chunks}</a>,
+              }}
+            />
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function ConditionNotFound() {
+function ConditionNotFound({ headingRef }: { headingRef: RefObject<HTMLHeadingElement> }) {
   return (
     <div className="condition-detail fade-up" style={{ padding: "80px 0 120px" }}>
       <div className="container-narrow">
         <h1
+          ref={headingRef}
+          tabIndex={-1}
           className="serif"
           style={{
             fontSize: 42,

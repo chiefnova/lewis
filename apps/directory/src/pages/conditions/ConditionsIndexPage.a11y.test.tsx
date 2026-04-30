@@ -86,7 +86,11 @@ describe("ConditionsIndexPage a11y", () => {
       </IntlProvider>,
     );
 
+    // Wait for one row from each of the three state sections so axe runs
+    // with the full UI (live + coming-soon + not-offered tables) mounted.
     await screen.findByText("Diabetic peripheral neuropathy");
+    await screen.findByText("Post-traumatic stress disorder (PTSD)");
+    await screen.findByText("Amyotrophic Lateral Sclerosis (ALS)");
 
     const results = await axe.run(container, AXE_OPTIONS);
     expect(results.violations).toEqual([]);

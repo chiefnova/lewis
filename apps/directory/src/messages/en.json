@@ -2,7 +2,8 @@
   "directory.announcement": "Lewis Health is just getting started. New programs and ETCs are added as Montana licenses them.",
   "directory.announcement.cta": "Get notified",
   "directory.nav.conditions": "Conditions",
-  "directory.nav.browse": "Treatments",
+  "directory.nav.browse": "Browse Treatments",
+  "directory.nav.browse.short": "Browse",
   "directory.nav.search.aria": "Search",
   "directory.home.aria": "Lewis home",
   "directory.home.search.aria": "Search by your condition",
@@ -102,7 +103,12 @@
   "directory.conditions.detail.advocacy.eyebrow": "Patient resources",
   "directory.conditions.detail.advocacy.heading": "Advocacy organizations",
   "directory.conditions.detail.disclaimer": "This page is not medical advice. Consult your treating physician about any treatment decision.",
+  "directory.conditions.detail.source.label": "Source: {source}",
+  "directory.conditions.detail.seo.title": "{name} — Lewis Health",
+  "directory.conditions.detail.seo.description": "Experimental treatments for {name} in Montana.",
+  "directory.conditions.not-found.seo.title": "Condition not found — Lewis Health",
   "directory.conditions.detail.error.heading": "We couldn't load this condition.",
   "directory.conditions.detail.error.body": "Try refreshing in a moment.",
-  "directory.conditions.detail.error.retry": "Try again"
+  "directory.conditions.detail.error.retry": "Try again",
+  "directory.conditions.detail.error.support": "If this persists, contact <a>support@lewis.health</a>."
 }

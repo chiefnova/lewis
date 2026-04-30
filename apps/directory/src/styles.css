@@ -216,6 +216,25 @@ section {
   }
 }
 
+/* TopNav Browse pill — full label on desktop ("Browse Treatments"), short
+ * label on small viewports ("Browse"). Keeps the outline pill from
+ * crowding the wordmark + magnifier on phone widths without changing the
+ * desktop intent. Restored from the Slice 1 baseline. */
+.topnav-browse-full {
+  display: inline;
+}
+.topnav-browse-short {
+  display: none;
+}
+@media (max-width: 768px) {
+  .topnav-browse-full {
+    display: none;
+  }
+  .topnav-browse-short {
+    display: inline;
+  }
+}
+
 /* Announcement strip. Desktop = centered (text + CTA) group with the Montana
  * flag floating at the left edge. Mobile = 3-column grid so wrapping text
  * never collides with the flag and the CTA pins to the right. */

@@ -55,7 +55,10 @@ type ConditionDetailRow = {
 };
 
 type LinkedProgramRow = {
-  slug: string;
+  // directory_slug is nullable on the programs table — a publish-flag drift
+  // (directory_published=true with directory_slug=null) is theoretically
+  // possible, so the SELECT and filter chain treat slug as nullable end-to-end.
+  slug: string | null;
   name: string;
   drug: string | null;
   phase: string | null;
@@ -84,6 +87,7 @@ publicConditionsRoutes.get("/", async (c) => {
              join programs p on p.id = pc.program_id
              where pc.condition_id = c.id
                and p.directory_published = true
+               and p.directory_slug is not null
            ), 0) as program_count
     from conditions c
     where c.published = true
@@ -162,13 +166,17 @@ publicConditionsRoutes.get(
         join program_conditions pc on pc.program_id = p.id
         where pc.condition_id = $1::uuid
           and p.directory_published = true
+          and p.directory_slug is not null
         order by p.name asc
       `,
       [cond.id],
     );
 
+    // The SQL filter above guarantees row.slug is non-null; the type-narrowing
+    // filter below keeps the type system honest end-to-end without trusting
+    // the SQL invariant at the TS layer.
     const linkedPrograms: PublicConditionLinkedProgram[] = programsResult.rows
-      .filter((row) => row.slug !== null)
+      .filter((row): row is LinkedProgramRow & { slug: string } => row.slug !== null)
       .map((row) => ({
         slug: row.slug,
         name: row.name,

@@ -37,9 +37,15 @@ export function useConditionDetail(slug: string) {
           setState({ loading: false, notFound: false, error: err });
           return;
         }
-        if (err instanceof Error && err.name !== "AbortError") {
+        if (err instanceof Error) {
+          if (err.name === "AbortError") return;
           setState({ loading: false, notFound: false, error: err });
+          return;
         }
+        // Non-Error rejection (e.g. a thrown string). Normalize so the
+        // spinner doesn't hang forever.
+        const normalized = new Error(typeof err === "string" ? err : "Unknown error");
+        setState({ loading: false, notFound: false, error: normalized });
       });
     return () => ctrl.abort();
   }, [slug, retryToken]);

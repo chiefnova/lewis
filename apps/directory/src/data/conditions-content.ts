@@ -74,7 +74,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
     standardOfCare: {
       intro:
         "The FDA-approved or routinely used treatments for diabetic peripheral neuropathy in the United States today include:",
-      treatments: PN_FDA_APPROVED_TREATMENTS as unknown as string[],
+      treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
         "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate FDA-approved options first. Experimental treatments listed on Lewis are intended for patients for whom these standard treatments have not provided adequate relief.",
       sourceLabel: PN_AAN_GUIDELINE.sourceLabel,
@@ -101,7 +101,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
     standardOfCare: {
       intro:
         "There is no FDA-approved treatment specifically indicated for CIPN. The treatments routinely used to manage CIPN symptoms in the United States today include:",
-      treatments: PN_FDA_APPROVED_TREATMENTS as unknown as string[],
+      treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
         "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate available options first. The lack of an FDA-approved treatment specifically indicated for CIPN is part of why this condition is in scope for experimental treatments.",
       sourceLabel: "ASCO — Prevention and Management of CIPN clinical practice guideline",
@@ -128,7 +128,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
     standardOfCare: {
       intro:
         "The treatments routinely used for HIV-induced peripheral neuropathy in the United States today include:",
-      treatments: PN_FDA_APPROVED_TREATMENTS as unknown as string[],
+      treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
         "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate FDA-approved options first. Adjustments to your antiretroviral regimen, where appropriate, are an additional consideration with your HIV-care team.",
       sourceLabel: PN_AAN_GUIDELINE.sourceLabel,
@@ -155,7 +155,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
     standardOfCare: {
       intro:
         "The treatments routinely used for idiopathic peripheral neuropathy in the United States today include:",
-      treatments: PN_FDA_APPROVED_TREATMENTS as unknown as string[],
+      treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
         "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate available options first. For idiopathic neuropathy in particular, periodic re-evaluation for an emergent underlying cause is a parallel step.",
       sourceLabel: PN_AAN_GUIDELINE.sourceLabel,

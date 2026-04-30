@@ -106,7 +106,7 @@ When you add a SQL file, both paths must stay in sync:
 
 ```sh
 # 1. Author the new migration file
-$EDITOR packages/db/migrations/0019_<feature>.sql
+$EDITOR packages/db/migrations/<NNNN>_<snake_name>.sql
 
 # 2. Regenerate the journal so drizzle-kit migrate sees the new entry
 pnpm --filter @lewis/db migrate:journal
@@ -119,7 +119,7 @@ $EDITOR packages/db/test/rls/<NNNN>_<descriptive>.sql
 mise run db:rls:test
 
 # 5. Commit BOTH the SQL file and the regenerated journal
-git add packages/db/migrations/0019_<feature>.sql packages/db/migrations/meta/_journal.json
+git add packages/db/migrations/<NNNN>_<snake_name>.sql packages/db/migrations/meta/_journal.json
 ```
 
 CI gate `migrate:journal:check` (in `api-ci.yml`) compares the disk journal byte-for-byte against what the regenerator would produce. Skipping step 2 fails the PR with a one-command fix message — you cannot accidentally ship a migration that the cloud applier silently skips.
