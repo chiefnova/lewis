@@ -61,6 +61,32 @@ type SearchIndexRow = {
   rank: number;
 };
 
+/**
+ * Build a prefix-mode tsquery from raw user input.
+ *
+ * Why: `websearch_to_tsquery('english', 'neur')` parses "neur" as a stemmed
+ * lexeme and matches only documents whose tsvector contains that stem. The
+ * tsvector for "Diabetic peripheral neuropathy" tokenizes to e.g. {diabet,
+ * peripher, neuropathi} — "neur" is NOT in there, so partial-word queries
+ * (typeahead's whole point) return zero hits. To support "type the first
+ * letter and see suggestions immediately," we layer a prefix tsquery on top:
+ * each sanitized token gets a `:*` suffix, joined with ` & `. Combined with
+ * the existing websearch query via OR, complete words still benefit from
+ * stemming and quoting, and partial words get prefix-matched.
+ *
+ * Returns null when the sanitized input is empty (avoids `to_tsquery('')`
+ * which errors at the SQL layer).
+ */
+export function buildPrefixTsquery(q: string): string | null {
+  const tokens = q
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
+  if (tokens.length === 0) return null;
+  return tokens.map((t) => `${t}:*`).join(" & ");
+}
+
 type ConditionRow = {
   id: string;
   slug: string;
@@ -107,22 +133,49 @@ publicSearchRoutes.get("/", validatePublicSearchQuery, async (c) => {
     etc: "etcs",
   };
 
-  // 1. FTS pass — single query, all sections, ranked. Off-topic floor
-  //    applied here so the MIN_RANK threshold filters out drug-name-only
-  //    matches that happen to share a stem with the query (e.g. an ALS
-  //    query matching nothing in WST-057's vector returns 0 rank → drops).
-  const ftsSql = `
-    select source_table, source_id::text as source_id, title, redacted_snippet,
-           ts_rank_cd(search_vector, websearch_to_tsquery('english', $1)) as rank
-    from search_index_documents
-    where visibility_classification = 'public'
-      and search_vector @@ websearch_to_tsquery('english', $1)
-      and ($2::text is null or source_table = $2::text)
-    order by rank desc, title asc
-    limit ${TOTAL_LIMIT}
-  `;
+  // 1. FTS pass — single query, all sections, ranked. We OR two tsqueries:
+  //    - websearch_to_tsquery for whole-word + stemming + quoted phrases
+  //      (handles "diabetic neuropathy" → matches the stemmed indexed form).
+  //    - to_tsquery with `tok:*` prefix-mode for typeahead-friendly partial
+  //      matching (handles "neur" → matches "neuropathi" stem).
+  //    Rank is the greatest of the two so prefix hits don't get penalized
+  //    when they would also match websearch. The MIN_RANK floor still applies
+  //    so off-topic noise (an ALS query weakly hitting WST-057 because they
+  //    share an English stop-word) drops out the same way per § 13.5.
   const sourceTableFilter = type ? typeToTable[type] : null;
-  const ftsResult = await db.query<SearchIndexRow>(ftsSql, [q, sourceTableFilter]);
+  const prefixTsquery = buildPrefixTsquery(q);
+
+  const ftsSql = prefixTsquery
+    ? `
+      select source_table, source_id::text as source_id, title, redacted_snippet,
+             greatest(
+               ts_rank_cd(search_vector, websearch_to_tsquery('english', $1)),
+               ts_rank_cd(search_vector, to_tsquery('english', $3))
+             ) as rank
+      from search_index_documents
+      where visibility_classification = 'public'
+        and (
+          search_vector @@ websearch_to_tsquery('english', $1)
+          or search_vector @@ to_tsquery('english', $3)
+        )
+        and ($2::text is null or source_table = $2::text)
+      order by rank desc, title asc
+      limit ${TOTAL_LIMIT}
+    `
+    : `
+      select source_table, source_id::text as source_id, title, redacted_snippet,
+             ts_rank_cd(search_vector, websearch_to_tsquery('english', $1)) as rank
+      from search_index_documents
+      where visibility_classification = 'public'
+        and search_vector @@ websearch_to_tsquery('english', $1)
+        and ($2::text is null or source_table = $2::text)
+      order by rank desc, title asc
+      limit ${TOTAL_LIMIT}
+    `;
+  const ftsParams: (string | null)[] = prefixTsquery
+    ? [q, sourceTableFilter, prefixTsquery]
+    : [q, sourceTableFilter];
+  const ftsResult = await db.query<SearchIndexRow>(ftsSql, ftsParams);
 
   // Apply the MIN_RANK floor in JS so we can include the threshold in
   // observability output if we ever want to emit it.
