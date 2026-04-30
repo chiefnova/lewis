@@ -193,7 +193,7 @@ function ResultsSection({
   children: ReactNode;
 }) {
   return (
-    <section style={{ marginBottom: 48 }}>
+    <section style={{ padding: 0, marginBottom: 32 }}>
       <h2
         className="serif"
         style={{

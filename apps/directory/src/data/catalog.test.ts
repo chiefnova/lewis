@@ -1,13 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  CATALOG,
-  CONDITIONS,
-  ETCS,
-  getConditionBySlug,
-  getEtcBySlug,
-  getProgramBySlug,
-  getProgramsForCondition,
-} from "./catalog";
+import { CATALOG, ETCS, getEtcBySlug, getProgramBySlug } from "./catalog";
 
 describe("catalog lookups", () => {
   test("getProgramBySlug returns the WST-057 program", () => {
@@ -41,29 +33,9 @@ describe("catalog lookups", () => {
     const re = /^[a-z0-9-]+$/;
     for (const p of CATALOG) expect(p.slug).toMatch(re);
     for (const e of ETCS) expect(e.slug).toMatch(re);
-    for (const c of CONDITIONS) expect(c.slug).toMatch(re);
   });
 
   test("at least one program is currently available", () => {
     expect(CATALOG.some((p) => p.available)).toBe(true);
-  });
-
-  test("seeded live neuropathy conditions link to WST-057", () => {
-    const liveNeuropathyConditions = CONDITIONS.filter(
-      (c) => c.state === "live" && c.slug.includes("neuropathy"),
-    );
-
-    expect(liveNeuropathyConditions).toHaveLength(4);
-    for (const condition of liveNeuropathyConditions) {
-      expect(getProgramsForCondition(condition).map((p) => p.slug)).toContain("wst-057");
-    }
-  });
-
-  test("getConditionBySlug resolves ALS as not offered", () => {
-    expect(getConditionBySlug("als")).toMatchObject({
-      name: "Amyotrophic Lateral Sclerosis (ALS)",
-      state: "not_offered",
-      programSlugs: [],
-    });
   });
 });

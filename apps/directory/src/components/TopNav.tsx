@@ -7,6 +7,7 @@ export function TopNav() {
   const location = useLocation();
   const intl = useIntl();
   const isBrowse = location.pathname.startsWith("/browse");
+  const isConditions = location.pathname.startsWith("/conditions");
   const { open } = useSearchOverlay();
 
   return (
@@ -56,20 +57,36 @@ export function TopNav() {
             health
           </span>
         </Link>
-        <nav aria-label="Primary" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <nav aria-label="Primary" style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <Link
-            to="/browse"
-            className="pill pill-outline pill-sm"
+            to="/conditions"
+            className="topnav-link"
+            aria-current={isConditions ? "page" : undefined}
             style={{
-              borderColor: isBrowse ? "var(--ink)" : "rgba(27,24,20,0.25)",
+              fontSize: 14,
+              color: isConditions ? "var(--ink)" : "var(--ink-soft)",
+              textDecoration: "none",
+              borderBottom: isConditions ? "1px solid var(--ink)" : "1px solid transparent",
+              paddingBottom: 2,
+              transition: "color 120ms ease, border-color 120ms ease",
             }}
           >
-            <span className="topnav-browse-full">
-              <FormattedMessage id="directory.nav.browse" defaultMessage="Browse Treatments" />
-            </span>
-            <span className="topnav-browse-short">
-              <FormattedMessage id="directory.nav.browse.short" defaultMessage="Browse" />
-            </span>
+            <FormattedMessage id="directory.nav.conditions" defaultMessage="Conditions" />
+          </Link>
+          <Link
+            to="/browse"
+            className="topnav-link"
+            aria-current={isBrowse ? "page" : undefined}
+            style={{
+              fontSize: 14,
+              color: isBrowse ? "var(--ink)" : "var(--ink-soft)",
+              textDecoration: "none",
+              borderBottom: isBrowse ? "1px solid var(--ink)" : "1px solid transparent",
+              paddingBottom: 2,
+              transition: "color 120ms ease, border-color 120ms ease",
+            }}
+          >
+            <FormattedMessage id="directory.nav.browse" defaultMessage="Treatments" />
           </Link>
           <button
             type="button"
