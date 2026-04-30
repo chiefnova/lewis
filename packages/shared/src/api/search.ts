@@ -26,7 +26,7 @@ export const PublicSearchQueryParams = z.object({
 });
 export type PublicSearchQueryParams = z.infer<typeof PublicSearchQueryParams>;
 
-const ConditionState = z.enum(["live", "coming_soon", "not_offered"]);
+export const ConditionState = z.enum(["live", "coming_soon", "not_offered"]);
 export type ConditionState = z.infer<typeof ConditionState>;
 
 export const PublicSearchConditionHit = z.object({

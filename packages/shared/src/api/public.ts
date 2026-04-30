@@ -6,6 +6,10 @@
 
 import { z } from "zod";
 
+import { ConditionState } from "./search.js";
+
+export { ConditionState };
+
 // ----- Programs (a "program" is an investigational treatment listing) -----
 
 export const ProgramSlug = z
@@ -46,6 +50,50 @@ export const PublicProgramListResponse = z.object({
   total: z.number().int().nonnegative(),
 });
 export type PublicProgramListResponse = z.infer<typeof PublicProgramListResponse>;
+
+// ----- Conditions (the directory's primary patient browse surface) -----
+
+export const ConditionSlug = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .regex(/^[a-z0-9-]+$/, "Condition slugs must be lowercase kebab-case.");
+
+export const PublicConditionSummary = z.object({
+  slug: ConditionSlug,
+  name: z.string(),
+  state: ConditionState,
+  summary: z.string().nullable(),
+  icd10Codes: z.array(z.string()),
+  programCount: z.number().int().nonnegative(),
+  href: z.string(),
+});
+export type PublicConditionSummary = z.infer<typeof PublicConditionSummary>;
+
+export const PublicConditionLinkedProgram = z.object({
+  slug: z.string(),
+  name: z.string(),
+  drug: z.string().nullable(),
+  // Phase + form come straight off the programs table. Manufacturer stays
+  // nullable until sponsor display names are exposed through a public-safe
+  // API/RLS path; the directory UI drops missing fields rather than rendering
+  // placeholders.
+  phase: z.string().nullable(),
+  form: z.string().nullable(),
+  manufacturer: z.string().nullable(),
+});
+export type PublicConditionLinkedProgram = z.infer<typeof PublicConditionLinkedProgram>;
+
+export const PublicConditionDetail = PublicConditionSummary.extend({
+  linkedPrograms: z.array(PublicConditionLinkedProgram),
+});
+export type PublicConditionDetail = z.infer<typeof PublicConditionDetail>;
+
+export const PublicConditionListResponse = z.object({
+  conditions: z.array(PublicConditionSummary),
+});
+export type PublicConditionListResponse = z.infer<typeof PublicConditionListResponse>;
 
 // ----- ETCs -----
 
