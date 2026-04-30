@@ -15,7 +15,11 @@ const SearchOverlay = lazy(() =>
 
 interface SearchOverlayContextValue {
   isOpen: boolean;
-  open(): void;
+  /** Open the overlay. Optionally seed the input with `initialQuery` —
+   * used by the homepage hero typeahead's mobile branch to forward
+   * the typed value into the full-screen overlay so the patient
+   * doesn't lose their first character. */
+  open(initialQuery?: string): void;
   close(): void;
 }
 
@@ -32,9 +36,19 @@ const SearchOverlayContext = createContext<SearchOverlayContextValue | undefined
  */
 export function SearchOverlayProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [initialQuery, setInitialQuery] = useState<string>("");
 
-  const open = useCallback(() => setIsOpen(true), []);
-  const close = useCallback(() => setIsOpen(false), []);
+  const open = useCallback((seedQuery?: string) => {
+    setInitialQuery(seedQuery ?? "");
+    setIsOpen(true);
+  }, []);
+  const close = useCallback(() => {
+    setIsOpen(false);
+    // Don't clear initialQuery here — SearchOverlay's seededRef logic
+    // already gates against re-applying it, and clearing on close would
+    // race with the close transition. The next open() call overwrites
+    // initialQuery before isOpen flips back to true.
+  }, []);
 
   const value = useMemo<SearchOverlayContextValue>(
     () => ({ isOpen, open, close }),
@@ -49,7 +63,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
           intent. A flash of empty state is preferable to a phantom loader. */}
       {isOpen ? (
         <Suspense fallback={null}>
-          <SearchOverlay open={isOpen} onClose={close} />
+          <SearchOverlay open={isOpen} onClose={close} initialQuery={initialQuery} />
         </Suspense>
       ) : null}
     </SearchOverlayContext.Provider>

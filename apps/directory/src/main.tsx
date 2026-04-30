@@ -50,12 +50,14 @@ const ConditionDetailPage = lazy(() =>
     default: m.ConditionDetailPage,
   })),
 );
-// StaticPages bundles the placeholder routes (FAQ, privacy, terms, etc.) into
-// one chunk. Pull each named export through a thin module-default-export hop
-// so React.lazy receives a Component shape.
 const ConditionsIndexPage = lazy(() =>
-  import("./pages/StaticPages").then((m) => ({ default: m.ConditionsIndexPage })),
+  import("./pages/conditions/ConditionsIndexPage").then((m) => ({
+    default: m.ConditionsIndexPage,
+  })),
 );
+// StaticPages bundles the remaining placeholder routes (FAQ, privacy, terms,
+// etc.) into one chunk. Pull each named export through a thin
+// module-default-export hop so React.lazy receives a Component shape.
 const CookiesPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.CookiesPage })),
 );

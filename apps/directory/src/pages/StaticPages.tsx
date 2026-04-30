@@ -136,15 +136,8 @@ export function NotFoundPage() {
   );
 }
 
-export function ConditionsIndexPage() {
-  return (
-    <StaticShell
-      title="Conditions"
-      path="/conditions"
-      body="An index of conditions covered by listed programs. Builds out as more programs are licensed by Montana DPHHS."
-    />
-  );
-}
+// ConditionsIndexPage now lives at apps/directory/src/pages/conditions/ConditionsIndexPage.tsx
+// (replaced the StaticShell placeholder in Slice 2 — directoryprd.md § 14).
 
 export function EtcsIndexPage() {
   return (

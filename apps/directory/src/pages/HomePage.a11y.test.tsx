@@ -3,8 +3,22 @@ import axe from "axe-core";
 import { cleanup, render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { IntlProvider } from "react-intl";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomePage } from "./HomePage";
+import { SearchOverlayProvider } from "../search/SearchContext";
+
+// Stub the search API — the new HeroSearchTypeahead uses it on mount.
+vi.mock("../api/client", () => ({
+  ApiNetworkError: class ApiNetworkError extends Error {},
+  ApiSchemaError: class ApiSchemaError extends Error {},
+  publicApi: {
+    searchPublic: vi.fn().mockResolvedValue({
+      sections: { conditions: [], treatments: [], etcs: [] },
+      totals: { conditions: 0, treatments: 0, etcs: 0 },
+      query: "",
+    }),
+  },
+}));
 
 afterEach(cleanup);
 
@@ -24,7 +38,9 @@ describe("HomePage a11y", () => {
     const { container } = render(
       <IntlProvider locale="en" messages={{}}>
         <MemoryRouter>
-          <HomePage />
+          <SearchOverlayProvider>
+            <HomePage />
+          </SearchOverlayProvider>
         </MemoryRouter>
       </IntlProvider>,
     );

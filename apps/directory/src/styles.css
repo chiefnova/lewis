@@ -11,6 +11,18 @@ main:focus {
   outline: none;
 }
 
+/* Smooth anchor-jumps for in-page TOC links (e.g. /conditions/:slug
+ * sticky TOC). prefers-reduced-motion overrides to instant scroll for
+ * users who've opted out of animation. */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Hero search-pill rotating placeholder.
  *
  * The .search-pill from @lewis/ui has [icon, input, button] as direct flex
@@ -35,6 +47,48 @@ main:focus {
 
 .search-pill__input > input {
   width: 100%;
+}
+
+/* Hero typeahead — Surface 1.5 per directoryprd.md § 13. The container
+ * scopes click-outside detection to the search-pill. The popover itself is
+ * rendered via React Portal into <body> so it escapes the hero <section>'s
+ * overflow:hidden boundary (the hero clips its decorative pill graphics;
+ * an in-flow popover would get cropped at the section edge). The component
+ * sets top/left/width inline from the input's bounding rect. */
+.hero-typeahead {
+  position: relative;
+}
+
+.hero-typeahead-popover {
+  position: absolute;
+  background: var(--paper);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(27, 24, 20, 0.18);
+  /* Cap the dropdown height so a long suggestion list scrolls inside the
+   * popover instead of pushing other hero content downward. 60vh leaves
+   * comfortable room above and below on most laptop viewports. */
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  z-index: 1000;
+  /* Light fade-up — feels smooth without animating layout. */
+  animation: hero-typeahead-in 140ms var(--ease-out) both;
+}
+
+@keyframes hero-typeahead-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-typeahead-popover {
+    animation: none;
+  }
 }
 
 .rotating-placeholder {
@@ -316,24 +370,6 @@ section {
   }
 }
 
-/* Top nav — desktop shows the full "Browse Treatments" label; mobile swaps
- * to the compact "Browse" label so the pill fits cleanly next to the
- * search button without crowding the logo. */
-.topnav-browse-full {
-  display: inline;
-}
-.topnav-browse-short {
-  display: none;
-}
-@media (max-width: 768px) {
-  .topnav-browse-full {
-    display: none;
-  }
-  .topnav-browse-short {
-    display: inline;
-  }
-}
-
 /* Hero section — desktop fills the viewport below the 50px announcement
  * strip + 80px sticky nav, but the content is optically centered between
  * the announcement strip and the bottom of the viewport. That treats the
@@ -550,4 +586,943 @@ section.hero-section {
     padding: 40px 24px 80px;
     max-width: 100%;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Conditions index (`/conditions`) — newspaper-directory layout.
+ *
+ * Three semantic <table> blocks per state ("Available now", "Coming soon",
+ * "Not currently offered"). Each <caption> carries an accent dot (filled blue
+ * for live, hollow ring for coming-soon, none for not-offered), a 30px
+ * Fraunces serif title, and a count chip that floats to the right edge.
+ * Not-offered rows go italic Fraunces ink-soft to step back honestly.
+ *
+ * Approved 2026-04-29 in design-shotgun round 1 — see
+ * ~/.gstack/projects/chiefnova-lewis/designs/conditions-index-20260429/approved.json
+ * ------------------------------------------------------------------------- */
+
+.conditions-index {
+  padding-bottom: 80px;
+}
+
+.conditions-index .masthead {
+  border-bottom: 3px double var(--ink);
+  padding: 64px 0 28px;
+  margin-bottom: 32px;
+}
+.conditions-index .masthead-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.conditions-index .masthead h1 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: clamp(40px, 5vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin-bottom: 18px;
+  max-width: 880px;
+}
+.conditions-index .masthead h1 em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+.conditions-index .masthead-lede {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 720px;
+  font-style: italic;
+  font-weight: 300;
+}
+
+.dir-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+/* Caption: <caption> stays default-display (table-caption) so its
+ * border-bottom spans the full table width edge-to-edge. The flex layout
+ * lives on a .caption-row wrapper inside — putting flex on <caption> itself
+ * breaks the table-width inheritance in some renderers. */
+.dir-table caption {
+  text-align: left;
+  padding: 36px 0 18px;
+  border-bottom: 1px solid var(--rule);
+  caption-side: top;
+}
+.dir-table .caption-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.dir-table .caption-dot {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dir-table .caption-dot.is-live {
+  background: var(--accent);
+}
+.dir-table .caption-dot.is-coming {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  box-sizing: border-box;
+}
+.dir-table .caption-title {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-left: 10px;
+}
+.dir-table .caption-row > .caption-title:first-child {
+  margin-left: 0;
+}
+.dir-table .caption-count {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 400;
+  line-height: 1;
+  margin-left: auto;
+}
+.dir-table.is-not .caption-title {
+  color: var(--ink-soft);
+}
+
+.dir-table th {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 400;
+  text-align: left;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.dir-table th.col-icd {
+  width: 130px;
+}
+.dir-table th.col-arrow {
+  width: 40px;
+  text-align: right;
+}
+
+.dir-table tbody tr {
+  border-bottom: 1px solid var(--rule-soft);
+  transition: background-color 120ms ease;
+}
+.dir-table tbody tr:hover {
+  background: rgba(255, 254, 251, 0.5);
+}
+.dir-table tbody tr:hover .row-arrow {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+.dir-table td {
+  padding: 18px 0;
+  vertical-align: top;
+}
+
+.dir-table .row-name {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: 19px;
+  color: var(--ink);
+  font-weight: 400;
+  margin-bottom: 4px;
+  letter-spacing: -0.005em;
+}
+.dir-table .row-name a {
+  color: inherit;
+  text-decoration: none;
+}
+.dir-table .row-name a:hover {
+  color: var(--accent);
+}
+.dir-table .row-summary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 580px;
+}
+.dir-table .row-icd {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  padding-top: 4px;
+}
+.dir-table .row-arrow {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--ink-faint);
+  text-align: right;
+  transition:
+    color 140ms ease,
+    transform 140ms ease;
+  padding-top: 4px;
+}
+
+/* Not-offered: serif italic + ink-soft (mirrors the "step-back" treatment
+ * from variant A — present, browsable, but visually subordinate). */
+.dir-table.is-not .row-name {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.dir-table.is-not .row-name a:hover {
+  color: var(--accent);
+}
+.dir-table.is-not .row-summary {
+  color: var(--ink-faint);
+}
+.dir-table.is-not .row-arrow {
+  color: var(--ink-faint);
+}
+
+.conditions-index .footer-note {
+  border-top: 1px solid var(--rule);
+  margin-top: 48px;
+  padding: 36px 0 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 680px;
+}
+.conditions-index .footer-note a {
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  font-style: normal;
+  text-decoration: none;
+}
+
+@media (max-width: 720px) {
+  .dir-table th.col-arrow,
+  .dir-table .row-arrow {
+    display: none;
+  }
+  .dir-table th.col-icd,
+  .dir-table .row-icd {
+    width: 90px;
+    font-size: 11px;
+  }
+  .dir-table .row-name {
+    font-size: 17px;
+  }
+  .conditions-index .caption-title {
+    font-size: 24px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * ConditionStateBadge — compact status chip used at the top of every
+ * `/conditions/:slug` detail page (and reusable elsewhere — e.g. inline in
+ * search overlay results, future homepage FeaturedConditions cards).
+ *
+ * Same shape across all three states; the dot does the state-signaling work
+ * (filled --accent for live, hollow ring --accent for coming-soon, faded
+ * ink-faint for not-offered). Sentence case label, 600 weight. Mirrors the
+ * dot pattern from .conditions-index .caption-dot so the visual language
+ * carries from the index → detail navigation.
+ *
+ * Approved 2026-04-29 in design-shotgun round 6 — see
+ * ~/.gstack/projects/chiefnova-lewis/designs/condition-state-badge-20260429/approved.json
+ * ------------------------------------------------------------------------- */
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.state-badge .state-badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent);
+}
+
+.state-badge.is-coming .state-badge-dot {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  box-sizing: border-box;
+}
+
+.state-badge.is-not {
+  color: var(--ink-soft);
+}
+
+.state-badge.is-not .state-badge-dot {
+  background: var(--ink-faint);
+  opacity: 0.5;
+}
+
+.state-badge.is-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  gap: 8px;
+}
+.state-badge.is-sm .state-badge-dot {
+  width: 7px;
+  height: 7px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Condition detail page (`/conditions/:slug`) — C1 architecture per
+ * design-shotgun Round 2 + Round 3-5 sub-compositions.
+ *
+ * Reading order: Breadcrumb → ConditionStateBadge → H1 → italic summary →
+ * ICD chips → standalone heading + count + HERO CARD with asset well +
+ * (programs row | Lewis-is-tracking row | not-offered row) → anchor-nav
+ * layout (sticky TOC left, content right) → disclaimer.
+ *
+ * The hero card has a 110px asset well on the left + body on the right +
+ * (for live state) an arrow column. Coming-soon and not-offered share the
+ * same hero card structure — only copy + asset SVG change.
+ *
+ * Approved 2026-04-29 — see ~/.gstack/projects/chiefnova-lewis/designs/
+ * condition-detail-{composition,coming-soon,not-offered,email-signup}-20260429/
+ * ------------------------------------------------------------------------- */
+
+.condition-detail {
+  padding-bottom: 80px;
+}
+
+.condition-detail .breadcrumb {
+  padding: 28px 0 0;
+}
+.condition-detail .breadcrumb a {
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+.condition-detail .breadcrumb a:hover {
+  color: var(--accent);
+}
+
+.condition-detail .badge-row {
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.condition-detail .page-h1 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: clamp(38px, 4.6vw, 52px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 18px;
+  color: var(--ink);
+  /* H1 fills full container width so it doesn't shrink-to-fit short titles
+   * while expanding for long ones — keeps the structural feel identical
+   * across diabetic / chemo / hiv / idiopathic / etc. */
+  width: 100%;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.condition-detail .page-h1 em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.condition-detail .page-summary {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 620px;
+  margin-bottom: 22px;
+}
+
+.condition-detail .icd-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.condition-detail .icd-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  border: 1px solid var(--rule);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+/* Hero section — standalone heading, no parent panel */
+.condition-detail .hero-head {
+  margin-top: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.condition-detail .hero-head h2 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.condition-detail .hero-head .hero-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Hero card — shared shell for live (with arrow + program link),
+ * coming-soon (with email signup), and not-offered (with email signup) */
+.condition-detail .hero-card {
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.condition-detail .hero-card-link {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  align-items: stretch;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 140ms ease;
+}
+.condition-detail .hero-card-link:hover {
+  background: var(--paper-card);
+}
+.condition-detail .hero-card-static {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.condition-detail .hero-asset {
+  background: var(--paper-card);
+  border-right: 1px solid var(--rule-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 12px;
+  min-height: 110px;
+}
+.condition-detail .hero-asset svg {
+  width: 64px;
+  height: 64px;
+  display: block;
+}
+.condition-detail .hero-asset.is-quiet svg {
+  opacity: 0.7;
+}
+
+.condition-detail .hero-card-body {
+  padding: 22px 26px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.condition-detail .hero-card-body h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 21px;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.005em;
+}
+.condition-detail .hero-card-body .program-meta {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.condition-detail .hero-card-body p {
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+.condition-detail .hero-card-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 24px 0 16px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  transition: transform 140ms ease;
+}
+.condition-detail .hero-card-link:hover .hero-card-arrow {
+  transform: translateX(3px);
+}
+
+/* TOC anchor-nav layout (sticky left + content right at desktop) */
+.condition-detail .toc-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 64px;
+  margin-top: 56px;
+  padding-top: 48px;
+  border-top: 1px solid var(--rule);
+}
+@media (max-width: 1023px) {
+  .condition-detail .toc-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .condition-detail .toc {
+    display: none;
+  }
+}
+.condition-detail .toc {
+  position: sticky;
+  /* Clear the sticky TopNav (80px tall) + 24px breathing room. The mockup
+   * used top: 32px because its nav was static, not sticky — production
+   * needs to add the header height back in so the first TOC item ("About
+   * this condition") doesn't get clipped behind the nav as the user
+   * scrolls. */
+  top: 104px;
+  align-self: start;
+}
+.condition-detail .toc-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+.condition-detail .toc ol {
+  list-style: none;
+  padding-left: 0;
+}
+.condition-detail .toc li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  position: relative;
+}
+.condition-detail .toc li:last-child {
+  border-bottom: 0;
+}
+.condition-detail .toc a {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+  text-decoration: none;
+  display: block;
+  transition: color 120ms ease;
+}
+.condition-detail .toc a:hover {
+  color: var(--accent);
+}
+.condition-detail .toc li.is-active a {
+  color: var(--accent);
+  font-weight: 500;
+}
+.condition-detail .toc li.is-active::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 14px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.condition-detail .toc-main {
+  min-width: 0;
+}
+.condition-detail .toc-main .section {
+  padding: 0 0 56px;
+  /* Land anchor jumps and scrollspy thresholds 104px below the viewport
+   * top — clears the 80px sticky TopNav with breathing room so the
+   * section's heading is fully visible after a click. Pairs with the TOC's
+   * `top: 104px` and the useScrollSpy rootMargin offset. */
+  scroll-margin-top: 104px;
+}
+.condition-detail .toc-main .section + .section {
+  padding-top: 48px;
+  border-top: 1px solid var(--rule);
+}
+
+/* Section heading inside TOC content */
+.condition-detail .section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+.condition-detail .section-h2 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  margin-bottom: 18px;
+  color: var(--ink);
+}
+.condition-detail .prose p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink);
+  margin-bottom: 14px;
+  max-width: 680px;
+}
+.condition-detail .prose p.muted {
+  color: var(--ink-soft);
+}
+.condition-detail .prose .source {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-top: 14px;
+  font-style: italic;
+}
+.condition-detail .prose .source a {
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+}
+
+/* Standard of care list + closing block */
+.condition-detail .soc-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 16px;
+}
+.condition-detail .soc-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+.condition-detail .soc-list li:first-child {
+  border-top: 1px solid var(--rule-soft);
+}
+.condition-detail .soc-closing {
+  background: var(--paper-bright);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px;
+  margin-top: 18px;
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 1.6;
+  border-radius: 0 4px 4px 0;
+}
+
+/* "While you wait" panel (coming-soon + not-offered) */
+.condition-detail .while-you-wait {
+  background: var(--paper-card);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  padding: 22px 26px;
+}
+.condition-detail .while-you-wait h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.condition-detail .while-you-wait p {
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin-bottom: 14px;
+  max-width: none;
+}
+.condition-detail .while-you-wait .cta {
+  color: var(--accent);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+
+.condition-detail .not-offered-paths {
+  background: var(--paper-card);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  padding: 22px 26px;
+}
+.condition-detail .not-offered-paths h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.condition-detail .not-offered-path-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.condition-detail .path-card {
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  background: var(--paper-bright);
+  padding: 16px;
+}
+.condition-detail .path-card h4 {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 650;
+  margin-bottom: 8px;
+}
+.condition-detail .path-card p {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+.condition-detail .path-card .cta {
+  color: var(--accent);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+.condition-detail .path-card .condition-email-signup {
+  margin-top: 0;
+}
+
+/* Why-experimental sidebar callout (lives inside TOC content) */
+.condition-detail .callout {
+  padding: 24px 28px;
+  background: var(--paper-card);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+.condition-detail .callout h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.condition-detail .callout p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: none;
+}
+
+.condition-detail .advocacy-list {
+  list-style: none;
+  padding-left: 0;
+}
+.condition-detail .advocacy-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink);
+  font-size: 15.5px;
+}
+.condition-detail .advocacy-list li:first-child {
+  border-top: 1px solid var(--rule-soft);
+}
+.condition-detail .advocacy-list a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+
+.condition-detail .disclaimer {
+  margin-top: 48px;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+  color: var(--ink-faint);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+/* Disabled-CTA email signup (Round 7 variant A — horizontal inline) */
+.condition-email-signup {
+  margin-top: 6px;
+}
+.condition-email-signup-row {
+  display: flex;
+  gap: 8px;
+}
+.condition-email-signup input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.condition-email-signup button {
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--paper-card);
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  cursor: not-allowed;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.condition-email-signup-note {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* Mobile fallback — hero card collapses asset above body */
+@media (max-width: 720px) {
+  .condition-detail .hero-card-link,
+  .condition-detail .hero-card-static {
+    grid-template-columns: 1fr;
+  }
+  .condition-detail .not-offered-path-grid {
+    grid-template-columns: 1fr;
+  }
+  .condition-detail .hero-asset {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-soft);
+    min-height: 96px;
+  }
+  .condition-detail .hero-card-arrow {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Skeleton + error states for the conditions surfaces.
+ * Shared visual language across both /conditions and /conditions/:slug:
+ *   - Skeletons use a subtle paper-card shimmer pulse on rule-soft blocks
+ *     so they don't feel mechanical; opacity stays low to read as
+ *     "loading" rather than "real but empty".
+ *   - Error states use a serif heading + muted body + outline pill retry,
+ *     mirroring the rest of the directory's quiet error posture (no red,
+ *     no scary iconography — these are recoverable failures).
+ * ------------------------------------------------------------------------- */
+
+@keyframes lewis-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+/* Search overlay polish — the dialog frame itself uses anchored auto-height
+ * so the bottom edge grows downward with content. To avoid a hard "pop"
+ * when results stream in, suggestion rows fade in subtly. The frame stays
+ * stable; only the new rows animate. Skipped under prefers-reduced-motion. */
+.search-overlay-results {
+  animation: search-overlay-fade-in 120ms var(--ease-out) both;
+}
+
+@keyframes search-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-overlay-results {
+    animation: none;
+  }
+}
+
+.lewis-skeleton {
+  background: var(--rule-soft);
+  border-radius: 4px;
+  animation: lewis-skeleton-pulse 1400ms ease-in-out infinite;
+}
+
+.lewis-skeleton.is-card {
+  border-radius: 8px;
+}
+
+.lewis-error-block {
+  padding: 48px 0 24px;
+  max-width: 580px;
+}
+.lewis-error-block h2 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.lewis-error-block p {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.55;
+  margin-bottom: 18px;
 }

@@ -11,6 +11,8 @@ import {
   EligibilityStartResponse,
   type LinkAnonymousScreenRequest,
   LinkAnonymousScreenResponse,
+  PublicConditionDetail,
+  PublicConditionListResponse,
   PublicEtcDetail,
   PublicProgramDetail,
   PublicProgramListResponse,
@@ -116,6 +118,26 @@ export const publicApi = {
     const params = new URLSearchParams({ q });
     if (options?.type) params.set("type", options.type);
     return getJson(`/v1/public/search?${params.toString()}`, PublicSearchResponse, {
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
+  },
+  /**
+   * Conditions catalog list — primary patient browse surface per
+   * directoryprd.md § 14. Returns every published condition with a
+   * count of directory_published linked programs. AbortSignal lets the
+   * index page cancel a pending request on unmount.
+   */
+  listConditions(options?: { signal?: AbortSignal }) {
+    return getJson("/v1/public/conditions", PublicConditionListResponse, {
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
+  },
+  /**
+   * Single condition detail — primary patient waypoint per § 14.2.
+   * Hydrates linked directory_published programs in one call.
+   */
+  getCondition(slug: string, options?: { signal?: AbortSignal }) {
+    return getJson(`/v1/public/conditions/${encodeURIComponent(slug)}`, PublicConditionDetail, {
       ...(options?.signal ? { signal: options.signal } : {}),
     });
   },

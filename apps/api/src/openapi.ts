@@ -23,6 +23,10 @@ import {
   SearchResponse,
   PublicSearchQueryParams,
   PublicSearchResponse,
+  ConditionSlug,
+  PublicConditionDetail,
+  PublicConditionListResponse,
+  PublicConditionSummary,
 } from "@lewis/shared";
 import {
   OpenAPIRegistry,
@@ -77,6 +81,10 @@ export function buildOpenApiDocument(baseUrl: string) {
   registry.register("SearchResponse", SearchResponse);
   registry.register("PublicSearchQueryParams", PublicSearchQueryParams);
   registry.register("PublicSearchResponse", PublicSearchResponse);
+  registry.register("ConditionSlug", ConditionSlug);
+  registry.register("PublicConditionSummary", PublicConditionSummary);
+  registry.register("PublicConditionDetail", PublicConditionDetail);
+  registry.register("PublicConditionListResponse", PublicConditionListResponse);
 
   // -- Security schemes -----------------------------------------------------
 
@@ -158,6 +166,12 @@ export function buildOpenApiDocument(baseUrl: string) {
     },
     Forbidden: {
       description: "Authenticated but not allowed",
+      content: {
+        "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+      },
+    },
+    NotFound: {
+      description: "Resource not found",
       content: {
         "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
       },
@@ -268,6 +282,40 @@ export function buildOpenApiDocument(baseUrl: string) {
         responses: {
           200: ok("PublicSearchResponse"),
           400: { $ref: "#/components/responses/ValidationError" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/conditions": {
+      get: {
+        summary: "Anonymous public conditions catalog (list)",
+        description:
+          "Returns every published condition in the directory with summary metadata and a count of directory_published linked programs. Grouped by state in the UI per § 14.1; alphabetical within each group. Rate limited at 60 req/min/IP. See docs/directoryprd.md § 14.",
+        responses: {
+          200: ok("PublicConditionListResponse"),
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/conditions/{slug}": {
+      get: {
+        summary: "Anonymous public condition detail",
+        description:
+          "Returns a single published condition with linked directory_published programs hydrated. Three states: live (programs listed), coming_soon (program expected, email-signup placeholder), not_offered (graceful fallback to clinicaltrials.gov). See docs/directoryprd.md § 14.2.",
+        parameters: [
+          {
+            name: "slug",
+            in: "path",
+            required: true,
+            schema: { $ref: "#/components/schemas/ConditionSlug" },
+          },
+        ],
+        responses: {
+          200: ok("PublicConditionDetail"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
           429: { $ref: "#/components/responses/RateLimited" },
           500: { $ref: "#/components/responses/InternalError" },
         },

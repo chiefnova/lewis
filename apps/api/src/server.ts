@@ -14,6 +14,7 @@ import { boardRoutes } from "./domains/boards/routes.js";
 import { etcRoutes } from "./domains/etcs/routes.js";
 import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
 import { patientRoutes } from "./domains/patients/routes.js";
+import { publicConditionsRoutes } from "./domains/public-conditions/routes.js";
 import { publicSearchRoutes } from "./domains/public-search/routes.js";
 import { searchRoutes } from "./domains/search/routes.js";
 import { sponsorRoutes } from "./domains/sponsors/routes.js";
@@ -201,6 +202,18 @@ v1Public.route("/webhooks", webhookRoutes);
 v1Public.use("/public/search", rateLimit({ bucket: "public_search", max: 30, windowSeconds: 60 }));
 v1Public.use("/public/search", withPublicDbContext);
 v1Public.route("/public/search", publicSearchRoutes);
+
+// /v1/public/conditions — primary patient browse surface (per directoryprd.md
+// § 14). Same anonymous-RLS posture as /public/search, separate rate-limit
+// bucket so a search-spam burst doesn't lock out catalog browsing. 60/min/IP
+// (twice search) — list + detail navigation produces more requests per
+// session than search.
+v1Public.use(
+  "/public/conditions/*",
+  rateLimit({ bucket: "public_conditions", max: 60, windowSeconds: 60 }),
+);
+v1Public.use("/public/conditions/*", withPublicDbContext);
+v1Public.route("/public/conditions", publicConditionsRoutes);
 
 // ---------------------------------------------------------------------------
 // /v1 — authed sub-router (every route below this gate requires Clerk auth +

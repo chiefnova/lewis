@@ -13,7 +13,8 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "test:a11y": "vitest run --passWithNoTests a11y"
+    "test:a11y": "vitest run --passWithNoTests a11y",
+    "test:e2e": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.4.5",
