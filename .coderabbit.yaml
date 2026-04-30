@@ -556,12 +556,21 @@ reviews:
           rollbacks, time-zone boundaries, pagination, and authorization-denial
           edge cases when the changed code touches those risks.
 
-    - path: "docs/prd.md"
+    - path: "docs/b2bprd.md"
       instructions: |
-        - The PRD is canonical. Changes must preserve SB 535/MAR traceability,
-          schema/API consistency, portal boundaries, and MVP/Phase 2 distinctions.
-          Flag implementation promises that lack data model, API, tests, or legal
-          review path.
+        - The regulated operating platform PRD is canonical. Changes must preserve
+          SB 535/MAR traceability, schema/API consistency, portal boundaries, and
+          MVP/Phase 2 distinctions. Flag implementation promises that lack data
+          model, API, tests, or legal review path.
+
+    - path: "docs/directoryprd.md"
+      instructions: |
+        - The public directory PRD is canonical for the anonymous lewis.health
+          surface. Changes must preserve the condition-first patient mental model,
+          search relevance posture (off-topic protection), SEO/canonical strategy,
+          subprocessor classification (anonymous vs PHI), and the rollout sequencing
+          in § 2.4. Flag any new feature that crosses the anonymous → authenticated
+          boundary without a data-flow note.
 
     - path: "docs/implementation.md"
       instructions: |
@@ -629,7 +638,8 @@ knowledge_base:
     filePatterns:
       - "CLAUDE.md"
       - ".claude/rules/*.md"
-      - "docs/prd.md"
+      - "docs/b2bprd.md"
+      - "docs/directoryprd.md"
       - "docs/implementation.md"
       - "docs/legal-content-inventory.md"
       - "docs/subprocessors.md"

@@ -53,7 +53,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Decide patient-portal `<Show>` behavior for Clerk pending sessions
 
-**What:** When MFA is enforced on the patient portal (per [prd.md § 18.3](docs/prd.md) and SB 535-aligned posture for PHI handlers), evaluate passing `treatPendingAsSignedOut` on the `<Show when="signed-in">` gate in [apps/patient/src/auth/RequirePatientSession.tsx](apps/patient/src/auth/RequirePatientSession.tsx). Without it, a session that has authenticated but has an outstanding Clerk task (MFA challenge incomplete, account-completion task pending) renders as signed-in and the patient sees PHI before the task resolves.
+**What:** When MFA is enforced on the patient portal (per [b2bprd.md § 18.3](docs/b2bprd.md) and SB 535-aligned posture for PHI handlers), evaluate passing `treatPendingAsSignedOut` on the `<Show when="signed-in">` gate in [apps/patient/src/auth/RequirePatientSession.tsx](apps/patient/src/auth/RequirePatientSession.tsx). Without it, a session that has authenticated but has an outstanding Clerk task (MFA challenge incomplete, account-completion task pending) renders as signed-in and the patient sees PHI before the task resolves.
 
 **Why:** Clerk v6's `<Show>` defaults to treating pending sessions as signed-in for backward compatibility with v5's `<SignedIn>`. That default is fine today (MFA is not enforced yet), but once MFA gating is wired the defense-in-depth answer for PHI surfaces is to treat pending as signed-out. Staff portals (`apps/app`) likely take the same posture.
 

@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Magnifier } from "./icons";
+import { useSearchOverlay } from "../search/SearchContext";
 
 export function TopNav() {
   const location = useLocation();
   const intl = useIntl();
   const isBrowse = location.pathname.startsWith("/browse");
+  const { open } = useSearchOverlay();
 
   return (
     <header style={{ background: "var(--paper)", position: "sticky", top: 0, zIndex: 30 }}>
@@ -29,23 +31,26 @@ export function TopNav() {
           })}
           style={{ display: "inline-flex", alignItems: "baseline" }}
         >
-          <span className="serif" style={{ fontSize: 24, letterSpacing: "-0.015em" }}>
-            Lewis
-          </span>
           <span
             className="serif"
-            style={{ fontSize: 24, color: "var(--accent)", letterSpacing: "-0.015em" }}
-            aria-hidden="true"
+            style={{
+              fontSize: 24,
+              fontWeight: 400,
+              letterSpacing: "-0.025em",
+              lineHeight: 1,
+            }}
           >
-            .
+            lewis.
           </span>
           <span
             className="serif italic"
             style={{
               fontSize: 24,
-              letterSpacing: "-0.015em",
-              color: "var(--ink-soft)",
               fontWeight: 300,
+              fontStyle: "italic",
+              letterSpacing: "-0.025em",
+              lineHeight: 1,
+              color: "var(--ink-soft)",
             }}
           >
             health
@@ -66,8 +71,9 @@ export function TopNav() {
               <FormattedMessage id="directory.nav.browse.short" defaultMessage="Browse" />
             </span>
           </Link>
-          <Link
-            to="/search"
+          <button
+            type="button"
+            onClick={open}
             aria-label={intl.formatMessage({
               id: "directory.nav.search.aria",
               defaultMessage: "Search",
@@ -75,16 +81,19 @@ export function TopNav() {
             style={{
               width: 40,
               height: 40,
+              padding: 0,
+              border: "none",
               borderRadius: "var(--radius-button-sm)",
               background: "var(--accent)",
               color: "var(--paper)",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
+              cursor: "pointer",
             }}
           >
             <Magnifier />
-          </Link>
+          </button>
         </nav>
       </div>
     </header>

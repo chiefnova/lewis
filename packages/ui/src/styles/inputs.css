@@ -86,7 +86,7 @@
    * few extra pixels for the input. The label stays full ("Browse") —
    * we're only trimming padding, not switching to an icon-only button. */
   .search-pill .pill {
-    padding: 9px 16px;
+    padding: 10px 16px 8px;
     font-size: 13px;
     border-radius: var(--radius-button-sm);
   }

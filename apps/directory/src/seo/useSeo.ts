@@ -6,9 +6,17 @@ interface SeoOptions {
   canonical?: string | undefined;
   jsonLd?: Record<string, unknown> | undefined;
   ogImage?: string | undefined;
+  /**
+   * When true, write `<meta name="robots" content="noindex, follow">`. Used
+   * for query-result variations of search/filter pages so Google doesn't
+   * index a long tail of `?q=…` URLs. The empty-state version of the same
+   * route should leave noIndex unset.
+   */
+  noIndex?: boolean | undefined;
 }
 
 const JSON_LD_ID = "lewis-jsonld";
+const ROBOTS_META_NAME = "robots";
 
 function setMeta(name: string, content: string, attr: "name" | "property" = "name") {
   const selector = `meta[${attr}="${name}"]`;
@@ -38,7 +46,7 @@ function setLink(rel: string, href: string) {
  * just fine — the SSG follow-up (vite-plugin-ssr or similar) will pre-bake
  * them into the static HTML for crawlers that don't.
  */
-export function useSeo({ title, description, canonical, jsonLd, ogImage }: SeoOptions) {
+export function useSeo({ title, description, canonical, jsonLd, ogImage, noIndex }: SeoOptions) {
   useEffect(() => {
     document.title = title;
     if (description) {
@@ -58,6 +66,13 @@ export function useSeo({ title, description, canonical, jsonLd, ogImage }: SeoOp
       setMeta("twitter:image", ogImage);
     }
 
+    if (noIndex) {
+      setMeta(ROBOTS_META_NAME, "noindex, follow");
+    } else {
+      const existingRobots = document.head.querySelector(`meta[name="${ROBOTS_META_NAME}"]`);
+      if (existingRobots) existingRobots.remove();
+    }
+
     if (jsonLd) {
       let el = document.head.querySelector<HTMLScriptElement>(`script#${JSON_LD_ID}`);
       if (!el) {
@@ -71,7 +86,7 @@ export function useSeo({ title, description, canonical, jsonLd, ogImage }: SeoOp
       const existing = document.head.querySelector(`script#${JSON_LD_ID}`);
       if (existing) existing.remove();
     }
-  }, [title, description, canonical, jsonLd, ogImage]);
+  }, [title, description, canonical, jsonLd, ogImage, noIndex]);
 }
 
 export const SITE_URL = "https://lewis.health";

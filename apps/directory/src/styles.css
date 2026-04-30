@@ -253,6 +253,26 @@ section {
   flex-shrink: 0;
 }
 
+/* Footer wordmark — mirrors the header treatment but at the smaller
+ * 18px attribution scale. Pairs with .serif / .serif.italic from
+ * @lewis/ui base styles for family + axis; these classes only own the
+ * size, weight, tracking, and the muted color on "health". */
+.footer-wordmark-primary {
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.footer-wordmark-secondary {
+  font-size: 18px;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+
 .announce-strip__group {
   display: flex;
   align-items: center;
@@ -314,14 +334,23 @@ section {
   }
 }
 
-/* Hero section — desktop fills the viewport (minus the 50px announcement
- * strip + 80px sticky nav = 130px chrome) and centers content vertically.
- * Mobile is content-driven with a more compact min-height + extra vertical
- * padding so the headline + search bar feel substantial without leaving a
- * giant empty gap before the next section. */
+/* Hero section — desktop fills the viewport below the 50px announcement
+ * strip + 80px sticky nav, but the content is optically centered between
+ * the announcement strip and the bottom of the viewport. That treats the
+ * sticky nav as overlay chrome for centering instead of letting it push the
+ * hero copy low. Mobile is content-driven with a more compact min-height +
+ * extra vertical padding so the headline + search bar feel substantial
+ * without leaving a giant empty gap before the next section. */
 .hero-section {
-  height: calc(100svh - 130px);
+  --directory-announcement-height: 50px;
+  --directory-nav-height: 80px;
+
+  height: calc(100svh - var(--directory-announcement-height) - var(--directory-nav-height));
   padding: 0;
+}
+
+.hero-section > .container {
+  transform: translateY(calc(var(--directory-nav-height) / -2));
 }
 
 @media (max-width: 768px) {
@@ -329,6 +358,9 @@ section {
     height: auto;
     min-height: calc(100svh - 200px);
     padding: 56px 0 72px;
+  }
+  .hero-section > .container {
+    transform: none;
   }
   /* The desktop headline floor (4.6rem ≈ 73.6px) is too tall on mobile —
    * "experimental" overflows the viewport. Scale it down to a normal

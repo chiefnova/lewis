@@ -9,10 +9,12 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { apiReference } from "@scalar/hono-api-reference";
 
+import { sanitizeAccessLogMessage } from "./access-log-message.js";
 import { boardRoutes } from "./domains/boards/routes.js";
 import { etcRoutes } from "./domains/etcs/routes.js";
 import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
 import { patientRoutes } from "./domains/patients/routes.js";
+import { publicSearchRoutes } from "./domains/public-search/routes.js";
 import { searchRoutes } from "./domains/search/routes.js";
 import { sponsorRoutes } from "./domains/sponsors/routes.js";
 import { webhookRoutes } from "./domains/webhooks/routes.js";
@@ -21,6 +23,7 @@ import { ApiError } from "./middleware/errors.js";
 import { requireClerkAuth } from "./middleware/auth.js";
 import { resolveTenant } from "./middleware/tenant.js";
 import { withDbContext } from "./middleware/db-context.js";
+import { withPublicDbContext } from "./middleware/public-context.js";
 import { rateLimit } from "./middleware/rate-limit.js";
 import {
   bodyLimitMiddleware,
@@ -65,7 +68,9 @@ app.use("*", bodyLimitMiddleware);
 // message through pino at info level so it lands in the structured stream.
 app.use(
   "*",
-  honoLogger((message) => appLogger.info({ source: "hono.logger" }, redactPhi(message))),
+  honoLogger((message) =>
+    appLogger.info({ source: "hono.logger" }, sanitizeAccessLogMessage(message)),
+  ),
 );
 
 // ---------------------------------------------------------------------------
@@ -182,6 +187,20 @@ v1Public.get(
 // limiting legitimate traffic.
 v1Public.use("/webhooks/*", rateLimit({ bucket: "webhooks", max: 120, windowSeconds: 60 }));
 v1Public.route("/webhooks", webhookRoutes);
+
+// Public directory search — anonymous, condition-first, FTS over
+// search_index_documents. See docs/directoryprd.md § 13 and
+// plans/immutable-squishing-sprout.md.
+//
+// Per-IP rate limit (30/min/IP per § 28.5) layered on top of the coarse
+// 600/min public bucket above. withPublicDbContext sets
+// app.role = 'directory_anonymous' inside a transaction; the public-read
+// RLS policies on search_index_documents/programs/conditions/etcs all
+// gate on that role string. NOT a service-role bypass — runtime role
+// stays app_api (NOBYPASSRLS, see migration 0011).
+v1Public.use("/public/search", rateLimit({ bucket: "public_search", max: 30, windowSeconds: 60 }));
+v1Public.use("/public/search", withPublicDbContext);
+v1Public.route("/public/search", publicSearchRoutes);
 
 // ---------------------------------------------------------------------------
 // /v1 — authed sub-router (every route below this gate requires Clerk auth +

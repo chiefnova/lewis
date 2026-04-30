@@ -15,6 +15,7 @@ import {
   PublicProgramDetail,
   PublicProgramListResponse,
 } from "@lewis/shared/api/public";
+import { PublicSearchResponse } from "@lewis/shared/api/search";
 import type { ZodType } from "zod";
 
 // Distinct error types let callers tell network failures apart from server
@@ -101,6 +102,21 @@ export const publicApi = {
     return getJson(`/v1/public/connect-requests`, ConnectRequestResponse, {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+  /**
+   * Public directory search. Sectioned response, condition-first ordering
+   * enforced server-side. The optional AbortSignal lets the overlay's
+   * live-suggest cancel an in-flight request when the user types again.
+   */
+  searchPublic(
+    q: string,
+    options?: { type?: "treatment" | "condition" | "etc"; signal?: AbortSignal },
+  ) {
+    const params = new URLSearchParams({ q });
+    if (options?.type) params.set("type", options.type);
+    return getJson(`/v1/public/search?${params.toString()}`, PublicSearchResponse, {
+      ...(options?.signal ? { signal: options.signal } : {}),
     });
   },
 };

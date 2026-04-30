@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#E6E5DD" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Lewis Health — Patient Directory</title>
     <meta
       name="description"
@@ -17,8 +18,17 @@
       content="Find experimental treatments available in Montana through licensed Experimental Treatment Centers."
     />
     <meta property="og:url" content="https://lewis.health/" />
-    <!-- Brand fonts (Inter Tight, Fraunces) are self-hosted via @fontsource-variable
-         in @lewis/ui/styles/fonts.css. No third-party requests at runtime. -->
+    <!-- The directory is anonymous-first (no PHI), so Fraunces is loaded from
+         Google Fonts here — same source the gate page uses, so the wordmark
+         renders identically across surfaces. The patient and app consoles
+         (which DO touch PHI) keep using the self-hosted @fontsource-variable
+         build per the subprocessor rule in CLAUDE.md / b2bprd.md § 17.9. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..400&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

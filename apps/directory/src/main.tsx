@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { IntlProvider } from "react-intl";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
@@ -6,26 +6,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import messages from "./messages/en.json";
 import { DirectoryLayout } from "./layout/DirectoryLayout";
 import { HomePage } from "./pages/HomePage";
-import { BrowsePage } from "./pages/BrowsePage";
-import { TreatmentDetailPage } from "./pages/TreatmentDetailPage";
-import { EtcProfilePage } from "./pages/EtcProfilePage";
-import { EligibilityPage } from "./pages/EligibilityPage";
-import { ConnectPage } from "./pages/ConnectPage";
-import {
-  ConditionsIndexPage,
-  CookiesPage,
-  EtcDocumentPage,
-  EtcsIndexPage,
-  FaqPage,
-  FeedbackPage,
-  ForEtcsPage,
-  ForSponsorsPage,
-  HowItWorksPage,
-  NotFoundPage,
-  PrivacyPage,
-  SearchPage,
-  TermsPage,
-} from "./pages/StaticPages";
+import { SearchOverlayProvider } from "./search/SearchContext";
 import "@lewis/ui/styles.css";
 import "./styles.css";
 
@@ -38,36 +19,281 @@ import "./styles.css";
 // detects an existing .lewis.health session cookie and wants to deep-link
 // the user into patient.lewis.health. Both flows go through
 // packages/auth (when scaffolded) so the import boundary is auditable.
+//
+// HomePage is eager because it's the hot landing route — every cold visitor
+// from a Google SERP hits it. Every other page is lazy-loaded behind
+// React.Suspense so the initial JS payload stays under the 120KB
+// above-the-fold budget per directoryprd.md § 28.2. Keep this list in sync
+// with apps/directory/public/sitemap.xml — every indexable route here must
+// also have a sitemap entry.
+
+const BrowsePage = lazy(() =>
+  import("./pages/BrowsePage").then((m) => ({ default: m.BrowsePage })),
+);
+const TreatmentDetailPage = lazy(() =>
+  import("./pages/TreatmentDetailPage").then((m) => ({ default: m.TreatmentDetailPage })),
+);
+const EtcProfilePage = lazy(() =>
+  import("./pages/EtcProfilePage").then((m) => ({ default: m.EtcProfilePage })),
+);
+const EligibilityPage = lazy(() =>
+  import("./pages/EligibilityPage").then((m) => ({ default: m.EligibilityPage })),
+);
+const ConnectPage = lazy(() =>
+  import("./pages/ConnectPage").then((m) => ({ default: m.ConnectPage })),
+);
+const SearchPage = lazy(() =>
+  import("./pages/SearchPage").then((m) => ({ default: m.SearchPage })),
+);
+const ConditionDetailPage = lazy(() =>
+  import("./pages/conditions/ConditionDetailPage").then((m) => ({
+    default: m.ConditionDetailPage,
+  })),
+);
+// StaticPages bundles the placeholder routes (FAQ, privacy, terms, etc.) into
+// one chunk. Pull each named export through a thin module-default-export hop
+// so React.lazy receives a Component shape.
+const ConditionsIndexPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.ConditionsIndexPage })),
+);
+const CookiesPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.CookiesPage })),
+);
+const EtcDocumentPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.EtcDocumentPage })),
+);
+const EtcsIndexPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.EtcsIndexPage })),
+);
+const FaqPage = lazy(() => import("./pages/StaticPages").then((m) => ({ default: m.FaqPage })));
+const FeedbackPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.FeedbackPage })),
+);
+const ForEtcsPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.ForEtcsPage })),
+);
+const ForSponsorsPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.ForSponsorsPage })),
+);
+const HowItWorksPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.HowItWorksPage })),
+);
+const NotFoundPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.NotFoundPage })),
+);
+const PrivacyPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.PrivacyPage })),
+);
+const TermsPage = lazy(() => import("./pages/StaticPages").then((m) => ({ default: m.TermsPage })));
+
+// Lazy-route wrapper — Suspense fallback intentionally minimal (a single
+// shimmer line via the stylesheet). The loaded chunks are small and warm
+// quickly; a heavy fallback would feel laggier than the bare gap.
+function LazyRoute({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={null}>{children}</Suspense>;
+}
+
+// Layout wrapper that hosts the search overlay context. The overlay code
+// itself is lazy-loaded inside SearchOverlayProvider — the Radix Dialog
+// chunk only ships when the user opens the overlay for the first time.
+function DirectoryLayoutWithSearch() {
+  return (
+    <SearchOverlayProvider>
+      <DirectoryLayout />
+    </SearchOverlayProvider>
+  );
+}
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <DirectoryLayout />,
+    element: <DirectoryLayoutWithSearch />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: "browse", element: <BrowsePage /> },
-      { path: "conditions", element: <ConditionsIndexPage /> },
-      { path: "conditions/:slug", element: <ConditionsIndexPage /> },
-      { path: "programs/:slug", element: <TreatmentDetailPage /> },
-      { path: "etcs", element: <EtcsIndexPage /> },
-      { path: "etcs/:slug", element: <EtcProfilePage /> },
-      { path: "etcs/:slug/manual", element: <EtcDocumentPage kind="manual" /> },
-      { path: "etcs/:slug/etrb-report", element: <EtcDocumentPage kind="etrb-report" /> },
-      { path: "etcs/:slug/ae-summary", element: <EtcDocumentPage kind="ae-summary" /> },
-      { path: "eligibility/:programSlug", element: <EligibilityPage /> },
-      { path: "eligibility/:programSlug/result", element: <EligibilityPage /> },
-      { path: "connect/:programSlug", element: <ConnectPage /> },
-      { path: "connect/confirmed", element: <ConnectPage /> },
-      { path: "search", element: <SearchPage /> },
-      { path: "how-it-works", element: <HowItWorksPage /> },
-      { path: "faq", element: <FaqPage /> },
-      { path: "for-etcs", element: <ForEtcsPage /> },
-      { path: "for-sponsors", element: <ForSponsorsPage /> },
-      { path: "feedback", element: <FeedbackPage /> },
-      { path: "privacy", element: <PrivacyPage /> },
-      { path: "terms", element: <TermsPage /> },
-      { path: "cookies", element: <CookiesPage /> },
-      { path: "*", element: <NotFoundPage /> },
+      {
+        path: "browse",
+        element: (
+          <LazyRoute>
+            <BrowsePage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "conditions",
+        element: (
+          <LazyRoute>
+            <ConditionsIndexPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "conditions/:slug",
+        element: (
+          <LazyRoute>
+            <ConditionDetailPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "programs/:slug",
+        element: (
+          <LazyRoute>
+            <TreatmentDetailPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "etcs",
+        element: (
+          <LazyRoute>
+            <EtcsIndexPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "etcs/:slug",
+        element: (
+          <LazyRoute>
+            <EtcProfilePage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "etcs/:slug/manual",
+        element: (
+          <LazyRoute>
+            <EtcDocumentPage kind="manual" />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "etcs/:slug/etrb-report",
+        element: (
+          <LazyRoute>
+            <EtcDocumentPage kind="etrb-report" />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "etcs/:slug/ae-summary",
+        element: (
+          <LazyRoute>
+            <EtcDocumentPage kind="ae-summary" />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "eligibility/:programSlug",
+        element: (
+          <LazyRoute>
+            <EligibilityPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "eligibility/:programSlug/result",
+        element: (
+          <LazyRoute>
+            <EligibilityPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "connect/:programSlug",
+        element: (
+          <LazyRoute>
+            <ConnectPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "connect/confirmed",
+        element: (
+          <LazyRoute>
+            <ConnectPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "search",
+        element: (
+          <LazyRoute>
+            <SearchPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "how-it-works",
+        element: (
+          <LazyRoute>
+            <HowItWorksPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "faq",
+        element: (
+          <LazyRoute>
+            <FaqPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "for-etcs",
+        element: (
+          <LazyRoute>
+            <ForEtcsPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "for-sponsors",
+        element: (
+          <LazyRoute>
+            <ForSponsorsPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "feedback",
+        element: (
+          <LazyRoute>
+            <FeedbackPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "privacy",
+        element: (
+          <LazyRoute>
+            <PrivacyPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "terms",
+        element: (
+          <LazyRoute>
+            <TermsPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "cookies",
+        element: (
+          <LazyRoute>
+            <CookiesPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "*",
+        element: (
+          <LazyRoute>
+            <NotFoundPage />
+          </LazyRoute>
+        ),
+      },
     ],
   },
 ]);

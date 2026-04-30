@@ -21,9 +21,10 @@ export function Footer() {
           }}
         >
           <div className="footer-attribution">
-            {/* Flag + wordmark mirror the header treatment: serif "Lewis", accent
-                period, italic ink-soft "health". Inherits the footer's 12.5px so
-                it stays a quiet attribution mark, not a second brand banner. */}
+            {/* Flag + wordmark mirror the header treatment exactly:
+                serif "lewis." + italic ink-soft "health". Footer keeps the
+                smaller 18px size so it stays a quiet attribution mark, not
+                a second brand banner. */}
             <img
               src={montanaFlag}
               alt=""
@@ -40,19 +41,10 @@ export function Footer() {
                 display: "inline-flex",
                 alignItems: "baseline",
                 textTransform: "none",
-                letterSpacing: "-0.015em",
-                fontSize: 18,
               }}
             >
-              <span className="serif" style={{ color: "var(--ink)" }}>
-                Lewis
-              </span>
-              <span className="serif" style={{ color: "var(--accent)" }} aria-hidden="true">
-                .
-              </span>
-              <span className="serif italic" style={{ color: "var(--ink-soft)", fontWeight: 300 }}>
-                health
-              </span>
+              <span className="serif footer-wordmark-primary">lewis.</span>
+              <span className="serif footer-wordmark-secondary italic">health</span>
             </span>
           </div>
           <div

@@ -21,6 +21,8 @@ import {
   AdminTenantsResponse,
   SearchQueryParams,
   SearchResponse,
+  PublicSearchQueryParams,
+  PublicSearchResponse,
 } from "@lewis/shared";
 import {
   OpenAPIRegistry,
@@ -73,6 +75,8 @@ export function buildOpenApiDocument(baseUrl: string) {
 
   registry.register("SearchQueryParams", SearchQueryParams);
   registry.register("SearchResponse", SearchResponse);
+  registry.register("PublicSearchQueryParams", PublicSearchQueryParams);
+  registry.register("PublicSearchResponse", PublicSearchResponse);
 
   // -- Security schemes -----------------------------------------------------
 
@@ -240,6 +244,33 @@ export function buildOpenApiDocument(baseUrl: string) {
           cursorParam,
         ],
         responses: { 200: ok("SearchResponse"), ...errors },
+      },
+    },
+    "/v1/public/search": {
+      get: {
+        summary: "Anonymous public directory search (condition-first)",
+        description:
+          "Sectioned response: conditions, treatments, ETCs in that order. Off-topic queries (e.g. 'ALS') do NOT promote unrelated live programs as primary matches. Rate limited at 30 req/min/IP. See docs/directoryprd.md § 13.",
+        parameters: [
+          {
+            name: "q",
+            in: "query",
+            required: true,
+            schema: { type: "string", minLength: 1, maxLength: 200 },
+          },
+          {
+            name: "type",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["treatment", "condition", "etc"] },
+          },
+        ],
+        responses: {
+          200: ok("PublicSearchResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
       },
     },
     "/v1/sponsors/{sponsorId}/programs": {
