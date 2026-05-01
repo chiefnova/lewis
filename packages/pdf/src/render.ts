@@ -14,7 +14,7 @@
 //     the puppeteer dependency.
 
 import { clearTimeout, setTimeout } from "node:timers";
-import type { Browser } from "puppeteer";
+import type { Browser, Page } from "puppeteer";
 import type { PublicProgramDetail } from "@lewis/shared";
 
 import {
@@ -83,7 +83,7 @@ export async function renderProgramBrief(
   // newPage / setContent / page.pdf promises to settle. Promise.race
   // abandons the loser; without this, an outer timeout firing while
   // setContent or page.pdf was hung would leak the Chromium page.
-  let page: import("puppeteer").Page | null = null;
+  let page: Page | null = null;
   let pageClosed = false;
   const closePageOnce = async (): Promise<void> => {
     if (pageClosed || !page) return;
