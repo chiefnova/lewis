@@ -76,13 +76,20 @@ export async function renderProgramBrief(
 ): Promise<Buffer> {
   const timeout = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const html = renderProgramBriefHtml(detail, options);
-  const browser = await getBrowser(timeout);
 
-  // Track the page (created inside the deadline-raced operation) so the
-  // outer timeout can force-close it without waiting for the abandoned
-  // newPage / setContent / page.pdf promises to settle. Promise.race
-  // abandons the loser; without this, an outer timeout firing while
-  // setContent or page.pdf was hung would leak the Chromium page.
+  // Track the page so cleanup can run from any of three call sites:
+  //   1. withRenderDeadline's onTimeout — fire-and-forget close on the
+  //      timeout edge (may no-op if newPage hasn't resolved yet).
+  //   2. The inner finally inside the IIFE below — guarantees a close
+  //      after the IIFE's promise eventually settles, even if it
+  //      settles AFTER the outer deadline already gave up. Without this,
+  //      a slow newPage that resolves post-timeout would leak the page
+  //      until process exit (the IIFE keeps running on the abandoned
+  //      side of Promise.race).
+  //   3. The outer finally — covers the success path (closes page after
+  //      pdf is captured) and is the no-op last line of defense.
+  // closePageOnce is idempotent via the pageClosed flag, so all three
+  // call sites are safe to fire.
   let page: Page | null = null;
   let pageClosed = false;
   const closePageOnce = async (): Promise<void> => {
@@ -98,17 +105,31 @@ export async function renderProgramBrief(
     }
   };
 
+  // The IIFE runs entirely inside the deadline race, including the
+  // browser-launch step. The header comment at line 7 promises a "5-second
+  // hard timeout" as a wall-clock contract — putting getBrowser INSIDE the
+  // race makes that contract honest on cold start. Steady-state (warm
+  // shared browser) returns ~0ms from getBrowser, so the wrap costs
+  // nothing in the hot path.
   const operation = (async () => {
-    page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0", timeout });
-    const pdf = await page.pdf({
-      format: "letter",
-      printBackground: true,
-      margin: { top: "0.5in", right: "0.5in", bottom: "0.5in", left: "0.5in" },
-      timeout,
-    });
-    // puppeteer returns Uint8Array; the API layer wants Buffer for Hono.
-    return Buffer.from(pdf);
+    try {
+      const browser = await getBrowser(timeout);
+      page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0", timeout });
+      const pdf = await page.pdf({
+        format: "letter",
+        printBackground: true,
+        margin: { top: "0.5in", right: "0.5in", bottom: "0.5in", left: "0.5in" },
+        timeout,
+      });
+      // puppeteer returns Uint8Array; the API layer wants Buffer for Hono.
+      return Buffer.from(pdf);
+    } finally {
+      // Inner finally covers the post-timeout race: if newPage resolved
+      // late (after the outer race already rejected), this still closes
+      // the page when the IIFE's promise eventually settles.
+      await closePageOnce();
+    }
   })();
 
   try {
@@ -150,9 +171,38 @@ async function withRenderDeadline<T>(
 }
 
 export async function disposeRenderer(): Promise<void> {
-  if (sharedBrowser) {
-    const b = sharedBrowser;
-    sharedBrowser = null;
-    await b.close();
+  // Capture both refs synchronously and null the module-level state in
+  // the same tick. Without this, a launch that resolves mid-dispose
+  // would silently assign the just-launched Browser back into
+  // sharedBrowser via the launchPromise body's closure — and any
+  // concurrent getBrowser caller would see "still alive" or "still in
+  // flight" and receive a doomed handle. Capturing locally lets us
+  // close both the already-launched browser AND any in-flight launch
+  // result deterministically before returning.
+  const browser = sharedBrowser;
+  const inFlight = launchPromise;
+  sharedBrowser = null;
+  launchPromise = null;
+
+  const closeTasks: Array<Promise<unknown>> = [];
+  if (browser) {
+    closeTasks.push(browser.close());
   }
+  if (inFlight) {
+    // Wait for the in-flight launch to land, then close that Browser
+    // too. Swallow rejections — a failed launch has no handle to close.
+    // We do NOT reassign sharedBrowser from the launched handle; the
+    // launchPromise body's closure writes to sharedBrowser when it
+    // resolves, and the final null-out below cancels that write so
+    // post-dispose module state stays deterministic.
+    closeTasks.push(inFlight.then((launched) => launched.close()).catch(() => undefined));
+  }
+  await Promise.allSettled(closeTasks);
+
+  // The launchPromise body executes `sharedBrowser = browser` when
+  // launch resolves; that write happened during the await above (after
+  // our initial null-out). Reset sharedBrowser to null so a future
+  // getBrowser starts a fresh launch instead of returning the closed
+  // Browser handle we just disposed of.
+  sharedBrowser = null;
 }
