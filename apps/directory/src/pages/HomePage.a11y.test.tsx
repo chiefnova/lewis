@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { IntlProvider } from "react-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomePage } from "./HomePage";
+import messages from "../messages/en.json";
 import { SearchOverlayProvider } from "../search/SearchContext";
 
 // Stub the search API — the new HeroSearchTypeahead uses it on mount.
@@ -36,7 +37,7 @@ const AXE_OPTIONS: axe.RunOptions = {
 describe("HomePage a11y", () => {
   it("renders without axe violations", async () => {
     const { container } = render(
-      <IntlProvider locale="en" messages={{}}>
+      <IntlProvider locale="en" messages={messages}>
         <MemoryRouter>
           <SearchOverlayProvider>
             <HomePage />

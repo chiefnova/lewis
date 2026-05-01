@@ -1,10 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   Capsule,
   IVBag,
-  MiniCapsule,
-  MiniPill,
   Pen,
   RoundTablet,
   Tablet,
@@ -15,6 +13,107 @@ import { ArrowRight, PlusIcon } from "../components/icons";
 import { FEATURED_HOMEPAGE } from "../data/catalog";
 import { HeroSearchTypeahead } from "../search/HeroSearchTypeahead";
 import { useSeo, siteUrl } from "../seo/useSeo";
+
+function HeroPillScatter() {
+  // 8-pill picasso scatter, tuned in /design-shotgun rounds 2026-04-30.
+  // Positions are % of the .hero-section so they spread proportionally with
+  // viewport. Asymmetric weight: 4 left (anchored by the cream/olive capsule),
+  // 3 right (one statement piece), 1 top-center outlier. depth-far + depth-
+  // anchor classes vary opacity + shadow weight to imply z-depth.
+  type CSS = CSSProperties & { "--rot"?: string };
+  return (
+    <div className="pill-scatter" aria-hidden="true">
+      {/* p1 — tiny rose tablet, near the H1's upper-left edge */}
+      <div
+        className="pill p1 depth-far"
+        style={{ top: "5%", left: "18%", "--rot": "rotate(-32deg)" } as CSS}
+      >
+        <svg width={32} height={32} viewBox="0 0 50 50" aria-hidden="true">
+          <circle cx={25} cy={25} r={20} fill="#D9A4A4" />
+          <ellipse cx={20} cy={20} rx={9} ry={3} fill="rgba(255,255,255,0.45)" />
+        </svg>
+      </div>
+
+      {/* p2 — BIG cream/olive capsule, anchor weight, mid-left */}
+      <div
+        className="pill p2 depth-anchor"
+        style={{ top: "23%", left: "9%", "--rot": "rotate(-30deg)" } as CSS}
+      >
+        <svg width={118} height={46} viewBox="0 0 80 32" aria-hidden="true">
+          <rect x={2} y={6} width={76} height={20} rx={10} fill="#E8DCC0" />
+          <rect x={2} y={6} width={38} height={20} rx={10} fill="#7A6B52" />
+          <rect x={2} y={6} width={76} height={6} rx={3} fill="rgba(255,255,255,0.20)" />
+          <rect x={6} y={10} width={22} height={2} rx={1} fill="rgba(255,255,255,0.45)" />
+          <rect x={46} y={10} width={22} height={2} rx={1} fill="rgba(255,255,255,0.55)" />
+        </svg>
+      </div>
+
+      {/* p3 — small amber round tablet, clusters with the capsule */}
+      <div className="pill p3" style={{ top: "51%", left: "12%", "--rot": "rotate(18deg)" } as CSS}>
+        <svg width={44} height={44} viewBox="0 0 50 50" aria-hidden="true">
+          <ellipse cx={25} cy={29} rx={20} ry={4} fill="rgba(40,30,20,0.10)" />
+          <circle cx={25} cy={25} r={20} fill="#E89B6E" />
+          <ellipse cx={20} cy={20} rx={9} ry={3} fill="rgba(255,255,255,0.40)" />
+        </svg>
+      </div>
+
+      {/* p4 — tiny rose oval pill, lower-left edge outlier */}
+      <div
+        className="pill p4 depth-far"
+        style={{ top: "66%", left: "5%", "--rot": "rotate(-12deg)" } as CSS}
+      >
+        <svg width={40} height={22} viewBox="0 0 60 34" aria-hidden="true">
+          <ellipse cx={30} cy={17} rx={28} ry={14} fill="#D9A4A4" />
+          <ellipse cx={22} cy={11} rx={9} ry={2.5} fill="rgba(255,255,255,0.55)" />
+        </svg>
+      </div>
+
+      {/* p5 — BIG sage oval pill, statement piece, upper-right */}
+      <div className="pill p5" style={{ top: "14%", right: "5%", "--rot": "rotate(16deg)" } as CSS}>
+        <svg width={100} height={56} viewBox="0 0 60 34" aria-hidden="true">
+          <ellipse cx={30} cy={17} rx={28} ry={14} fill="#A4B8A8" />
+          <ellipse cx={30} cy={14} rx={22} ry={3} fill="rgba(255,255,255,0.30)" />
+          <ellipse cx={22} cy={11} rx={9} ry={2.5} fill="rgba(255,255,255,0.55)" />
+        </svg>
+      </div>
+
+      {/* p6 — medium amber oval pill, mid-right, isolated */}
+      <div
+        className="pill p6"
+        style={{ top: "42%", right: "11%", "--rot": "rotate(32deg)" } as CSS}
+      >
+        <svg width={60} height={34} viewBox="0 0 60 34" aria-hidden="true">
+          <ellipse cx={30} cy={17} rx={28} ry={14} fill="#C8956A" />
+          <ellipse cx={30} cy={14} rx={22} ry={3} fill="rgba(255,255,255,0.30)" />
+          <ellipse cx={22} cy={11} rx={9} ry={2.5} fill="rgba(255,255,255,0.55)" />
+        </svg>
+      </div>
+
+      {/* p7 — small deep-rose round tablet, lower-right */}
+      <div
+        className="pill p7"
+        style={{ top: "64%", right: "6%", "--rot": "rotate(-22deg)" } as CSS}
+      >
+        <svg width={42} height={42} viewBox="0 0 50 50" aria-hidden="true">
+          <ellipse cx={25} cy={29} rx={20} ry={4} fill="rgba(40,30,20,0.10)" />
+          <circle cx={25} cy={25} r={20} fill="#C68A8A" />
+          <ellipse cx={20} cy={20} rx={9} ry={3} fill="rgba(255,255,255,0.40)" />
+        </svg>
+      </div>
+
+      {/* p8 — tiny sage tablet, top-center outlier breaking the L/R divide */}
+      <div
+        className="pill p8 depth-far"
+        style={{ top: "5%", left: "64%", "--rot": "rotate(8deg)" } as CSS}
+      >
+        <svg width={30} height={30} viewBox="0 0 50 50" aria-hidden="true">
+          <circle cx={25} cy={25} r={20} fill="#A4B8A8" />
+          <ellipse cx={20} cy={20} rx={9} ry={3} fill="rgba(255,255,255,0.45)" />
+        </svg>
+      </div>
+    </div>
+  );
+}
 
 function Hero({ onSearch }: { onSearch: (q: string) => void }) {
   return (
@@ -28,23 +127,11 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
         justifyContent: "center",
       }}
     >
+      <HeroPillScatter />
       <div
         className="container"
-        style={{ textAlign: "center", position: "relative", width: "100%" }}
+        style={{ textAlign: "center", position: "relative", width: "100%", zIndex: 2 }}
       >
-        <div style={{ position: "absolute", left: "6%", top: 40, transform: "rotate(-8deg)" }}>
-          <MiniPill kind="rose" size={58} />
-        </div>
-        <div style={{ position: "absolute", left: "10%", bottom: 70 }}>
-          <MiniCapsule size={52} rot={20} />
-        </div>
-        <div style={{ position: "absolute", right: "8%", top: 80, transform: "rotate(12deg)" }}>
-          <MiniPill kind="amber" size={46} />
-        </div>
-        <div style={{ position: "absolute", right: "5%", bottom: 50, transform: "rotate(-6deg)" }}>
-          <MiniPill kind="sage" size={62} />
-        </div>
-
         <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
           <h1
             className="serif"
@@ -127,16 +214,19 @@ function ProblemSection() {
           }}
         >
           <p>
-            In 2025, Montana enacted the country's most expansive Right to Try framework. Licensed
-            Experimental Treatment Centers can now deliver investigational drugs — Phase 1 and
-            beyond — to patients who have evaluated standard-of-care options and chosen to try
-            something else.
+            In 2025, Montana enacted the country's most expansive Right to Try framework.
+            Investigational drugs that have completed Phase 1 — and passed safety review by a
+            licensed Experimental Treatment Review Board (ETRB) — can be delivered through
+            Experimental Treatment Centers to patients who have evaluated standard-of-care options
+            and chosen to try something else.
           </p>
           <p>
-            Lewis is the public directory for that program. We don't manufacture treatments and we
-            don't operate clinics. We connect patients to the licensed centers that do, with the
-            information needed to make a real decision: what the treatment is, who it's for, where
-            it's offered, and what to expect next.
+            For patients, Lewis is the public directory of every Montana program — what's available,
+            what's coming, and where to begin. Beneath it is the operating platform connecting
+            sponsors, ETCs, treating physicians, and patients in one place: coordinating ETRB
+            review, informed consent, treatment delivery, and adverse-event reporting so a Right to
+            Try program can move from a sponsor's IND to a patient's first dose under one compliant
+            workflow.
           </p>
         </div>
       </div>
