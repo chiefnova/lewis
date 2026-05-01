@@ -418,6 +418,179 @@ section.hero-section {
   }
 }
 
+/* ============================================================
+ * Hero pill scatter — 8 colored product silhouettes scattered in
+ * the negative space around the centered H1 + subtitle + search.
+ * Asymmetric weight (heavier left, anchored by a big cream/olive
+ * capsule), varied size/rotation/opacity creates picasso-style
+ * depth, and a staggered fall-in animation gives motion on load.
+ * Mobile retunes the same assets in the media query below.
+ * ============================================================ */
+.pill-scatter {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.pill-scatter .pill {
+  position: absolute;
+  filter: drop-shadow(0 12px 14px rgba(40, 30, 20, 0.18))
+    drop-shadow(0 4px 5px rgba(40, 30, 20, 0.1));
+  animation: hero-pill-fall 950ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+  transform-origin: 50% 50%;
+}
+.pill-scatter .pill svg {
+  display: block;
+}
+.pill-scatter .pill.depth-far {
+  opacity: 0.92;
+  filter: drop-shadow(0 5px 7px rgba(40, 30, 20, 0.12));
+  --end-opacity: 0.92;
+}
+.pill-scatter .pill.depth-anchor {
+  filter: drop-shadow(0 16px 18px rgba(40, 30, 20, 0.22))
+    drop-shadow(0 5px 6px rgba(40, 30, 20, 0.12));
+}
+
+@keyframes hero-pill-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-36px) var(--rot);
+  }
+  60% {
+    opacity: var(--end-opacity, 1);
+  }
+  82% {
+    transform: translateY(2px) var(--rot);
+  }
+  100% {
+    opacity: var(--end-opacity, 1);
+    transform: translateY(0) var(--rot);
+  }
+}
+
+/* Random-feeling stagger — anchor capsule lands first (heaviest),
+ * other pieces tumble in afterward. */
+.pill-scatter .pill.p1 {
+  animation-delay: 220ms;
+}
+.pill-scatter .pill.p2 {
+  animation-delay: 60ms;
+}
+.pill-scatter .pill.p3 {
+  animation-delay: 380ms;
+}
+.pill-scatter .pill.p4 {
+  animation-delay: 540ms;
+}
+.pill-scatter .pill.p5 {
+  animation-delay: 160ms;
+}
+.pill-scatter .pill.p6 {
+  animation-delay: 460ms;
+}
+.pill-scatter .pill.p7 {
+  animation-delay: 620ms;
+}
+.pill-scatter .pill.p8 {
+  animation-delay: 320ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-scatter .pill {
+    animation: none;
+    transform: var(--rot);
+  }
+}
+
+/* Mobile (≤768px): the measured content band leaves only two safe
+ * lanes: above the H1 and below the search bar. Keep every pill out of
+ * the middle lane; p2/p5 stay visible as scaled bottom anchors. */
+@media (max-width: 768px) {
+  .pill-scatter .pill {
+    display: flex !important;
+  }
+
+  .pill-scatter .pill svg {
+    transform-origin: center;
+  }
+  .pill-scatter .pill.p1 svg {
+    transform: scale(0.76);
+  }
+  .pill-scatter .pill.p2 svg {
+    transform: scale(0.58);
+  }
+  .pill-scatter .pill.p3 svg {
+    transform: scale(0.68);
+  }
+  .pill-scatter .pill.p4 svg {
+    transform: scale(0.72);
+  }
+  .pill-scatter .pill.p5 svg {
+    transform: scale(0.58);
+  }
+  .pill-scatter .pill.p6 svg {
+    transform: scale(0.56);
+  }
+  .pill-scatter .pill.p7 svg {
+    transform: scale(0.76);
+  }
+  .pill-scatter .pill.p8 svg {
+    transform: scale(0.78);
+  }
+
+  .pill-scatter .pill.p1 {
+    top: 5.8% !important;
+    bottom: auto !important;
+    left: 10% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p8 {
+    top: 1% !important;
+    bottom: auto !important;
+    left: 55% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p6 {
+    top: 6.5% !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: 4% !important;
+  }
+  .pill-scatter .pill.p4 {
+    top: 7.8% !important;
+    bottom: auto !important;
+    left: 31% !important;
+    right: auto !important;
+  }
+
+  .pill-scatter .pill.p2 {
+    top: auto !important;
+    bottom: 4.8% !important;
+    left: -7% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p5 {
+    top: auto !important;
+    bottom: 6.5% !important;
+    left: auto !important;
+    right: 0 !important;
+  }
+  .pill-scatter .pill.p3 {
+    top: auto !important;
+    bottom: 0.3% !important;
+    left: 33% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p7 {
+    top: auto !important;
+    bottom: 4% !important;
+    left: auto !important;
+    right: 21% !important;
+  }
+}
+
 /* ===========================================================
  * Mobile layout helpers (sub-768px ONLY — desktop is untouched)
  * =========================================================== */
@@ -554,8 +727,13 @@ section.hero-section {
  * shrinks on mobile so the text isn't pushed below the fold. */
 .split-detail {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* 1/3 art · 2/3 content per /design-shotgun Round 1 winner (Variant C,
+   * approved 2026-04-30). The Clinical Evidence + CTA densification on
+   * the right column needs the breathing room; the product art earns its
+   * quiet third on the left. */
+  grid-template-columns: 1fr 2fr;
   min-height: calc(100vh - 130px);
+  align-items: start;
 }
 
 .split-detail > .split-detail-art {
@@ -573,6 +751,355 @@ section.hero-section {
   max-width: 640px;
 }
 
+/* Variant C composition (slice 3): the right column splits into a main
+ * content area and a sticky right rail (anchors + patient CTA + physician
+ * CTAs). Only used by /programs/:slug today; isolating it under its own
+ * class avoids touching the existing split-detail-body that other pages
+ * (e.g. /etcs/:slug) still use. */
+.split-detail > .split-detail-content-grid {
+  display: grid;
+  /* 200px sticky rail per the approved Variant C dimensions. */
+  grid-template-columns: 1fr 200px;
+  gap: 56px;
+  /* Top padding intentionally tight (24px) so "Back to browse" + the H1
+   * align with the top of the sticky art panel on the left. The 64px
+   * top padding the original split-detail-body used left a visible gap
+   * between the panel top and the content's first line — the right
+   * column appeared "shoved down". The bottom 96px keeps a generous
+   * tail past the feedback footer. Horizontal padding is 56px to match
+   * the inter-column gap so the main content has equal breathing room
+   * on both sides (art↔main and main↔rail are both 56px). */
+  padding: 24px 56px 96px;
+  max-width: 1080px;
+}
+.split-detail > .split-detail-content-grid > main {
+  min-width: 0;
+}
+
+/* Editorial section panels for /programs/:slug.
+ *
+ * Flat sections — NO background, NO box. Just an h2 + body content with
+ * generous vertical rhythm between sections. The visual weight of the
+ * page lives in the prose itself; only the .evidence-block and
+ * .program-etc-card carry surfaces.
+ *
+ * This intentionally diverges from the global <Panel> component
+ * (components/Panel.tsx) which renders a --paper-card box. /programs/:slug
+ * is editorial; /etcs/:slug stays card-style — the two pages have
+ * different content density and use different visual systems on purpose.
+ *
+ * Approved 2026-04-30 in /design-shotgun Round 1 (Variant C). */
+/* Override the global `section { padding: 120px 0 }` rule (~line 235).
+ * Without this, every <section className="program-panel"> inherited
+ * 240px of vertical padding, blowing apart the editorial rhythm and
+ * making sections feel disconnected. The approved Variant C design has
+ * exactly 36px between sections, no inner padding. */
+.program-panel {
+  padding: 0;
+  margin-bottom: 36px;
+  /* Section anchors target the .program-panel element via id="about",
+   * id="evidence", etc. Without scroll-margin-top, clicking a rail
+   * anchor scrolls the section to the very top of the viewport — under
+   * the 80px sticky TopNav. 104px = 80px topnav + 24px breathing room,
+   * matching the existing scrollspy precedent used by the conditions
+   * detail TOC. */
+  scroll-margin-top: 104px;
+}
+.program-panel-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px 0;
+  color: var(--ink);
+}
+.program-panel-body {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.program-panel-body p {
+  margin: 0 0 12px 0;
+}
+.program-panel-body p:last-child {
+  margin-bottom: 0;
+}
+.program-panel-body .ink {
+  color: var(--ink);
+}
+
+.program-back-link {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.program-title {
+  font-family: var(--serif);
+  font-size: 56px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-weight: 400;
+  margin: 0 0 8px 0;
+  outline: none;
+}
+.program-title sup {
+  font-size: 22px;
+  top: -1.2em;
+  position: relative;
+}
+
+.program-available-tag {
+  font-family: var(--serif);
+  font-size: 32px;
+  color: var(--accent);
+  letter-spacing: -0.015em;
+  font-weight: 400;
+  margin: 0 0 14px 0;
+}
+.program-available-tag .italic {
+  font-weight: 300;
+  font-style: italic;
+}
+
+.program-manufacturer-line {
+  color: var(--ink-soft);
+  font-size: 15px;
+  margin: 0 0 40px 0;
+}
+.program-manufacturer-line .ink {
+  color: var(--ink);
+}
+
+/* ETC card lives inside the Where-to-access section. Bordered, lighter
+ * paper-bright background — distinct from the surrounding flat prose. */
+.program-etc-card {
+  border: 1px solid var(--rule);
+  background: var(--paper-bright);
+  padding: 22px;
+  border-radius: 4px;
+}
+.program-etc-name {
+  font-family: var(--serif);
+  font-size: 18px;
+  margin: 0 0 6px 0;
+}
+.program-etc-loc {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.program-etc-prose {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 14px 0;
+}
+.program-accept-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  padding: 5px 11px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+.program-accept-tag::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.program-etc-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Enrollment ordered list — flat, no card background. */
+.program-enrollment {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.75;
+  padding-left: 22px;
+  margin: 0 0 14px 0;
+}
+.program-enrollment-note {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--serif);
+}
+
+/* Cost display — flat, large serif accent number. */
+.program-cost-display {
+  font-family: var(--serif);
+  font-size: 30px;
+  color: var(--accent);
+  letter-spacing: -0.015em;
+  font-weight: 400;
+  margin: 0 0 12px 0;
+}
+.program-cost-disclaimer {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* Feedback footer — flat closing block, attached to the bottom of the
+ * column with a hairline divider. */
+.program-feedback-footer {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+}
+.program-ff-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  margin: 0 0 8px 0;
+}
+.program-ff-body {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0 0 14px 0;
+}
+
+/* Sticky right rail.
+ * top: 104px = 80px topnav + 24px content-grid padding-top. Matches the
+ * rail's natural y-position on initial load so it doesn't jump up when
+ * the user starts scrolling. */
+.program-section-nav {
+  position: sticky;
+  top: 104px;
+  align-self: start;
+  font-family: var(--sans);
+}
+.program-section-nav .psn-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.program-section-nav ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: psn;
+}
+.program-section-nav ol li {
+  counter-increment: psn;
+  position: relative;
+}
+.program-section-nav ol li a {
+  display: block;
+  padding: 8px 0 8px 22px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  border-left: 2px solid transparent;
+  margin-left: -2px;
+  transition:
+    color 100ms ease,
+    border-color 100ms ease;
+  text-decoration: none;
+}
+.program-section-nav ol li a::before {
+  content: counter(psn, decimal-leading-zero);
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.program-section-nav ol li.is-active a {
+  color: var(--ink);
+  border-left-color: var(--accent);
+}
+.program-section-nav ol li a:hover {
+  color: var(--ink);
+}
+
+/* Patient CTA group — the conversion path. Primary fill, full-width,
+ * sits above the physician group so visual hierarchy mirrors business
+ * priority: eligibility check is THE conversion; clinician actions
+ * are supporting. */
+.program-section-nav .psn-cta-patient {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-soft);
+}
+.program-section-nav .psn-cta-patient .psn-label {
+  margin-bottom: 10px;
+}
+.program-section-nav .psn-cta-patient .pill {
+  width: 100%;
+  font-size: 13.5px;
+  padding: 14px 14px;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.program-section-nav .psn-cta-physician {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-soft);
+}
+.program-section-nav .psn-cta-physician .psn-label {
+  margin-bottom: 10px;
+}
+.program-section-nav .psn-cta-physician .pill {
+  width: 100%;
+  font-size: 12.5px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+
+/* Mobile fallback: rail collapses, eligibility CTA renders inline in
+ * the body's Who-this-is-for panel. The .program-mobile-cta wrapper is
+ * hidden on desktop and only appears below 1100px. */
+.program-mobile-cta {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .split-detail > .split-detail-content-grid {
+    grid-template-columns: 1fr;
+    max-width: 720px;
+    padding: 64px 24px 96px;
+    gap: 0;
+  }
+  .program-section-nav {
+    display: none;
+  }
+  .program-mobile-cta {
+    display: block;
+    margin-top: 18px;
+  }
+  .program-mobile-cta .pill {
+    width: 100%;
+    padding: 18px 24px;
+    justify-content: space-between;
+  }
+}
+
 @media (max-width: 1024px) {
   .split-detail {
     grid-template-columns: 1fr;
@@ -586,6 +1113,77 @@ section.hero-section {
     padding: 40px 24px 80px;
     max-width: 100%;
   }
+}
+
+/* Clinical Evidence block — slice 3, design-shotgun Round 1 Variant C.
+ * Card on --paper-card with an accent left-border. Header carries a
+ * 4-field grid (Trial registration / IND / Phase / ETRB approval); body
+ * carries mechanism + key safety prose with a DOI citation footer.
+ * The accent border is the same used on the patient eligibility CTA so
+ * the visual hierarchy ties evidence → conversion. */
+.evidence-block {
+  background: var(--paper-card);
+  padding: 26px 28px;
+  border-radius: 6px;
+  margin: 0;
+  border-left: 3px solid var(--accent);
+}
+.evidence-block .ev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 18px 24px;
+  font-size: 13.5px;
+  margin: 0 0 22px 0;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.evidence-block .ev-field .ev-lbl {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+}
+.evidence-block .ev-field .ev-val {
+  color: var(--ink);
+  font-size: 14px;
+}
+.evidence-block .ev-field .ev-val a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.evidence-block .ev-prose .ev-prose-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin: 18px 0 8px 0;
+}
+.evidence-block .ev-prose .ev-prose-label:first-child {
+  margin-top: 0;
+}
+.evidence-block .ev-prose p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+  margin: 0 0 10px 0;
+}
+.evidence-block .ev-prose .ev-citation {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--serif);
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 12px;
+  margin-top: 18px;
+}
+.evidence-block .ev-prose .ev-citation a {
+  color: var(--accent);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1525,4 +2123,147 @@ section.hero-section {
   font-size: 15px;
   line-height: 1.55;
   margin-bottom: 18px;
+}
+
+/* Loading + error + not-found states for /programs/:slug.
+ * /design-shotgun Round 5 winner (Variant A, approved 2026-04-30 — see
+ * ~/.gstack/projects/chiefnova-lewis/designs/program-loading-error-20260430/approved.json).
+ *
+ * Loading: page-shaped shimmer skeleton — preserves the split layout +
+ * sticky art panel + content silhouette + rail anchor list. The
+ * shimmer animation is a 1.4s linear-gradient sweep; respects
+ * prefers-reduced-motion (falls back to a solid paper-card).
+ *
+ * Error / Not-found: stays inside the layout (topnav + sticky art panel
+ * with caption only, body carries a serif H1-style state message + body
+ * + retry/back action). Calm, recoverable, on-brand. */
+
+.program-skel {
+  background: linear-gradient(
+    90deg,
+    var(--paper-card) 0%,
+    var(--paper-bright) 50%,
+    var(--paper-card) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: program-skel-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes program-skel-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .program-skel {
+    animation: none;
+    background: var(--paper-card);
+  }
+}
+.program-skel-back {
+  width: 90px;
+  height: 13px;
+  margin-bottom: 28px;
+}
+.program-skel-h1 {
+  width: 60%;
+  height: 56px;
+  margin-bottom: 14px;
+}
+.program-skel-tag {
+  width: 40%;
+  height: 32px;
+  margin-bottom: 20px;
+}
+.program-skel-line {
+  width: 80%;
+  height: 14px;
+  margin-bottom: 10px;
+}
+.program-skel-line.short {
+  width: 50%;
+}
+.program-skel-line.med {
+  width: 65%;
+}
+.program-skel-h2 {
+  width: 30%;
+  height: 22px;
+  margin-bottom: 18px;
+}
+.program-skel-section {
+  margin-bottom: 36px;
+  padding-top: 4px;
+}
+.program-skel-art {
+  width: 240px;
+  height: 320px;
+  background: var(--paper-bright);
+  opacity: 0.55;
+  border-radius: 12px;
+}
+.program-skel-rail-label {
+  width: 70%;
+  height: 11px;
+  margin-bottom: 14px;
+}
+.program-skel-rail-item {
+  width: 100%;
+  height: 14px;
+  margin-bottom: 16px;
+}
+
+/* Inline state message (error + not-found). Uses the same .split-detail
+ * shell as the live page so the topnav + sticky art panel stay in
+ * place — only the right column changes. */
+.program-state-msg-h1 {
+  font-family: var(--serif);
+  font-size: 36px;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  font-weight: 400;
+  margin: 0 0 14px 0;
+  color: var(--ink);
+}
+.program-state-msg-body {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0 0 24px 0;
+  max-width: 540px;
+}
+.program-state-msg-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.program-state-msg-retry-link {
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.program-state-msg-retry-link:hover {
+  text-decoration-thickness: 2px;
+}
+.program-state-msg-support {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--serif);
+}
+.program-state-msg-support a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

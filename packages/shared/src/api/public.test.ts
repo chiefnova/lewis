@@ -8,6 +8,9 @@ import {
   PublicConditionListResponse,
   PublicConditionSummary,
   PublicEtcSummary,
+  PublicProgramDetail,
+  PublicProgramEtrb,
+  PublicProgramPublishedPaper,
   PublicProgramSummary,
 } from "./public.js";
 
@@ -222,6 +225,110 @@ describe("PublicConditionListResponse", () => {
   });
   test("empty list is valid", () => {
     expect(PublicConditionListResponse.safeParse({ conditions: [] }).success).toBe(true);
+  });
+});
+
+describe("PublicProgramPublishedPaper", () => {
+  test("happy path", () => {
+    expect(
+      PublicProgramPublishedPaper.safeParse({
+        citation: "Lancet eBioMedicine 2023;90:104525.",
+        doi: "10.1016/j.ebiom.2023.104525",
+      }).success,
+    ).toBe(true);
+  });
+  test("rejects empty citation or doi", () => {
+    expect(PublicProgramPublishedPaper.safeParse({ citation: "", doi: "x" }).success).toBe(false);
+    expect(PublicProgramPublishedPaper.safeParse({ citation: "x", doi: "" }).success).toBe(false);
+  });
+});
+
+describe("PublicProgramEtrb", () => {
+  test("happy path with ISO date", () => {
+    expect(
+      PublicProgramEtrb.safeParse({
+        approvalDate: "2025-09-15",
+        boardName: "Big Sky ETC ETRB",
+      }).success,
+    ).toBe(true);
+  });
+  test("rejects non-ISO date", () => {
+    expect(
+      PublicProgramEtrb.safeParse({
+        approvalDate: "Sept 15 2025",
+        boardName: "Big Sky ETC ETRB",
+      }).success,
+    ).toBe(false);
+  });
+  test("rejects empty board name", () => {
+    expect(PublicProgramEtrb.safeParse({ approvalDate: "2025-09-15", boardName: "" }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("PublicProgramDetail (slice 3 augmentations)", () => {
+  const base = {
+    slug: "wst-057",
+    name: "WST-057",
+    indication: "for diabetic peripheral neuropathy",
+    manufacturer: "WinSanTor",
+    form: "Topical",
+    phase: "Phase 2",
+    etcCount: 1,
+    available: true,
+    about: "About prose.",
+    whoThisIsFor: "Eligibility prose.",
+    enrollment: ["step 1", "step 2"],
+    costRange: {
+      low: 240000,
+      high: 380000,
+      currency: "USD",
+      disclaimer: "Disclaimer prose.",
+    },
+    publishedEvidenceUrl: null,
+    clinicalTrialsGovId: "NCT04742205",
+    indNumber: "152367",
+    publishedPaper: {
+      citation: "Lancet eBioMedicine 2023;90:104525.",
+      doi: "10.1016/j.ebiom.2023.104525",
+    },
+    etrb: {
+      approvalDate: "2025-09-15",
+      boardName: "Big Sky ETC ETRB",
+    },
+    mechanismSummary: "Two-paragraph mechanism prose.",
+    keySafetyFindings: "Safety prose.",
+  } as const;
+
+  test("happy path with full slice-3 evidence + cost", () => {
+    expect(PublicProgramDetail.safeParse(base).success).toBe(true);
+  });
+
+  test("all clinical-evidence fields can be null (graceful degradation)", () => {
+    const r = PublicProgramDetail.safeParse({
+      ...base,
+      clinicalTrialsGovId: null,
+      indNumber: null,
+      publishedPaper: null,
+      etrb: null,
+      mechanismSummary: null,
+      keySafetyFindings: null,
+    });
+    expect(r.success).toBe(true);
+  });
+
+  test("costRange disclaimer can be null", () => {
+    const r = PublicProgramDetail.safeParse({
+      ...base,
+      costRange: { low: 240000, high: 380000, currency: "USD", disclaimer: null },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  test("costRange itself can be null", () => {
+    const r = PublicProgramDetail.safeParse({ ...base, costRange: null });
+    expect(r.success).toBe(true);
   });
 });
 

@@ -127,10 +127,12 @@ test.describe("Conditions browse flow", () => {
       "Conditions with experimental treatments in",
     );
 
-    // All three state sections render
-    await expect(page.getByText("Available now")).toBeVisible();
-    await expect(page.getByText("Coming soon")).toBeVisible();
-    await expect(page.getByText("Not currently offered")).toBeVisible();
+    // All three state sections render. Use exact:true so the locators
+    // only match the section captions and not the masthead lede which
+    // contains the same words inline.
+    await expect(page.getByText("Available now", { exact: true })).toBeVisible();
+    await expect(page.getByText("Coming soon", { exact: true })).toBeVisible();
+    await expect(page.getByText("Not currently offered", { exact: true })).toBeVisible();
 
     await page.getByRole("link", { name: "Diabetic peripheral neuropathy" }).click();
 
@@ -218,9 +220,18 @@ test.describe("Search overlay → condition detail integration", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByLabel("Search").click();
-    await page.keyboard.type("diabetic");
-    await page.getByRole("option", { name: /Diabetic peripheral neuropathy/ }).click();
+    // Open the overlay via the TopNav magnifier (aria-label "Search").
+    // Multiple elements are labeled "Search" (the topnav button + the
+    // overlay's combobox input that mounts after the click), so use
+    // .first() to grab the magnifier button explicitly.
+    await page.getByLabel("Search").first().click();
+    // Type into the overlay's combobox input directly. Scope to the dialog
+    // because the homepage hero search has its own visible combobox.
+    const dialog = page.getByRole("dialog", { name: "Search Lewis" });
+    await expect(dialog).toBeVisible();
+    const combobox = dialog.getByRole("combobox", { name: /search/i });
+    await combobox.fill("diabetic");
+    await dialog.getByRole("option", { name: /Diabetic peripheral neuropathy/ }).click();
     await expect(page).toHaveURL(/\/conditions\/diabetic-peripheral-neuropathy$/);
   });
 });

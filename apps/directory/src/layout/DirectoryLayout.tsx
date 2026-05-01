@@ -23,7 +23,7 @@ export function DirectoryLayout() {
       <a href="#main" className="skip-link">
         Skip to main content
       </a>
-      <AnnouncementStrip />
+      {location.pathname === "/" && <AnnouncementStrip />}
       <TopNav />
       <main id="main" key={location.pathname} tabIndex={-1} ref={mainRef}>
         <Outlet />

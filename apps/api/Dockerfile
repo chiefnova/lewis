@@ -64,6 +64,14 @@ WORKDIR /repo
 # ============================================================================
 FROM base AS builder
 
+# Skip puppeteer's bundled Chromium download. We use the apt-installed
+# chromium binary in the runtime stage instead — apt-installed Chromium is
+# smaller, version-tracked by Debian security, and avoids puppeteer's
+# 280MB binary download from storage.googleapis.com on every cold build
+# (which has historically been a flaky build dependency).
+# See render.ts: puppeteer reads PUPPETEER_EXECUTABLE_PATH automatically.
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 # Copy the workspace shape first so `pnpm install` caches independently of
 # source edits. If a package.json or the lockfile changes, the install layer
 # busts; otherwise BuildKit reuses the layer below across builds.
@@ -180,8 +188,21 @@ FROM node:${NODE_VERSION}-bookworm-slim@${NODE_DIGEST} AS runtime
 # Reproducible Builds for SLSA L4), switch this to apt sources rooted at
 # snapshot.debian.org with a baked-in snapshot date — but accept the
 # tzdata/ca-cert staleness cost.
+#
+# Chromium + its runtime libs are needed for the /v1/public/programs/:slug/brief.pdf
+# Puppeteer renderer (see packages/pdf/src/render.ts). We install Debian's
+# chromium rather than letting puppeteer download its bundled Chrome:
+#   - smaller cumulative image (Debian dedupes shared libs)
+#   - tracked by Debian security advisories
+#   - one binary version per base-image-digest = reproducible
+# The fonts ensure the brief PDF's Fraunces/Inter (loaded via Google Fonts at
+# render time) has a fallback that doesn't show .notdef squares if the
+# CDN ever blips.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends tini ca-certificates tzdata \
+ && apt-get install -y --no-install-recommends \
+    tini ca-certificates tzdata \
+    chromium \
+    fonts-liberation fonts-noto-color-emoji \
  && rm -rf /var/lib/apt/lists/*
 
 # Run as the unprivileged `node` user that ships with the official image
@@ -195,7 +216,9 @@ USER node
 ENV NODE_ENV=production \
     TZ=America/Denver \
     NODE_OPTIONS=--enable-source-maps \
-    PATH=/opt/tsx/node_modules/.bin:$PATH
+    PATH=/opt/tsx/node_modules/.bin:$PATH \
+    PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Railway injects PORT dynamically; the api reads it via
 # `process.env.PORT ?? 13001` (apps/api/src/index.ts). Document the local
