@@ -30,6 +30,25 @@ export const PublicProgramSummary = z.object({
 });
 export type PublicProgramSummary = z.infer<typeof PublicProgramSummary>;
 
+// Slice 3 — Clinical evidence augmentations per directoryprd.md § 15.3.
+// Citation + DOI come paired so consumers can render either the citation
+// alone or as a link to https://doi.org/{doi}.
+export const PublicProgramPublishedPaper = z.object({
+  citation: z.string().min(1),
+  doi: z.string().min(1),
+});
+export type PublicProgramPublishedPaper = z.infer<typeof PublicProgramPublishedPaper>;
+
+// ETRB approval per RULE 16(6)(a). Date is ISO YYYY-MM-DD; the API converts
+// the underlying `date` column to that string shape so consumers don't have
+// to think about timezones (an ETRB approval has a calendar day, not an
+// instant).
+export const PublicProgramEtrb = z.object({
+  approvalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  boardName: z.string().min(1),
+});
+export type PublicProgramEtrb = z.infer<typeof PublicProgramEtrb>;
+
 export const PublicProgramDetail = PublicProgramSummary.extend({
   about: z.string(),
   whoThisIsFor: z.string(),
@@ -39,9 +58,21 @@ export const PublicProgramDetail = PublicProgramSummary.extend({
       low: z.number().int().nonnegative(),
       high: z.number().int().nonnegative(),
       currency: z.literal("USD"),
+      // Per-program disclaimer wording. Lives in the DB so counsel can
+      // override per program without an application code change.
+      disclaimer: z.string().nullable(),
     })
     .nullable(),
   publishedEvidenceUrl: z.string().url().nullable(),
+  // Slice 3 additions — § 15.3 Clinical evidence block. All nullable so a
+  // future program with partial evidence still renders; the UI hides the
+  // missing sub-sections rather than rendering placeholders.
+  clinicalTrialsGovId: z.string().nullable(),
+  indNumber: z.string().nullable(),
+  publishedPaper: PublicProgramPublishedPaper.nullable(),
+  etrb: PublicProgramEtrb.nullable(),
+  mechanismSummary: z.string().nullable(),
+  keySafetyFindings: z.string().nullable(),
 });
 export type PublicProgramDetail = z.infer<typeof PublicProgramDetail>;
 
