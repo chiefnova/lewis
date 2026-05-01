@@ -70,11 +70,37 @@ async function getJson<T>(path: string, schema: ZodType<T>, init?: RequestInit):
 }
 
 export const publicApi = {
-  listPrograms() {
-    return getJson("/v1/public/programs", PublicProgramListResponse);
+  /**
+   * Programs catalog list — drives the homepage carousels + browse grid
+   * once those slices migrate (slice 4). Returns every directory_published
+   * program with summary metadata + ETC count via the SECURITY DEFINER
+   * helper added in migration 0019.
+   */
+  listPrograms(options?: { signal?: AbortSignal }) {
+    return getJson("/v1/public/programs", PublicProgramListResponse, {
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
   },
-  getProgram(slug: string) {
-    return getJson(`/v1/public/programs/${encodeURIComponent(slug)}`, PublicProgramDetail);
+  /**
+   * Single program detail — primary clinician + SERP-arrival waypoint per
+   * directoryprd.md § 15. Hydrates the full Clinical Evidence block:
+   * citations, DOI, ETRB approval, ClinicalTrials.gov ID, mechanism summary,
+   * key safety findings, plus the cost panel.
+   */
+  getProgram(slug: string, options?: { signal?: AbortSignal }) {
+    return getJson(`/v1/public/programs/${encodeURIComponent(slug)}`, PublicProgramDetail, {
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
+  },
+  /**
+   * Absolute URL of the server-rendered clinical brief PDF. The directory
+   * frontend uses this as the href on the "Download clinical brief" CTA;
+   * the browser hits the API directly with no JS, so the user gets a real
+   * file download (not a popup, not a fetch). Cached at the edge for 1h
+   * with 24h stale-while-revalidate per directoryprd.md § 28.4.
+   */
+  briefPdfUrl(slug: string): string {
+    return `${getBaseUrl()}/v1/public/programs/${encodeURIComponent(slug)}/brief.pdf`;
   },
   getEtc(slug: string) {
     return getJson(`/v1/public/etcs/${encodeURIComponent(slug)}`, PublicEtcDetail);
