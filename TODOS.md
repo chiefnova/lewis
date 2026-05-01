@@ -765,6 +765,37 @@ synthetic-data tenants without doc edits.
 
 ## Completed
 
+### Directory Sprint 3 — Programs Clinical Evidence + brief.pdf
+
+**What:** Full rewrite of `/programs/:slug` per [directoryprd.md § 15](docs/directoryprd.md#L1069). New `<ClinicalEvidencePanel>` between About and Who-this-is-for (citations, IND, phase, ETRB approval, mechanism, key safety findings, DOI link). New `/v1/public/programs/:slug/brief.pdf` endpoint — single-page server-rendered clinician brief via Puppeteer + apt-installed Chromium in the API container, 5s hard timeout, 30/min/IP rate-limit bucket, Cloudflare 1h max-age + 24h SWR. Sticky right-rail CTAs ("Check my eligibility", "Refer this patient", "Download brief"). Migration 0019 added 10 columns to `programs` (clinical_trials_gov_id, published_paper_citation/doi, etrb_approval_date/board_name, mechanism_summary, key_safety_findings, cost_low/high_cents, cost_disclaimer) plus three CHECK constraints for cost-range coherence + a SECURITY DEFINER `app.directory_program_etc_count(uuid)` helper. WST-057 backfilled with real Lancet eBioMedicine 2023;90:104525 (DOI 10.1016/j.ebiom.2023.104525), IND 152367, NCT04742205, ETRB approval 2025-09-15, two-paragraph mechanism prose, $2,400–$3,800 per-course cost. Both `[COUNSEL REVIEW]` markers on the program page cleared. Drug JSON-LD § 15.7 augmentation (clinicalPharmacology / medicineSystem / prescribingInfo) with a unit-tested builder. 56 new i18n keys. Inline loading shimmer + error + not-found states per /design-shotgun Round 5 Variant A. Test coverage: 12 API integration tests, 14 frontend unit tests, 9 E2E specs, 6 drug-json-ld unit tests, 4 programs-content drift tests, 6 RLS assertions, 181-line PDF template snapshot test.
+
+**Why:** § 15 deliberately reframes `/programs/:slug` as the directory's **conversion surface** — clinicians searching "WST-057 trial" and SERP-arriving patients with a treating physician's recommendation need peer-level evidence (citations, ETRB approval, trial registration, key safety findings) above the eligibility CTA, not below marketing copy. The brief.pdf gives clinicians a fax-friendly one-pager. Public/no-PHI artifact, so synchronous render + edge cache is the right architecture (vs the worker-queue pattern reserved for regulated PHI artifacts per CLAUDE.md gotchas).
+
+**Followups (deferred per scope):**
+
+- Pre-launch `[COUNSEL REVIEW]` lint (CI gate that fails the build on found markers anywhere) — Sprint 6.
+- PostHog analytics event wiring (`program.clinician.refer_clicked`, `program.brief.downloaded`) — Sprint 6 alongside PostHog config.
+- `/feedback` page implementation — placeholder route today; the program page's "Share feedback" CTA already prefills `?ref=program:{slug}` so the destination form will see program context once it ships.
+- Self-host Fraunces + Inter WOFF2s in the API container instead of fetching from `fonts.googleapis.com` at render time — defer until soak shows flake.
+
+**Completed:** v0.0.9.0 (2026-05-01) [PR #14](https://github.com/chiefnova/lewis/pull/14)
+
+### Directory Sprint 2 — Conditions index + three-state condition detail
+
+**What:** Primary patient browse surface and highest-leverage SEO landing — `/conditions` newspaper-table layout grouped by state (Available now → Coming soon → Not currently offered) with `ItemList` JSON-LD, plus `/conditions/:slug` full three-state detail per [directoryprd.md § 14.2](docs/directoryprd.md). Live state renders explainer + standard-of-care framing + listed-programs hero card + TOC anchor-nav with smooth scrollspy. Coming-soon renders a disabled email-signup form + "While you wait" ClinicalTrials.gov pointer. Not-offered renders the disabled signup + a three-path "you may want to" panel (search ClinicalTrials.gov, talk to your physician, get notified). `MedicalCondition` JSON-LD with `possibleTreatment` omitted entirely outside the live state. New `/v1/public/conditions` + `/v1/public/conditions/:slug` API endpoints riding the `directory_anonymous` RLS posture from Sprint 1. New editorial content module `apps/directory/src/data/conditions-content.ts` with drift-detection test that fails CI if a published condition in the DB seed lacks a content entry. Hero typeahead (debounced live-suggest, combobox/listbox a11y, dialog-scoped) + stable-frame search overlay polish. Sitemap + Playwright runner.
+
+**Why:** Per § 14.0, the condition page is the **door**; the program page is the conversion. Long-tail SEO volumes for "{condition} experimental treatment Montana" queries are 10–50× higher than drug-name queries. Sprint 2 builds the door so SERP arrivals land on something real with state-aware honest framing (not a redirect to an unrelated drug for ALS searches, etc.).
+
+**Completed:** v0.0.8.0 (2026-04-30) [PR #13](https://github.com/chiefnova/lewis/pull/13)
+
+### Directory Sprint 1 — Search backend FTS + overlay component foundation
+
+**What:** Full `/v1/public/search` API with prefix-mode tsquery for typeahead-friendly search, plus Surface 1 (Radix Dialog overlay, lazy-loaded, debounced live-suggest, combobox/listbox a11y) and Surface 2 (results page, three states, `noindex, follow` on query results, canonical strips `?q=`). Sectioned response (Conditions → Treatments → ETCs) enforced server-side. Plus the data layer Sprint 2 composes on: new `conditions` table + `program_conditions` join + 9 seeded conditions + RLS policies + trigger architecture (three SECURITY DEFINER `*_by_id` helpers + cascade helpers, no no-op `UPDATE` patterns). Plus a minimal `/conditions/:slug` page so search results land on a real route. Plus PHI hardening (`sanitizeAccessLogMessage`), wordmark + Fraunces typography tightening across all three apps, the v1.1 condition-first PRD reframe (split into `b2bprd.md` + `directoryprd.md`), and Hero static-placeholder per § 11.3.
+
+**Why:** Search was the bare slice spec; the data layer + minimal condition page + PHI hardening were prerequisites Sprint 2 needed. Doing them in Sprint 1 unblocked Sprint 2 cleanly.
+
+**Completed:** v0.0.7.0 (2026-04-29) [PR #12](https://github.com/chiefnova/lewis/pull/12)
+
 ### Directory app launch (apps/directory) — lewis.health public patient directory
 
 **What:** New Vite/React/TS SPA at [apps/directory/](apps/directory/) covering homepage, browse, treatment detail, ETC profile, eligibility self-screen, connect-request handoff, and supporting static pages. Anonymous-first (Clerk not in bundle). Bundle 109.96 KB gzipped (under 120 KB above-the-fold budget). Public-API contract module [packages/shared/src/api/public.ts](packages/shared/src/api/public.ts) defines the `/v1/public/*` Zod schemas. SEO infrastructure (per-route head meta, JSON-LD, robots.txt, build-time sitemap.xml). 24 vitest tests covering eligibility evaluator, anonymous-session round-trip, catalog lookups, schema validation, and axe-core a11y sweeps. Monorepo glue: `dev:directory` task, `frontend_directory_dev` fnox profile, eslint browser-globals block scoped to frontend apps, `.claude/rules/frontend.md` updated. Followed by `/review` (multi-specialist; quality_score 9.0) which auto-fixed 10 mechanical issues (SVG `id` collision, dead state, broken canonical URLs, etc.) and applied option-C polish (cards as Link, auto-advance removed for WCAG 2.2.1, mobile responsive, full a11y test suite).

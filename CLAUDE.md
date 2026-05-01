@@ -4,14 +4,15 @@ Operating platform for Montana's Experimental Treatment Center (ETC) regime unde
 
 ## Architecture
 
+- `lewis.health` — anonymous public directory (Vite/React, SEO-critical, no PHI)
 - `app.lewis.health` — sponsor + ETC + internal admin portal (Vite/React)
 - `patient.lewis.health` — patient portal (Vite/React, mobile-first)
-- API — Node + Hono, Dockerized on Railway
+- API — Node + Hono, Dockerized on Railway (also renders the public program brief PDF synchronously via Puppeteer + apt-installed Chromium per slice 3 — see Gotchas)
 - Workers — BullMQ on Redis, Dockerized on Railway
 - Data — Supabase Postgres 15+ with RLS; Supabase Storage (HIPAA-eligible bucket)
-- Auth — Clerk authenticates identity; Lewis tenant memberships and relationships live in Postgres. The API sets transaction-local `app.*` variables for RLS.
+- Auth — Clerk authenticates identity; Lewis tenant memberships and relationships live in Postgres. The API sets transaction-local `app.*` variables for RLS. The directory is anonymous-first and never imports Clerk at the route level.
 
-Frontend deployment boundaries are intentionally asymmetric:
+Frontend deployment boundaries are intentionally asymmetric across three independently-deployed apps:
 
 ```mermaid
 flowchart LR
@@ -21,11 +22,13 @@ flowchart LR
   App --> Admin[apps/app/src/portals/admin]
   PatientHost[patient.lewis.health] --> Patient[apps/patient]
   Patient --> PatientPortal[apps/patient/src/portal]
+  DirectoryHost[lewis.health] --> Directory[apps/directory]
   App --> API[apps/api]
   Patient --> API
+  Directory --> API
 ```
 
-`apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Lewis internal admin workflows. `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
+`apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Lewis internal admin workflows. `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk. `apps/directory` is a third anonymous-first public product served at `lewis.health` — only `/v1/public/*` API endpoints, Clerk lazy-loaded only inside the connect-request flow, 120 KB above-the-fold JS budget.
 
 Monorepo layout: `apps/app`, `apps/patient`, `apps/directory` (anonymous public directory), `apps/api`, `apps/workers`, `packages/shared` (zod schemas, types), `packages/db` (migrations, RLS policies), `packages/ui` (design tokens + shared components), `packages/notifications`, `packages/pdf`, `packages/rbac`, plus `packages/gate` (TEMPORARY — Vercel Edge Middleware password gate in front of all three frontends; deleted before public launch per the cleanup sequence in [packages/gate/README.md](packages/gate/README.md)).
 
@@ -143,7 +146,7 @@ PHI is in scope from day one. Lewis is a Business Associate.
 - Montana deadlines (`Jan 31`, `Feb 1`, 5-day AE clock) are `America/Denver`, not UTC. Off-by-a-day here is a compliance miss.
 - Provisional ETC status gate: an ETC without an associated ETRB with RULE 16(6)(f) determinations cannot enroll patients into treatment. Enforce in both API and UI.
 - H&P older than 12 months blocks treatment (RULE 12(2)(b)(iii)). Validate at treatment-schedule time, not just upload time.
-- Puppeteer PDF rendering runs in a worker, not the API request path — patient agreement generation is async.
+- Puppeteer PDF rendering for **regulated artifacts** (patient agreements, informed-consent recordings, ETRB approvals, AE reports — see [b2bprd.md § 17.5](docs/b2bprd.md)) runs asynchronously in a BullMQ worker, never on the API request path. **Public catalog artifacts** (`/v1/public/programs/:slug/brief.pdf`) render synchronously inside the API process with a 5s hard timeout, a tighter 30/min/IP rate-limit bucket, and a Cloudflare 1h max-age + 24h SWR edge cache — these carry no PHI and follow [directoryprd.md § 15.6](docs/directoryprd.md#L1121) + § 28.4. Don't move public brief.pdf to the worker queue; don't move regulated artifacts onto the request path.
 - Running any `dev:*` task without an age private key whose public key is in `fnox.toml` `[providers.age].recipients` will fail at decryption. Get added as a recipient first.
 - Adding a new SQL migration to `packages/db/migrations/` requires regenerating the journal: `pnpm --filter @lewis/db migrate:journal` then commit `migrations/meta/_journal.json`. CI gate `migrate:journal:check` fails the PR if the disk journal drifts from the regenerated output. Without this, `drizzle-kit migrate` (the production migration runner in `deploy-staging.yml` / `deploy-prod.yml`) silently skips the new file.
 - `MIGRATION_DATABASE_URL` is the schema-owner DSN and lives ONLY on the GitHub Actions runner (env-scoped GH Secrets `STAGING_MIGRATION_DATABASE_URL` / `PROD_MIGRATION_DATABASE_URL`). Never on a Railway service env per security #1. The runtime `app_api` / `app_worker` DSNs cannot apply migrations (NOBYPASSRLS, no schema-modify rights).

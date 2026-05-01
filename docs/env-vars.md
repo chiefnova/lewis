@@ -188,6 +188,16 @@ Env vars that were referenced in source but not declared in any template or fnox
 | ☐ | `WORKER_RUNTIME_ROLE_OPT_OUT` | workers (TEST ONLY) | Skip role assertion in unit tests; **never set in staging/prod** |
 | ☐ | `LEWIS_SEED_ALLOW_NON_LOCAL` | seed script | **Trap variable — always errors when set.** Documented to prevent confusion |
 
+### Public program brief PDF rendering (v0.0.9.0)
+
+Slice 3 added Puppeteer-rendered `/v1/public/programs/:slug/brief.pdf` to the API. Three env vars govern the renderer; `PUPPETEER_*` are container-only (set in [apps/api/Dockerfile](../apps/api/Dockerfile)), `PUBLIC_SITE_URL` is runtime.
+
+| Status | Variable | Where | Purpose |
+|---|---|---|---|
+| ✅ | `PUPPETEER_SKIP_DOWNLOAD` | api Dockerfile (build + runtime) | Set to `true` so npm/pnpm install skips puppeteer's bundled Chromium download. The container apt-installs Debian's `chromium` instead — smaller image, Debian security tracking, reproducible per base-image-digest. |
+| ✅ | `PUPPETEER_EXECUTABLE_PATH` | api Dockerfile (runtime) | `/usr/bin/chromium`. Tells puppeteer where to find the apt-installed binary at launch. |
+| ☐ | `PUBLIC_SITE_URL` | api (optional) | Footer link in the rendered brief PDF. Defaults to `https://lewis.health` when unset. Override per env (Railway staging/prod) if the site host differs from the default. Reading site: [apps/api/src/domains/public-programs/routes.ts:189](../apps/api/src/domains/public-programs/routes.ts#L189). |
+
 ### CI-only (GitHub Secrets / Vars, not fnox)
 
 > Set in repo settings → Secrets and variables → Actions. Not in fnox.
@@ -330,6 +340,8 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 | `LEWIS_SEED_ALLOW_NON_LOCAL` | [packages/db/scripts/seed-dev.ts:9](../packages/db/scripts/seed-dev.ts#L9) (trap) |
 | `VITE_*` vars | `apps/app/src/main.tsx`, `apps/patient/src/main.tsx` (`import.meta.env.VITE_*`) |
 | `LEWIS_GATE_PASSWORD`, `LEWIS_GATE_SECRET`, `LEWIS_GATE_DISABLED` | [packages/gate/src/index.ts](../packages/gate/src/index.ts) (Vercel Edge Middleware), [packages/gate/src/vite.ts](../packages/gate/src/vite.ts) (Vite dev shim with baked-in dev defaults) |
+| `PUBLIC_SITE_URL` | [apps/api/src/domains/public-programs/routes.ts:189](../apps/api/src/domains/public-programs/routes.ts#L189) — siteUrl footer in the brief PDF; defaults to `https://lewis.health` |
+| `PUPPETEER_SKIP_DOWNLOAD`, `PUPPETEER_EXECUTABLE_PATH` | [apps/api/Dockerfile](../apps/api/Dockerfile) (build + runtime) — read by puppeteer's npm postinstall + by the renderer at launch ([packages/pdf/src/render.ts](../packages/pdf/src/render.ts)) |
 
 ---
 
@@ -341,6 +353,7 @@ This is the authoritative read-side of the matrix. If a var below isn't in [§ 5
 
 ### Change log
 
+- **2026-05-01** (v0.0.9.0) — Slice 3 added Puppeteer-rendered `/v1/public/programs/:slug/brief.pdf` to the API. Container-only `PUPPETEER_SKIP_DOWNLOAD=true` and `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` baked into [apps/api/Dockerfile](../apps/api/Dockerfile) — Debian's apt chromium replaces puppeteer's bundled download for smaller, security-tracked, reproducible images. Optional runtime `PUBLIC_SITE_URL` controls the brief footer's site link (defaults to `https://lewis.health`). All three vars added to the matrix above.
 - **2026-04-29** (v0.0.6.2) — Added `LEWIS_GATE_PASSWORD`, `LEWIS_GATE_SECRET`, `LEWIS_GATE_DISABLED` for the temporary pre-launch password gate. Set on each of the six Vercel projects (`lewis-{directory,app,patient}-{staging,production}`), Production + Preview scope, NOT in fnox per the security rule. Read by [packages/gate/src/index.ts](../packages/gate/src/index.ts). Local dev defaults baked into the Vite shim. Removed entirely with the gate before public launch. Also documented the **Supabase pooler `/`-in-password URL-encoding gotcha** under the Database / Redis section — encode `/` to `%2F` if the pooler-generated password contains it; otherwise zod's URL validation rejects the value at boot.
 - **2026-04-28** — Added `STAGING_MIGRATION_DATABASE_URL` (env-scoped `staging`) and `PROD_MIGRATION_DATABASE_URL` (env-scoped `production`) GH Secrets. These hold the Supabase session-pooler URL with the schema-owner credential and are consumed by the new `drizzle-kit migrate` step in `deploy-staging.yml` / `deploy-prod.yml`. Defense-in-depth: the runtime preflight in [packages/db/scripts/cloud-migration-preflight.ts](../packages/db/scripts/cloud-migration-preflight.ts) refuses to invoke `drizzle-kit migrate` if `MIGRATION_DATABASE_URL` is absent. Schema-owner credential is intentionally never present on any Railway service env per CLAUDE.md security #1.
 - **2026-04-25** — Initial end-to-end audit. 5 code-vs-config gaps closed: `WORKER_ELEVATED`, `WORKER_RUNTIME_ROLE_OPT_OUT`, `API_RUNTIME_ROLE_OPT_OUT`, `LEWIS_SEED_ALLOW_NON_LOCAL` documented in templates; `RESEND_WEBHOOK_SECRET` restored to `api_dev` fnox profile.

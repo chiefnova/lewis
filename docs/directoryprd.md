@@ -255,15 +255,16 @@ This section is the canonical record of the directory as of the date of this PRD
 |---|---|---|
 | `/` | Implemented | Hero, ProblemSection, HowItWorks, FeaturedTreatments, ForPhysicians, FaqSection (15 Qs), BeginningSection. Search submits to `/search?q=` (broken target). Several CTAs disabled. |
 | `/browse` | Implemented | Filter rail (checkboxes only, not wired). Sort dropdown. Grid of program cards. 1 live program (WST-057), 5 "Coming soon" cards. |
-| `/programs/:slug` | Implemented for WST-057 | Split layout. Panels for About, Who-this-is-for, Where-to-access, How-enrollment-works, Cost. Two `[COUNSEL REVIEW]` markers (evidence link, cost). |
+| `/programs/:slug` | ✅ Shipped v0.0.9.0 | Full rewrite per § 15. API-driven (`/v1/public/programs/:slug`). Sticky split layout (left product art, flat editorial body, sticky right rail). Sections: Header, About, Clinical evidence (citations, IND, ETRB approval, mechanism, key safety findings), Eligibility, Where-to-access, Enrollment, Cost. Right-rail CTAs: Check eligibility (patient), Refer this patient + Download brief (clinician). Both `[COUNSEL REVIEW]` markers cleared with real Lancet eBioMedicine 2023 citation + counsel-light cost copy. Drug JSON-LD augmented per § 15.7. Loading skeleton + error + not-found states inline. |
+| `/programs/:slug/brief.pdf` | ✅ Shipped v0.0.9.0 | Server-rendered single-page clinician brief via Puppeteer + Chromium. Synchronous in the API request path with 5s hard timeout. Filename `lewis-brief-{slug}-{yyyymmdd}.pdf`. 30 req/min/IP bucket; Cloudflare 1h max-age + 24h SWR. |
 | `/etcs/:slug` | Implemented for big-sky | SVG map placeholder. Panels for About, Treatments offered, Location, Public documents, Medical Director. |
 | `/eligibility/:programSlug` | Implemented for WST-057 | 4 questions, progress dots, no auto-advance, anonymous token. |
 | `/eligibility/:programSlug/result` | Implemented | Pass/fail branches with "Connect" or "Reach out anyway" CTAs. |
 | `/connect/:programSlug` | Implemented | Lead form with name, email, phone, best time to contact, brief situation. POST stubbed. |
 | `/connect/confirmed` | Implemented | Confirmation page with checklist of what to prep. |
 | `/search` | ✅ Implemented (v0.0.7.0) | Surface 1 (Radix Dialog overlay, lazy-loaded, debounced live-suggest, combobox/listbox a11y) + Surface 2 (results page, three states, `noindex, follow` on query results, canonical strips `?q=`). Sectioned response (Conditions → Treatments → ETCs) enforced server-side. |
-| `/conditions` | 🟡 Implemented locally (Sprint 2 PR pending) | API-driven conditions index grouped by state, alphabetized within each section, ItemList JSON-LD, unit/a11y coverage, and Playwright E2E coverage. |
-| `/conditions/:slug` | 🟡 Implemented locally (Sprint 2 PR pending) | Full three-state condition detail: live program cards, standard-of-care framing where applicable, plain-language explainers, MedicalCondition JSON-LD, coming-soon disabled notify CTA, and not-offered three-path panel (ClinicalTrials.gov, treating physician, disabled notify). |
+| `/conditions` | ✅ Shipped v0.0.8.0 | API-driven conditions index grouped by state, alphabetized within each section, ItemList JSON-LD, unit/a11y coverage, and Playwright E2E coverage. |
+| `/conditions/:slug` | ✅ Shipped v0.0.8.0 | Full three-state condition detail: live program cards, standard-of-care framing where applicable, plain-language explainers, MedicalCondition JSON-LD, coming-soon disabled notify CTA, and not-offered three-path panel (ClinicalTrials.gov, treating physician, disabled notify). |
 | `/etcs` | Placeholder | Index of all licensed ETCs. |
 | `/etcs/:slug/manual` | Placeholder | Public P&P manual rendering (RULE 6(1)). |
 | `/etcs/:slug/etrb-report` | Placeholder | ETRB annual public report (RULE 16(6)(c)). |
@@ -278,9 +279,9 @@ This section is the canonical record of the directory as of the date of this PRD
 | `/cookies` | Placeholder | May fold into `/privacy`. |
 | `*` (NotFound) | Implemented | 404 page. |
 
-### 7.4 Data seed (current — v0.0.8.0 local)
+### 7.4 Data seed (current — v0.0.9.0)
 
-- 1 live program: **WST-057®** (WinSanTor, topical, Phase 2, peripheral neuropathy, Bozeman MT) — linked to all 4 PN indications via the `program_conditions` join.
+- 1 live program: **WST-057®** (WinSanTor, topical, Phase 2, peripheral neuropathy, Bozeman MT) — linked to all 4 PN indications via the `program_conditions` join. Slice 3 backfilled the clinical-evidence + cost columns with real data: ClinicalTrials.gov NCT04742205, IND 152367, Lancet eBioMedicine 2023;90:104525 (DOI 10.1016/j.ebiom.2023.104525), ETRB approval 2025-09-15 by Big Sky ETC ETRB, two-paragraph mechanism prose, key safety findings, and cost range $2,400–$3,800 per course with the finalized counsel-light disclaimer.
 - 1 live ETC: **Big Sky ETC** (Bozeman, License ETC-2025-001, Dr. Helena Marsh MD) — connected to WinSanTor via an active PPA `tenant_relationships` row that drives the ETC's catalog-term aggregation in `search_index_documents`.
 - 9 conditions in the new `conditions` table per § 27.3:
   - Live: `diabetic-peripheral-neuropathy`, `chemotherapy-induced-peripheral-neuropathy`, `hiv-induced-peripheral-neuropathy`, `idiopathic-peripheral-neuropathy` — all linked to WST-057.
@@ -294,7 +295,7 @@ This section is the canonical record of the directory as of the date of this PRD
 - AnnouncementStrip "Get notified" button
 - BeginningSection email signup
 - ForPhysicians "Browse the clinical reference"
-- `/programs/:slug` "Used Lewis? Share Feedback"
+- ✅ `/programs/:slug` "Used Lewis? Share Feedback" — wired in v0.0.9.0 to `/feedback?ref=program:{slug}` (the link is real and prefills program context; `/feedback` itself is still a placeholder route per § 9, so the destination page is the remaining gap)
 - `/browse` bottom email signup
 
 ---
@@ -375,7 +376,7 @@ lewis.health/
 │   │     featured treatments (secondary carousel); abridged FAQ.
 │   │   Nav: primary (wordmark links here)
 │   │
-│   ├── /conditions                          [IMPLEMENTED LOCALLY — Sprint 2]
+│   ├── /conditions                          [SHIPPED v0.0.8.0]
 │   │   H1: Conditions with experimental treatments in *Montana*.
 │   │   Purpose: Primary patient browse surface AND highest-value SEO
 │   │     landing surface; alphabetical/grouped index of every condition
@@ -383,7 +384,7 @@ lewis.health/
 │   │     page is the door; the program page is the conversion.
 │   │   Nav: primary (FIRST in TopNav, before "Browse Treatments")
 │   │
-│   ├── /conditions/:slug                    [IMPLEMENTED LOCALLY — Sprint 2]
+│   ├── /conditions/:slug                    [SHIPPED v0.0.8.0]
 │   │   H1: Experimental treatments for {condition} in *Montana*.
 │   │   Purpose: Primary patient waypoint AND highest-value SEO destination
 │   │     for "{condition} experimental treatment Montana" queries. Lists
@@ -405,14 +406,14 @@ lewis.health/
 │   │     right of "Conditions" plain-text link).
 │   │   Nav: primary ("Browse Treatments" — secondary to "Conditions")
 │   │
-│   ├── /programs/:slug                      [EXISTS — add Evidence + brief.pdf]
+│   ├── /programs/:slug                      [SHIPPED v0.0.9.0 — Evidence + brief.pdf added]
 │   │   H1: {Drug name}® — *Available now* in Montana.
 │   │   Purpose: Conversion page. Patient learns what it is, who it's for,
 │   │     where it's offered, what it costs, how to enroll. Clinician gets
 │   │     evidence + downloadable brief.
 │   │   Nav: indexed only — entered via search engines, /browse, /conditions/:slug
 │   │
-│   ├── /programs/:slug/brief.pdf            [NEW — server-rendered PDF]
+│   ├── /programs/:slug/brief.pdf            [SHIPPED v0.0.9.0 — server-rendered PDF]
 │   │   Purpose: Clinician one-pager. Mechanism, phase, evidence citations,
 │   │     ETRB approval, ETC contact, eligibility criteria.
 │   │   Nav: linked from /programs/:slug "Download clinical brief" CTA.
@@ -1076,12 +1077,12 @@ Split layout: floating product photograph left (`--paper-deep` background, full-
 
 1. **Header block** — H1 with ®, "Available now in Montana" tag, manufacturer line
 2. **About this treatment** — mechanism + Phase status, plain language
-3. **Clinical evidence** (NEW BLOCK — required for clinician persona)
+3. **Clinical evidence** ✅ shipped v0.0.9.0 — required for clinician persona
 4. **Who this is for** — eligibility plain language with concrete criteria, CTA "Check my eligibility"
 5. **Where to access this treatment** — ETC card(s) with "Currently accepting new patients" tag, profile + connect links
 6. **How enrollment works** — 3-step ordered list, "Lewis never charges patients" reminder
-7. **What this typically costs** — range + insurance disclaimer (currently `[COUNSEL REVIEW]`)
-8. **Used Lewis? Share Feedback** — currently disabled; wire or remove
+7. **What this typically costs** — range + insurance disclaimer ✅ counsel-light copy shipped v0.0.9.0; wording stored per-program in `programs.cost_disclaimer` so counsel can override without a code change
+8. **Used Lewis? Share Feedback** — ✅ wired v0.0.9.0 to `/feedback?ref=program:{slug}` with program-ref prefill; `/feedback` page itself is still a placeholder route
 
 ### 15.3 Clinical evidence block specification
 
@@ -1101,37 +1102,40 @@ Split layout: floating product photograph left (`--paper-deep` background, full-
 
 **Voice:** Peer-level for clinicians, but readable by sophisticated patients/caregivers. No marketing language. Citations attached.
 
-### 15.4 Counsel review markers — must be cleared before public launch
+### 15.4 Counsel review markers
 
-| Marker | Location | Required content |
+| Marker | Location | Status |
 |---|---|---|
-| `[COUNSEL REVIEW]` evidence link | Clinical evidence block | Lancet eBioMedicine Phase 2a citation + DOI |
-| `[COUNSEL REVIEW]` cost range | Cost panel | Vetted "X–X–X–Y per course" language from WinSanTor + counsel sign-off |
+| `[COUNSEL REVIEW]` evidence link | Clinical evidence block | ✅ Cleared v0.0.9.0 — Lancet eBioMedicine 2023;90:104525 (DOI 10.1016/j.ebiom.2023.104525) backfilled in migration 0019 + rendered through ClinicalEvidencePanel + brief.pdf template |
+| `[COUNSEL REVIEW]` cost range | Cost panel | ✅ Cleared v0.0.9.0 — $2,400–$3,800 per course + finalized counsel-light disclaimer ("Treatment cost is set by the ETC...") backfilled in migration 0019 |
 
-**Pre-launch lint check:** A CI step must fail the build if `[COUNSEL REVIEW]` appears anywhere in committed copy.
+Two `[COUNSEL REVIEW]` markers remain elsewhere in the directory (in [apps/directory/src/pages/StaticPages.tsx](../apps/directory/src/pages/StaticPages.tsx)) on placeholder routes (about/legal/etc) — Sprint 6 territory.
 
-### 15.5 Clinician CTA
+**Pre-launch lint check (⏳ Sprint 6):** A CI step must fail the build if `[COUNSEL REVIEW]` appears anywhere in committed copy. Not yet wired; the slice 3 PR cleared the targeted program-page markers but did not add the lint gate.
 
-Add new CTA on `/programs/:slug`: "Refer this patient" outline pill button.
+### 15.5 Clinician CTA — ✅ shipped v0.0.9.0
+
+"Refer this patient" outline pill button in the sticky right rail under "For physicians".
 
 - Routes to `/connect/:programSlug?referrer=clinician`
 - Pre-fills the connect form context to indicate clinician origin
-- Tracking: `program.clinician.refer_clicked` event
+- Tracking: `program.clinician.refer_clicked` event (⏳ wiring deferred to PostHog config — see § 32.2)
 
-### 15.6 Brief PDF download
+### 15.6 Brief PDF download — ✅ shipped v0.0.9.0
 
-Add new CTA: "Download clinical brief" outline pill button.
+"Download brief" outline pill button in the sticky right rail under "For physicians". Native `<a download>` directly to the API brief.pdf URL — no JS, no popup, just a real file download.
 
 - Links to `/programs/:slug/brief.pdf`
-- Tracking: `program.brief.downloaded` event
+- Tracking: `program.brief.downloaded` event (⏳ wiring deferred to PostHog config — see § 32.2)
 
-**PDF specification:**
+**PDF specification (as shipped):**
 
-- Single page, 8.5×11
-- Header: drug name, indication, phase
-- Sections: Mechanism, Eligibility criteria, ETRB approval, ETC contact, Trial registration, Published evidence, Key safety findings
-- Designed in restrained serif aesthetic matching the website
+- Single page, 8.5×11 letter
+- Header: drug name, indication, phase tag
+- Sections: brief mast (Lewis wordmark + clinician-brief date), header block, inline trial/IND/phase field-line, mechanism prose, citation pulled-quote with DOI, eligibility, key safety findings, ETRB approval (per RULE 16(6)(a)), where-to-access blurb, program cost line, footer trust signal
+- Restrained serif aesthetic (Fraunces + Inter), fax-friendly
 - Saved with descriptive filename: `lewis-brief-{drug-slug}-{yyyymmdd}.pdf`
+- Synchronous render in API request path with 5s hard timeout; Cloudflare 1h max-age + 24h SWR per § 28.4 absorbs cost; tighter 30/min/IP rate-limit bucket isolates brief.pdf abuse from catalog browsing
 
 ### 15.7 Schema markup
 
@@ -2107,8 +2111,8 @@ Every directory feature must trace to a source statute or rule. Map:
 | Sprint | Theme | Status | Version | PR |
 |---|---|---|---|---|
 | Sprint 1 | Search backend FTS endpoint + overlay component foundation | ✅ **Shipped** | v0.0.7.0 (2026-04-29) | [#12](https://github.com/chiefnova/lewis/pull/12) |
-| Sprint 2 | Conditions index + conditions detail templates (three states) | 🟡 Implemented locally; PR pending | v0.0.8.0 local | — |
-| Sprint 3 | Programs page Evidence block + brief.pdf generation | ⏳ Pending | — | — |
+| Sprint 2 | Conditions index + conditions detail templates (three states) | ✅ **Shipped** | v0.0.8.0 (2026-04-30) | [#13](https://github.com/chiefnova/lewis/pull/13) |
+| Sprint 3 | Programs page Evidence block + brief.pdf generation | ✅ **Shipped** | v0.0.9.0 (2026-05-01) | [#14](https://github.com/chiefnova/lewis/pull/14) |
 | Sprint 4 | Homepage restructure + nav restructure + footer restructure | ⏳ Pending | — | — |
 | Sprint 5 | Eligibility fail refinement + connect privacy framing + B2B page implementations | ⏳ Pending | — | — |
 | Sprint 6 | Counsel reviews integrated, content finalized, launch readiness | ⏳ Pending | — | — |
@@ -2119,20 +2123,37 @@ Every directory feature must trace to a source statute or rule. Map:
 - Plus a minimal `/conditions/:slug` page so search results land on a real route. Three-state UI (live / coming_soon / not_offered) was differentiated in Sprint 1; full PRD § 14.2 content depth is implemented locally in the Sprint 2 work.
 - Plus PHI hardening (`sanitizeAccessLogMessage`), wordmark + Fraunces typography tightening across all three apps, the v1.1 condition-first PRD reframe (`docs/prd.md` split into `b2bprd.md` + `directoryprd.md`), and Hero static-placeholder per § 11.3.
 
+**Sprint 2 — what shipped beyond the bare slice spec:**
+- The `/conditions` index + the full three-state `/conditions/:slug` detail per § 14.2 (live / coming-soon / not-offered branches), each with its own JSON-LD posture (`MedicalCondition` with `possibleTreatment` only in the live state).
+- The `/v1/public/conditions` + `/v1/public/conditions/:slug` API endpoints riding the same `directory_anonymous` RLS posture from Sprint 1.
+- Editorial content module `apps/directory/src/data/conditions-content.ts` with a drift-detection test that fails CI if a published condition in the DB seed lacks a content entry. MedlinePlus / NIH / NCI / VA / AAN / ASCO sourcing.
+- Hero typeahead (debounced live-suggest, combobox/listbox a11y, dialog-scoped) + stable-frame search overlay polish that landed alongside slice 2.
+- Sitemap + Playwright runner.
+
+**Sprint 3 — what shipped beyond the bare slice spec:**
+- The full Clinical Evidence block on `/programs/:slug` per § 15.3 (citations, IND, phase, ETRB approval, mechanism, key safety findings, DOI link), with graceful degradation for partial-evidence programs.
+- Server-rendered `/programs/:slug/brief.pdf` per § 15.6 — synchronous Puppeteer + apt-installed Chromium in the API container, 5s hard timeout, edge cache. Real Lancet eBioMedicine 2023 + WinSanTor + Big Sky ETRB data backfilled by migration 0019.
+- New SECURITY DEFINER helper `app.directory_program_etc_count(uuid)` so the public catalog can return ETC counts without exposing `tenant_relationships` to the directory_anonymous read policy.
+- Both `[COUNSEL REVIEW]` markers on `/programs/wst-057` cleared (evidence link + cost range — see § 15.4).
+- Drug JSON-LD § 15.7 augmentation (`clinicalPharmacology`, `medicineSystem: WesternConventional`, `prescribingInfo`) with a unit-tested builder that omits each field on null.
+- Right-rail clinician CTAs ("Refer this patient" with `?referrer=clinician` prefill, "Download brief" native `<a download>`).
+- Loading/error/not-found inline states for `/programs/:slug` per /design-shotgun Round 5 Variant A.
+- Plus homepage polish picked up while in the area (8-pill picasso scatter replacing the previous 4 mini pills, problem-section copy rewrite, AnnouncementStrip restricted to homepage) — slightly ahead of Sprint 4's homepage restructure.
+
 ### 32.1 P0 — Blocks public launch
 
 These items must ship before any public traffic.
 
 **Engineering (P0):**
 
-- 🟡 `/conditions` index — the primary patient browse surface — **implemented locally in Sprint 2; PR pending**
-- 🟡 `/conditions/:slug` template — three states (live, coming-soon, not-offered) — primary patient waypoint — **full Sprint 2 template implemented locally; PR pending**
-- 🟡 `/conditions/:slug` first 5 condition pages — content + structured data — **implemented locally; counsel/editorial review pending**
+- ✅ **`/conditions` index — the primary patient browse surface — shipped v0.0.8.0**
+- ✅ **`/conditions/:slug` template — three states (live, coming-soon, not-offered) — primary patient waypoint — shipped v0.0.8.0**
+- 🟡 `/conditions/:slug` first 5 condition pages — content + structured data — **content shipped v0.0.8.0 in `apps/directory/src/data/conditions-content.ts`; counsel/editorial review pending**
 - ✅ **`/search` real implementation — overlay + results page + backend FTS endpoint — shipped v0.0.7.0**
-- ⏳ `/programs/:slug` Clinical Evidence block — new section above "Who this is for" — **Sprint 3**
-- ⏳ `/programs/:slug/brief.pdf` — server-rendered PDF generation — **Sprint 3**
-- ⏳ `/programs/wst-057` cost panel real content — clears `[COUNSEL REVIEW]` — **Sprint 3**
-- ⏳ `/programs/wst-057` evidence link real content — clears `[COUNSEL REVIEW]` — **Sprint 3**
+- ✅ **`/programs/:slug` Clinical Evidence block — new section above "Who this is for" — shipped v0.0.9.0**
+- ✅ **`/programs/:slug/brief.pdf` — server-rendered PDF generation — shipped v0.0.9.0**
+- ✅ **`/programs/wst-057` cost panel real content — `[COUNSEL REVIEW]` cleared — shipped v0.0.9.0**
+- ✅ **`/programs/wst-057` evidence link real content — `[COUNSEL REVIEW]` cleared — shipped v0.0.9.0**
 - ⏳ `/etcs/:slug` direct medical director contact line — for clinicians — **Sprint 4**
 - ⏳ `/etcs/:slug/ae-summary` route removal — fold into `/etrb-report` — **Sprint 4**
 - ⏳ Homepage section reordering — per § 11.1 — **Sprint 4**
@@ -2217,8 +2238,8 @@ These items must ship before any public traffic.
 Recommended 6-sprint plan to public launch:
 
 - ✅ **Sprint 1 (Week 1) — Shipped v0.0.7.0 (2026-04-29):** Search backend FTS endpoint + overlay component foundation. Plus the data layer (conditions table + RLS + triggers + 9 seeded conditions) and a minimal `/conditions/:slug` route so search hits land on a real page. See § 32.0 for full delivery scope. PR: [#12](https://github.com/chiefnova/lewis/pull/12).
-- 🟡 **Sprint 2 (local implementation in review):** Conditions index + conditions detail templates (three states)
-- ⏳ **Sprint 3:** Programs page Evidence block + brief.pdf generation
+- ✅ **Sprint 2 (Week 2) — Shipped v0.0.8.0 (2026-04-30):** Conditions index + conditions detail templates (three states), the `/v1/public/conditions` API, editorial content module + drift detector, hero typeahead overlay polish, sitemap + Playwright runner. See § 32.0 for full delivery scope. PR: [#13](https://github.com/chiefnova/lewis/pull/13).
+- ✅ **Sprint 3 (Week 3) — Shipped v0.0.9.0 (2026-05-01):** Programs page Clinical Evidence block + server-rendered brief.pdf endpoint. Migration 0019 backfilled WST-057 with real Lancet citation + ETRB approval + cost data. Both `[COUNSEL REVIEW]` markers on `/programs/wst-057` cleared. Drug JSON-LD § 15.7 augmentations. Right-rail clinician CTAs (Refer + Download brief). See § 32.0 for full delivery scope. PR: [#14](https://github.com/chiefnova/lewis/pull/14).
 - ⏳ **Sprint 4:** Homepage restructure + nav restructure + footer restructure
 - ⏳ **Sprint 5:** Eligibility fail refinement + connect privacy framing + B2B page implementations
 - ⏳ **Sprint 6:** Counsel reviews integrated, content finalized, launch readiness
