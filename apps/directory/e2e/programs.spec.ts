@@ -156,13 +156,9 @@ test.describe("Programs detail flow (slice 3)", () => {
     // Used Lewis feedback CTA wired with the program-ref query param.
     // Two "Share feedback" links exist on the page (page-level + footer);
     // we only care about the page-level one which carries the program ref.
-    const programFeedbackLink = page
-      .getByRole("link", { name: "Share feedback", exact: true })
-      .filter({ hasNot: page.locator("[data-discover]") })
-      .first();
-    // Fallback: just match the link with the right href directly.
+    // Match by the page-ref href directly so the assertion stays stable
+    // even if a future Footer "Share feedback" link is added or renamed.
     await expect(page.locator('a[href="/feedback?ref=program:wst-057"]')).toBeVisible();
-    void programFeedbackLink; // silence unused-var if the locator above goes stale
 
     // Drug JSON-LD with augmentations
     const jsonLd = await page.locator('script[type="application/ld+json"]').first().textContent();

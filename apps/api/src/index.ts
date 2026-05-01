@@ -46,13 +46,16 @@ async function shutdown(signal: NodeJS.Signals, server: Server): Promise<void> {
   logger.info({ signal }, "lewis API shutting down");
   server.close();
   // Lazy-import the PDF renderer's dispose hook so SIGTERM still works even
-  // when the puppeteer dep is missing in pre-build environments.
+  // when the puppeteer dep is missing in pre-build environments. Failures
+  // here are usually expected (no browser launched, or no puppeteer dep);
+  // log at debug level so a genuine Chromium hang/disconnect is still
+  // observable without polluting normal shutdown logs.
   const disposeBrowser = (async () => {
     try {
       const mod = await import("@lewis/pdf/render");
       await mod.disposeRenderer();
-    } catch {
-      // Browser may never have launched; ignore.
+    } catch (err) {
+      logger.debug({ err }, "disposeRenderer failed during shutdown — ignoring");
     }
   })();
   await Promise.allSettled([disposeBrowser, closeRedisClient(), closeDatabasePool()]);

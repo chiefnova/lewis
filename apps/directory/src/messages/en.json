@@ -118,6 +118,7 @@
   "directory.program.available-tag": "Available {nowEm} in Montana",
   "directory.program.available-tag.now": "now",
   "directory.program.manufacturer-line": "Topical investigational treatment for {indication} from {manufacturerEm}",
+  "directory.program.manufacturer.fallback": "the sponsor",
   "directory.program.about.heading": "About this treatment.",
   "directory.program.who.heading": "Who this is for.",
   "directory.program.where.heading": "Where to access this treatment.",

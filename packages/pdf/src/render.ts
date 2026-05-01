@@ -75,19 +75,31 @@ export async function renderProgramBrief(
   options: RenderProgramBriefOptions = {},
 ): Promise<Buffer> {
   const timeout = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  return withRenderDeadline(renderProgramBriefUnsafe(detail, options, timeout), timeout);
-}
-
-async function renderProgramBriefUnsafe(
-  detail: PublicProgramDetail,
-  options: RenderProgramBriefOptions,
-  timeout: number,
-): Promise<Buffer> {
   const html = renderProgramBriefHtml(detail, options);
-
   const browser = await getBrowser(timeout);
-  const page = await browser.newPage();
-  try {
+
+  // Track the page (created inside the deadline-raced operation) so the
+  // outer timeout can force-close it without waiting for the abandoned
+  // newPage / setContent / page.pdf promises to settle. Promise.race
+  // abandons the loser; without this, an outer timeout firing while
+  // setContent or page.pdf was hung would leak the Chromium page.
+  let page: import("puppeteer").Page | null = null;
+  let pageClosed = false;
+  const closePageOnce = async (): Promise<void> => {
+    if (pageClosed || !page) return;
+    pageClosed = true;
+    try {
+      await page.close();
+    } catch {
+      // page.close() can throw if Chromium disconnected mid-render
+      // (browser crashed, container died, etc.). We've already given
+      // up on this render so swallow it. getBrowser's connected check
+      // auto-relaunches on the next request.
+    }
+  };
+
+  const operation = (async () => {
+    page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0", timeout });
     const pdf = await page.pdf({
       format: "letter",
@@ -97,18 +109,39 @@ async function renderProgramBriefUnsafe(
     });
     // puppeteer returns Uint8Array; the API layer wants Buffer for Hono.
     return Buffer.from(pdf);
+  })();
+
+  try {
+    return await withRenderDeadline(operation, timeout, closePageOnce);
   } finally {
-    await page.close();
+    await closePageOnce();
   }
 }
 
-async function withRenderDeadline<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
+async function withRenderDeadline<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  onTimeout?: () => Promise<void> | void,
+): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       operation,
       new Promise<T>((_, reject) => {
-        timeoutId = setTimeout(() => reject(new PdfRenderTimeoutError(timeoutMs)), timeoutMs);
+        timeoutId = setTimeout(() => {
+          // Fire the abort callback before rejecting so the abandoned
+          // operation gets a chance to release its resources (close the
+          // Puppeteer page, etc.) before the caller sees the timeout.
+          // Errors in the abort callback are swallowed — caller already
+          // sees the timeout, propagating an abort-cleanup error would
+          // mask it.
+          if (onTimeout) {
+            void Promise.resolve()
+              .then(() => onTimeout())
+              .catch(() => undefined);
+          }
+          reject(new PdfRenderTimeoutError(timeoutMs));
+        }, timeoutMs);
       }),
     ]);
   } finally {

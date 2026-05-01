@@ -37,7 +37,7 @@ export function TreatmentDetailError({ onRetry }: TreatmentDetailErrorProps) {
       </div>
 
       <div className="split-detail-content-grid">
-        <main role="alert">
+        <main>
           <Link to="/browse" className="program-back-link">
             <ArrowLeft />
             <FormattedMessage
@@ -45,18 +45,30 @@ export function TreatmentDetailError({ onRetry }: TreatmentDetailErrorProps) {
               defaultMessage="Back to browse"
             />
           </Link>
-          <h1 className="program-state-msg-h1">
-            <FormattedMessage
-              id="directory.program.error.heading"
-              defaultMessage="We couldn't load this treatment."
-            />
-          </h1>
-          <p className="program-state-msg-body">
-            <FormattedMessage
-              id="directory.program.error.body"
-              defaultMessage="A network hiccup, briefly. Try again — your connection may have just blipped."
-            />
-          </p>
+          {/*
+            Scope role="alert" to just the heading + body so the retry
+            button and support link don't sit inside an assertive live
+            region. role="alert" implies aria-live="assertive" +
+            aria-atomic="true"; with the wider <main role="alert">,
+            screen-reader users would hear the message re-announced
+            whenever they navigated through the interactive controls
+            below it. This wrapper announces the message on mount and
+            keeps the controls outside the live region.
+          */}
+          <div role="alert">
+            <h1 className="program-state-msg-h1">
+              <FormattedMessage
+                id="directory.program.error.heading"
+                defaultMessage="We couldn't load this treatment."
+              />
+            </h1>
+            <p className="program-state-msg-body">
+              <FormattedMessage
+                id="directory.program.error.body"
+                defaultMessage="A network hiccup, briefly. Try again — your connection may have just blipped."
+              />
+            </p>
+          </div>
           <div className="program-state-msg-actions">
             <button type="button" className="program-state-msg-retry-link" onClick={onRetry}>
               {intl.formatMessage({

@@ -797,6 +797,13 @@ section.hero-section {
 .program-panel {
   padding: 0;
   margin-bottom: 36px;
+  /* Section anchors target the .program-panel element via id="about",
+   * id="evidence", etc. Without scroll-margin-top, clicking a rail
+   * anchor scrolls the section to the very top of the viewport — under
+   * the 80px sticky TopNav. 104px = 80px topnav + 24px breathing room,
+   * matching the existing scrollspy precedent used by the conditions
+   * detail TOC. */
+  scroll-margin-top: 104px;
 }
 .program-panel-title {
   font-family: var(--serif);

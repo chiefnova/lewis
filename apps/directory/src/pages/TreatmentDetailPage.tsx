@@ -43,7 +43,13 @@ import { useSeo, siteUrl } from "../seo/useSeo";
 // SEO: useSeo emits the augmented Drug JSON-LD per § 15.7
 // (clinicalPharmacology, medicineSystem, prescribingInfo).
 
-const SECTIONS: ReadonlyArray<{ id: string; labelId: string; defaultLabel: string }> = [
+type SectionDescriptor = { id: string; labelId: string; defaultLabel: string };
+
+// Sections always rendered when a program loads. Cost is appended in the
+// component body only when program.costRange is non-null — otherwise the
+// section + h2 + rail anchor would be a dead heading pointing at an empty
+// ProgramCostPanel (the panel returns null when costRange is null).
+const BASE_SECTIONS: ReadonlyArray<SectionDescriptor> = [
   { id: "about", labelId: "directory.program.section-nav.about", defaultLabel: "About" },
   { id: "evidence", labelId: "directory.program.section-nav.evidence", defaultLabel: "Evidence" },
   {
@@ -61,8 +67,13 @@ const SECTIONS: ReadonlyArray<{ id: string; labelId: string; defaultLabel: strin
     labelId: "directory.program.section-nav.enrollment",
     defaultLabel: "Enrollment",
   },
-  { id: "cost", labelId: "directory.program.section-nav.cost", defaultLabel: "Cost" },
 ];
+
+const COST_SECTION: SectionDescriptor = {
+  id: "cost",
+  labelId: "directory.program.section-nav.cost",
+  defaultLabel: "Cost",
+};
 
 export function TreatmentDetailPage() {
   const navigate = useNavigate();
@@ -102,6 +113,14 @@ export function TreatmentDetailPage() {
   if (loading) return <TreatmentDetailSkeleton />;
   if (notFound) return <TreatmentNotFound />;
   if (error || !program) return <TreatmentDetailError onRetry={retry} />;
+
+  // Build the section list from program data so the rail anchors match
+  // what's actually rendered. costRange is the only conditional section
+  // today; other sections always render with content from the API + the
+  // editorial content module.
+  const sections: ReadonlyArray<SectionDescriptor> = program.costRange
+    ? [...BASE_SECTIONS, COST_SECTION]
+    : BASE_SECTIONS;
 
   return (
     <article className="fade-up split-detail">
@@ -161,7 +180,13 @@ export function TreatmentDetailPage() {
               values={{
                 indication: program.indication,
                 manufacturerEm: (
-                  <span className="ink">{program.manufacturer ?? "the sponsor"}</span>
+                  <span className="ink">
+                    {program.manufacturer ??
+                      intl.formatMessage({
+                        id: "directory.program.manufacturer.fallback",
+                        defaultMessage: "the sponsor",
+                      })}
+                  </span>
                 ),
               }}
             />
@@ -317,15 +342,17 @@ export function TreatmentDetailPage() {
             </div>
           </section>
 
-          <section className="program-panel" id="cost">
-            <h2 className="program-panel-title">
-              <FormattedMessage
-                id="directory.program.cost.heading"
-                defaultMessage="What this typically costs."
-              />
-            </h2>
-            <ProgramCostPanel program={program} />
-          </section>
+          {program.costRange && (
+            <section className="program-panel" id="cost">
+              <h2 className="program-panel-title">
+                <FormattedMessage
+                  id="directory.program.cost.heading"
+                  defaultMessage="What this typically costs."
+                />
+              </h2>
+              <ProgramCostPanel program={program} />
+            </section>
+          )}
 
           <div className="program-feedback-footer">
             <div className="program-ff-title serif">
@@ -352,7 +379,7 @@ export function TreatmentDetailPage() {
           </div>
         </main>
 
-        <ProgramSectionNav program={program} sections={SECTIONS} />
+        <ProgramSectionNav program={program} sections={sections} />
       </div>
     </article>
   );

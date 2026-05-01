@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type { PublicProgramDetail } from "@lewis/shared/api/public";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { IntlProvider } from "react-intl";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -233,14 +233,18 @@ describe("TreatmentDetailPage — graceful degradation", () => {
     expect(screen.queryByText("Key safety findings")).toBeNull();
   });
 
-  it("hides cost panel content when costRange is null", async () => {
+  it("hides the entire cost section (heading + rail anchor) when costRange is null", async () => {
     mockGetProgram.mockResolvedValue({ ...WST_057, costRange: null });
     mount("/programs/wst-057");
     await waitFor(() => expect(screen.getByText("WST-057®")).toBeDefined());
-    // The h2 "What this typically costs." still renders (it's outside
-    // the ProgramCostPanel component) but the price + disclaimer shouldn't.
+    // Whole section + heading hidden so the rail anchor list and the
+    // editorial flow don't show a dead "Cost" entry pointing nowhere.
+    expect(screen.queryByText("What this typically costs.")).toBeNull();
     expect(screen.queryByText(/\$2,400/)).toBeNull();
     expect(screen.queryByText(/Treatment cost is set by the ETC/)).toBeNull();
+    // Right-rail anchor list also drops "Cost".
+    const costAnchor = screen.queryByRole("link", { name: /^Cost$/ });
+    expect(costAnchor).toBeNull();
   });
 });
 
@@ -261,13 +265,25 @@ describe("TreatmentDetailPage — error + not-found", () => {
     }
   });
 
-  it("renders the error block + retry on a non-404 network error", async () => {
+  it("renders the error block + retry triggers another fetch on a non-404 network error", async () => {
     const { ApiNetworkError } = await vi.importActual<ApiClientModule>("../api/client");
     mockGetProgram.mockRejectedValue(new ApiNetworkError(503, "Service Unavailable"));
     mount("/programs/wst-057");
     await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());
     expect(screen.getByText(/couldn't load this treatment/i)).toBeDefined();
-    expect(screen.getByRole("button", { name: /Try again/i })).toBeDefined();
+
+    // The first mount fires one fetch (which rejects → error UI).
+    const initialCallCount = mockGetProgram.mock.calls.length;
+    expect(initialCallCount).toBeGreaterThanOrEqual(1);
+
+    // Second attempt resolves successfully so we can also assert the UI
+    // recovers — covers both "click triggers fetch" and "fetch result
+    // re-renders the live state."
+    mockGetProgram.mockResolvedValueOnce(WST_057);
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }));
+
+    await waitFor(() => expect(screen.getByText("WST-057®")).toBeDefined());
+    expect(mockGetProgram.mock.calls.length).toBeGreaterThan(initialCallCount);
   });
 });
 

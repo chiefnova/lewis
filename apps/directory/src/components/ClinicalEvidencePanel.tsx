@@ -41,6 +41,12 @@ export function ClinicalEvidencePanel({ program }: ClinicalEvidencePanelProps) {
   const trialUrl = program.clinicalTrialsGovId
     ? `https://clinicaltrials.gov/study/${encodeURIComponent(program.clinicalTrialsGovId)}`
     : null;
+  // DOIs are intentionally NOT URL-encoded because the embedded `/` is
+  // path-significant in the doi.org resolver convention (e.g. for
+  // 10.1016/j.ebiom.2023.104525, doi.org/10.1016/... is the canonical
+  // form; encoded `%2F` works but breaks pretty URLs after click).
+  // DOI values flow from the DB (counsel-reviewed at write time), not
+  // anonymous user input, so trust-on-write is the right tradeoff.
   const doiUrl = program.publishedPaper ? `https://doi.org/${program.publishedPaper.doi}` : null;
 
   return (
