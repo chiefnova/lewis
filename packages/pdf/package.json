@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./render": "./src/render.ts",
+    "./templates/program-brief.html": "./src/templates/program-brief.html.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
@@ -12,5 +14,9 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@lewis/shared": "workspace:*",
+    "puppeteer": "^23.11.0"
   }
 }
