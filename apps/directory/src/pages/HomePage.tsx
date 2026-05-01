@@ -37,7 +37,7 @@ function HeroPillScatter() {
       {/* p2 — BIG cream/olive capsule, anchor weight, mid-left */}
       <div
         className="pill p2 depth-anchor"
-        style={{ top: "23%", left: "9%", "--rot": "rotate(-30deg)" } as CSS}
+        style={{ top: "23%", left: "3%", "--rot": "rotate(-30deg)" } as CSS}
       >
         <svg width={118} height={46} viewBox="0 0 80 32" aria-hidden="true">
           <rect x={2} y={6} width={76} height={20} rx={10} fill="#E8DCC0" />
