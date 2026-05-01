@@ -45,7 +45,17 @@ async function startup(): Promise<void> {
 async function shutdown(signal: NodeJS.Signals, server: Server): Promise<void> {
   logger.info({ signal }, "lewis API shutting down");
   server.close();
-  await Promise.allSettled([closeRedisClient(), closeDatabasePool()]);
+  // Lazy-import the PDF renderer's dispose hook so SIGTERM still works even
+  // when the puppeteer dep is missing in pre-build environments.
+  const disposeBrowser = (async () => {
+    try {
+      const mod = await import("@lewis/pdf/render");
+      await mod.disposeRenderer();
+    } catch {
+      // Browser may never have launched; ignore.
+    }
+  })();
+  await Promise.allSettled([disposeBrowser, closeRedisClient(), closeDatabasePool()]);
 }
 
 async function main(): Promise<void> {

@@ -15,6 +15,7 @@ import { etcRoutes } from "./domains/etcs/routes.js";
 import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
 import { patientRoutes } from "./domains/patients/routes.js";
 import { publicConditionsRoutes } from "./domains/public-conditions/routes.js";
+import { publicProgramsRoutes } from "./domains/public-programs/routes.js";
 import { publicSearchRoutes } from "./domains/public-search/routes.js";
 import { searchRoutes } from "./domains/search/routes.js";
 import { sponsorRoutes } from "./domains/sponsors/routes.js";
@@ -214,6 +215,34 @@ v1Public.use(
 );
 v1Public.use("/public/conditions/*", withPublicDbContext);
 v1Public.route("/public/conditions", publicConditionsRoutes);
+
+// /v1/public/programs — treatment detail surface (per directoryprd.md § 15).
+// Two GETs (list + detail) plus a third GET that renders the clinician
+// brief PDF via Puppeteer (§ 15.6). Same anonymous-RLS posture as conditions.
+//
+// brief.pdf sits in its own tighter bucket (30/min/IP vs 60/min for the
+// JSON endpoints) because Puppeteer is the most expensive operation in the
+// system. To make that isolation real, the broader /public/programs/*
+// limiter is wrapped to skip the brief.pdf path — otherwise Hono would run
+// BOTH limiters in registration order on the same request, and brief.pdf
+// abuse would consume from the catalog bucket too. With the skip in place,
+// brief.pdf only counts against public_program_briefs and catalog browsing
+// keeps its full 60/min budget under abuse.
+const publicProgramsBucket = rateLimit({
+  bucket: "public_programs",
+  max: 60,
+  windowSeconds: 60,
+});
+v1Public.use(
+  "/public/programs/*/brief.pdf",
+  rateLimit({ bucket: "public_program_briefs", max: 30, windowSeconds: 60 }),
+);
+v1Public.use("/public/programs/*", async (c, next) => {
+  if (c.req.path.endsWith("/brief.pdf")) return next();
+  return publicProgramsBucket(c, next);
+});
+v1Public.use("/public/programs/*", withPublicDbContext);
+v1Public.route("/public/programs", publicProgramsRoutes);
 
 // ---------------------------------------------------------------------------
 // /v1 — authed sub-router (every route below this gate requires Clerk auth +

@@ -24,9 +24,15 @@ import {
   PublicSearchQueryParams,
   PublicSearchResponse,
   ConditionSlug,
+  ProgramSlug,
   PublicConditionDetail,
   PublicConditionListResponse,
   PublicConditionSummary,
+  PublicProgramDetail,
+  PublicProgramEtrb,
+  PublicProgramListResponse,
+  PublicProgramPublishedPaper,
+  PublicProgramSummary,
 } from "@lewis/shared";
 import {
   OpenAPIRegistry,
@@ -85,6 +91,12 @@ export function buildOpenApiDocument(baseUrl: string) {
   registry.register("PublicConditionSummary", PublicConditionSummary);
   registry.register("PublicConditionDetail", PublicConditionDetail);
   registry.register("PublicConditionListResponse", PublicConditionListResponse);
+  registry.register("ProgramSlug", ProgramSlug);
+  registry.register("PublicProgramSummary", PublicProgramSummary);
+  registry.register("PublicProgramPublishedPaper", PublicProgramPublishedPaper);
+  registry.register("PublicProgramEtrb", PublicProgramEtrb);
+  registry.register("PublicProgramDetail", PublicProgramDetail);
+  registry.register("PublicProgramListResponse", PublicProgramListResponse);
 
   // -- Security schemes -----------------------------------------------------
 
@@ -184,6 +196,12 @@ export function buildOpenApiDocument(baseUrl: string) {
     },
     InternalError: {
       description: "Internal server error",
+      content: {
+        "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+      },
+    },
+    ServiceUnavailable: {
+      description: "Temporarily unavailable",
       content: {
         "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
       },
@@ -317,6 +335,70 @@ export function buildOpenApiDocument(baseUrl: string) {
           400: { $ref: "#/components/responses/ValidationError" },
           404: { $ref: "#/components/responses/NotFound" },
           429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/programs": {
+      get: {
+        summary: "Anonymous public programs catalog (list)",
+        description:
+          "Returns every directory_published program with summary metadata and a count of ETCs offering each (via active sponsor↔ETC PPAs). Drives the directory's browse surface. Rate limited at 60 req/min/IP. See docs/directoryprd.md § 15.",
+        responses: {
+          200: ok("PublicProgramListResponse"),
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/programs/{slug}": {
+      get: {
+        summary: "Anonymous public program detail",
+        description:
+          "Returns a single published program with full clinical-evidence block (ClinicalTrials.gov ID, IND number, published paper citation + DOI, ETRB approval, mechanism summary, key safety findings) and cost range. See docs/directoryprd.md § 15.3.",
+        parameters: [
+          {
+            name: "slug",
+            in: "path",
+            required: true,
+            schema: { $ref: "#/components/schemas/ProgramSlug" },
+          },
+        ],
+        responses: {
+          200: ok("PublicProgramDetail"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/programs/{slug}/brief.pdf": {
+      get: {
+        summary: "Server-rendered single-page clinical brief PDF",
+        description:
+          "Synchronous Puppeteer render of a 1-page clinician brief PDF (8.5×11, restrained serif, fax-friendly). Cached at the edge for 1 hour with 24h stale-while-revalidate; tighter rate-limit bucket (30 req/min/IP) than the JSON endpoints because Puppeteer is the most expensive operation in the system. Filename: lewis-brief-{slug}-{yyyymmdd}.pdf. See docs/directoryprd.md § 15.6 + § 28.4.",
+        parameters: [
+          {
+            name: "slug",
+            in: "path",
+            required: true,
+            schema: { $ref: "#/components/schemas/ProgramSlug" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "PDF document",
+            content: {
+              "application/pdf": {
+                schema: { type: "string", format: "binary" },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          503: { $ref: "#/components/responses/ServiceUnavailable" },
           500: { $ref: "#/components/responses/InternalError" },
         },
       },
