@@ -134,6 +134,10 @@ export const EtcSlug = z
   .max(80)
   .regex(/^[a-z0-9-]+$/);
 
+// Slice 4 — Mapbox lat/lng + programCount surfaced on summary so the /etcs
+// index can render list cards + map pins from a single payload (no per-ETC
+// detail round-trip). lat/lng coherence (both null, or both set with valid
+// ranges) is enforced at the DB layer in migration 0020.
 export const PublicEtcSummary = z.object({
   slug: EtcSlug,
   name: z.string(),
@@ -141,19 +145,50 @@ export const PublicEtcSummary = z.object({
   state: z.literal("MT"),
   licenseNumber: z.string(),
   acceptingPatients: z.boolean(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
+  programCount: z.number().int().nonnegative(),
 });
 export type PublicEtcSummary = z.infer<typeof PublicEtcSummary>;
+
+// Slice 4 — § 16.2 "For physicians: clinical inquiries" contact line.
+// At least one of clinicalEmail / clinicalPhone is shown when present; both
+// can be null on ETCs that haven't published a clinician contact yet
+// (the EtcProfilePage hides the block in that case).
+export const MedicalDirectorContact = z.object({
+  name: z.string(),
+  credentials: z.string(),
+  clinicalEmail: z.string().email().nullable(),
+  clinicalPhone: z.string().nullable(),
+});
+export type MedicalDirectorContact = z.infer<typeof MedicalDirectorContact>;
+
+// Slice 4 — programs offered by an ETC, joined via active PPA. Returned by
+// the directory_etc_program_offerings SECURITY DEFINER helper; surfacing the
+// full row (not just slugs) lets EtcProfilePage render the "Treatments
+// offered" panel in one round trip.
+export const PublicEtcOfferedProgram = z.object({
+  slug: ProgramSlug,
+  name: z.string(),
+  drug: z.string().nullable(),
+  indication: z.string().nullable(),
+  form: z.string().nullable(),
+  phase: z.string().nullable(),
+});
+export type PublicEtcOfferedProgram = z.infer<typeof PublicEtcOfferedProgram>;
 
 export const PublicEtcDetail = PublicEtcSummary.extend({
   about: z.string(),
   address: z.array(z.string()).min(1),
-  phone: z.string(),
-  hours: z.string(),
-  medicalDirector: z.object({ name: z.string(), credentials: z.string() }),
-  programs: z.array(ProgramSlug),
+  phone: z.string().nullable(),
+  hours: z.string().nullable(),
+  medicalDirector: MedicalDirectorContact,
+  programs: z.array(PublicEtcOfferedProgram),
+  // § 16.4 — `ae-summary` removed; folded into `etrb-report`. Slice 4 hard-
+  // deletes the route, sitemap entry, and this enum value.
   publicDocuments: z.array(
     z.object({
-      slug: z.enum(["manual", "etrb-report", "ae-summary"]),
+      slug: z.enum(["manual", "etrb-report"]),
       title: z.string(),
       version: z.string(),
       publishedAt: z.string().datetime(),
@@ -162,6 +197,73 @@ export const PublicEtcDetail = PublicEtcSummary.extend({
   ),
 });
 export type PublicEtcDetail = z.infer<typeof PublicEtcDetail>;
+
+export const PublicEtcListResponse = z.object({
+  etcs: z.array(PublicEtcSummary),
+});
+export type PublicEtcListResponse = z.infer<typeof PublicEtcListResponse>;
+
+// ----- Faceted programs catalog (slice 4 BrowsePage) -----
+
+// Each facet bucket carries a count keyed off the human-readable label. The
+// API's facet handler builds 5 parallel queries so counts respect the OTHER
+// active filters but not the filter for the same facet (standard Amazon-
+// style "what would the count be if I added this value" behavior).
+const FacetSlugBucket = z.object({
+  slug: z.string(),
+  name: z.string(),
+  count: z.number().int().nonnegative(),
+});
+
+const FacetEnumBucket = z.object({
+  code: z.string(),
+  display: z.string(),
+  count: z.number().int().nonnegative(),
+});
+
+export const PublicProgramFacets = z.object({
+  conditions: z.array(FacetSlugBucket),
+  forms: z.array(FacetEnumBucket),
+  phases: z.array(FacetEnumBucket),
+  etcs: z.array(FacetSlugBucket),
+  manufacturers: z.array(FacetSlugBucket),
+});
+export type PublicProgramFacets = z.infer<typeof PublicProgramFacets>;
+
+// ----- Marketing subscriptions (slice 4) -----
+
+export const MarketingSubscriptionSource = z.enum([
+  "announcement_strip",
+  "homepage_beginning",
+  "browse_bottom",
+]);
+export type MarketingSubscriptionSource = z.infer<typeof MarketingSubscriptionSource>;
+
+export const MarketingSubscriptionRequest = z.object({
+  // RFC 5321 §4.5.3.1.3 caps practical email addresses at 254 chars.
+  email: z.string().email().max(254),
+  source: MarketingSubscriptionSource,
+});
+export type MarketingSubscriptionRequest = z.infer<typeof MarketingSubscriptionRequest>;
+
+// Always-success shape — the API returns the same response for new + existing
+// subscribers to defeat email-existence timing attacks. The "check your
+// email" message is the front-end's signal to render the success state.
+export const MarketingSubscriptionResponse = z.object({
+  ok: z.literal(true),
+  message: z.string(),
+});
+export type MarketingSubscriptionResponse = z.infer<typeof MarketingSubscriptionResponse>;
+
+export const MarketingConfirmResponse = z.object({
+  confirmed: z.boolean(),
+});
+export type MarketingConfirmResponse = z.infer<typeof MarketingConfirmResponse>;
+
+export const MarketingUnsubscribeResponse = z.object({
+  unsubscribed: z.boolean(),
+});
+export type MarketingUnsubscribeResponse = z.infer<typeof MarketingUnsubscribeResponse>;
 
 // ----- Eligibility self-screen (anonymous) -----
 
