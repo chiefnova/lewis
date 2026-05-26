@@ -7,8 +7,9 @@ import {
 import { QueueEvents, Worker, type Job } from "bullmq";
 
 import { resolveWorkerDatabaseEnv } from "./database-env.js";
+import { registerMarketingConfirmationHandler } from "./handlers/marketing-confirmation.js";
 import { logger } from "./logger.js";
-import { workerDefinitions, type WorkerDefinition } from "./registry.js";
+import { lookupJobHandler, workerDefinitions, type WorkerDefinition } from "./registry.js";
 import { closeRedisConnections, createRedisConnection } from "./redis.js";
 
 type WorkerRuntime = {
@@ -44,8 +45,8 @@ async function processStubJob(
   definition: WorkerDefinition,
 ): Promise<Record<string, string>> {
   logger.debug(
-    { queueName: definition.queueName, jobId: job.id ?? "unknown" },
-    "stub processor invoked",
+    { queueName: definition.queueName, jobId: job.id ?? "unknown", jobName: job.name },
+    "stub processor invoked (no registered handler for this kind)",
   );
   return {
     status: "stubbed",
@@ -54,8 +55,23 @@ async function processStubJob(
   };
 }
 
+/**
+ * Dispatch router. Each incoming job is looked up by `${queueName}:${job.name}`
+ * in the per-job-kind handler registry (apps/workers/src/registry.ts).
+ * If a handler is registered, it runs. Otherwise the job falls through to
+ * the stub processor — this preserves the slice-1 stub posture for queues
+ * (and kinds) that haven't gained real consumers yet, instead of erroring.
+ */
+async function dispatchJob(job: Job, definition: WorkerDefinition): Promise<unknown> {
+  const handler = lookupJobHandler(definition.queueName, job.name);
+  if (handler) {
+    return handler(job);
+  }
+  return processStubJob(job, definition);
+}
+
 async function registerWorker(definition: WorkerDefinition): Promise<void> {
-  const worker = new Worker(definition.queueName, (job) => processStubJob(job, definition), {
+  const worker = new Worker(definition.queueName, (job) => dispatchJob(job, definition), {
     connection: createRedisConnection(`worker:${definition.queueName}`),
     concurrency: definition.concurrency,
   });
@@ -134,6 +150,11 @@ async function startup(): Promise<void> {
 
   await initializeDatabase(resolveWorkerDatabaseEnv());
   await assertWorkerRuntimeRole();
+
+  // Register per-job-kind handlers before workers start consuming. The order
+  // matters: registerJobKind throws on duplicate registration, which would
+  // surface a bug if two handlers tried to claim the same kind.
+  registerMarketingConfirmationHandler();
 
   const startupRedis = createRedisConnection("worker:startup");
   const redisPing = await startupRedis.ping();
