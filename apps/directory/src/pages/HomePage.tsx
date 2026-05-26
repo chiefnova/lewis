@@ -9,8 +9,10 @@ import {
   TopicalTube,
   Vial,
 } from "../components/Products";
-import { ArrowRight, PlusIcon } from "../components/icons";
-import { FEATURED_HOMEPAGE } from "../data/catalog";
+import { ArrowRight } from "../components/icons";
+import { EmailSignupForm } from "../components/EmailSignupForm";
+import { FeaturedConditions } from "../components/FeaturedConditions";
+import { FeaturedTreatments as FeaturedTreatmentsCarousel } from "../components/FeaturedTreatments";
 import { HeroSearchTypeahead } from "../search/HeroSearchTypeahead";
 import { useSeo, siteUrl } from "../seo/useSeo";
 
@@ -134,7 +136,7 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
       >
         <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
           <h1
-            className="serif"
+            className="serif hero-headline"
             style={{
               fontSize: "clamp(4.6rem, 8.2vw, 7.8rem)",
               lineHeight: 1.02,
@@ -145,9 +147,9 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
               margin: 0,
             }}
           >
-            Find experimental{" "}
+            <span className="hero-headline__lead">Find experimental</span>{" "}
             <span
-              className="serif italic"
+              className="serif hero-headline__accent italic"
               style={{
                 fontWeight: 300,
                 fontStyle: "italic",
@@ -157,7 +159,6 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
             >
               treatments
             </span>
-            .
           </h1>
         </div>
 
@@ -184,50 +185,32 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
 
 function ProblemSection() {
   return (
-    <section style={{ padding: "100px 0" }}>
-      <div className="container-narrow">
-        <h2
-          className="serif"
-          style={{
-            fontSize: "clamp(2.4rem, 4.8vw, 4rem)",
-            lineHeight: 1.05,
-            letterSpacing: "-0.02em",
-            textWrap: "balance",
-            marginBottom: 40,
-          }}
-        >
-          Some treatments don't{" "}
-          <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
-            exist
-          </span>{" "}
-          anywhere else.
+    <section className="ed-section">
+      <div className="ed-section__container">
+        <div className="ed-label">I · Why this exists</div>
+        <h2 className="ed-h2">
+          Some treatments don't <i>exist</i> anywhere else.
         </h2>
-        <div
-          className="grid-stack-mobile"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 56,
-            fontSize: 17,
-            lineHeight: 1.65,
-            color: "var(--ink)",
-          }}
-        >
-          <p>
-            In 2025, Montana enacted the country's most expansive Right to Try framework.
-            Investigational drugs that have completed Phase 1 — and passed safety review by a
-            licensed Experimental Treatment Review Board (ETRB) — can be delivered through
-            Experimental Treatment Centers to patients who have evaluated standard-of-care options
-            and chosen to try something else.
-          </p>
-          <p>
-            For patients, Lewis is the public directory of every Montana program — what's available,
-            what's coming, and where to begin. Beneath it is the operating platform connecting
-            sponsors, ETCs, treating physicians, and patients in one place: coordinating ETRB
-            review, informed consent, treatment delivery, and adverse-event reporting so a Right to
-            Try program can move from a sponsor's IND to a patient's first dose under one compliant
-            workflow.
-          </p>
+        <div className="problem-grid">
+          <div>
+            <p>
+              In 2025, Montana enacted the country's most expansive Right to Try framework.
+              Investigational drugs that have completed Phase 1 — and passed safety review by a
+              licensed Experimental Treatment Review Board (ETRB) — can be delivered through
+              Experimental Treatment Centers to patients who have evaluated standard-of-care options
+              and chosen to try something else.
+            </p>
+          </div>
+          <div>
+            <p>
+              For patients, Lewis is the public directory of every Montana program — what's
+              available, what's coming, and where to begin. Beneath it is the operating platform
+              connecting sponsors, ETCs, treating physicians, and patients in one place:
+              coordinating ETRB review, informed consent, treatment delivery, and adverse-event
+              reporting so a Right to Try program can move from a sponsor's IND to a patient's first
+              dose under one compliant workflow.
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -239,104 +222,30 @@ function HowItWorks() {
     {
       title: "Find a treatment for your condition.",
       body: "Browse the directory or search by condition, manufacturer, or trial phase. Every listing shows the dosage form, eligibility summary, and where it is offered.",
-      el: <RoundTablet size={220} color="#D9A4A4" />,
     },
     {
       title: "Connect with a licensed ETC.",
       body: "When you find a program that fits, request a connection. The Experimental Treatment Center reaches out directly to begin a clinical conversation.",
-      el: <Vial size={220} />,
     },
     {
       title: "Work with their clinical team to enroll.",
       body: "The ETC reviews your treating physician's recommendation, walks you through informed consent, and schedules your first visit.",
-      el: <Capsule size={220} rotate={-22} />,
     },
   ];
+  const numerals = ["i", "ii", "iii"];
   return (
-    <section style={{ padding: "100px 0", background: "transparent" }}>
-      <div className="container">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            marginBottom: 64,
-            flexWrap: "wrap",
-            gap: 24,
-          }}
-        >
-          <h2
-            className="serif"
-            style={{
-              fontSize: "clamp(2.2rem, 4.2vw, 3.4rem)",
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
-              maxWidth: 720,
-            }}
-          >
-            How Montana's program{" "}
-            <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
-              actually
-            </span>{" "}
-            works.
-          </h2>
-          <div
-            style={{
-              fontSize: 12.5,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: "var(--ink-soft)",
-            }}
-          >
-            Three steps · No account required to browse
-          </div>
-        </div>
-        <div
-          className="grid-carousel-mobile"
-          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}
-        >
+    <section className="ed-section">
+      <div className="ed-section__container">
+        <div className="ed-label">IV · How it works</div>
+        <h2 className="ed-h2">
+          How Montana's program <i>actually</i> works.
+        </h2>
+        <div className="how-grid">
           {steps.map((s, i) => (
-            <div key={s.title}>
-              <div
-                className="card-art"
-                style={{
-                  background: "var(--paper-deep)",
-                  borderRadius: 4,
-                  height: 280,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {s.el}
-              </div>
-              <div style={{ marginTop: 28 }}>
-                <div
-                  className="serif"
-                  style={{
-                    fontSize: 13,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: "var(--ink-soft)",
-                    marginBottom: 14,
-                  }}
-                >
-                  Step {i + 1}
-                </div>
-                <h3
-                  className="serif"
-                  style={{
-                    fontSize: 22,
-                    lineHeight: 1.2,
-                    letterSpacing: "-0.01em",
-                    marginBottom: 12,
-                    fontWeight: 400,
-                  }}
-                >
-                  {s.title}
-                </h3>
-                <p style={{ color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.6 }}>{s.body}</p>
-              </div>
+            <div key={s.title} className="how-item">
+              <div className="how-num">{numerals[i] ?? `${i + 1}`}</div>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
             </div>
           ))}
         </div>
@@ -345,165 +254,37 @@ function HowItWorks() {
   );
 }
 
-function FeaturedTreatments() {
-  return (
-    <section style={{ padding: "100px 0" }}>
-      <div className="container">
-        <div style={{ marginBottom: 56, maxWidth: 760 }}>
-          <h2
-            className="serif"
-            style={{
-              fontSize: "clamp(2.2rem, 4.2vw, 3.4rem)",
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
-              marginBottom: 20,
-            }}
-          >
-            Treatments available now in Montana.
-          </h2>
-          <p style={{ color: "var(--ink-soft)", fontSize: 16, lineHeight: 1.6 }}>
-            These investigational treatments are available through licensed Montana Experimental
-            Treatment Centers. Browse the full catalog or search by your condition.
-          </p>
-        </div>
-        <div
-          className="grid-carousel-mobile"
-          style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}
-        >
-          {FEATURED_HOMEPAGE.map((p, i) => {
-            const cardBody = (
-              <>
-                <div
-                  className="card-art"
-                  style={{
-                    background: "var(--paper-deep)",
-                    borderRadius: 4,
-                    height: 280,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {p.art}
-                </div>
-                <div style={{ padding: "20px 4px 4px" }}>
-                  <div
-                    className="serif"
-                    style={{ fontSize: 22, letterSpacing: "-0.01em", marginBottom: 6 }}
-                  >
-                    {p.name}
-                  </div>
-                  <div style={{ color: "var(--ink-soft)", fontSize: 14, marginBottom: 14 }}>
-                    {p.indication}
-                  </div>
-                  {!p.muted && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        color: "var(--accent)",
-                        fontSize: 13.5,
-                        fontWeight: 500,
-                        marginBottom: 14,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          background: "var(--accent)",
-                        }}
-                      />
-                      Available at {p.etcs} ETC
-                    </div>
-                  )}
-                </div>
-              </>
-            );
-            return p.slug ? (
-              <Link
-                key={p.slug}
-                to={`/programs/${p.slug}`}
-                className="card-lift"
-                style={{ display: "block", opacity: p.muted ? 0.5 : 1 }}
-              >
-                {cardBody}
-              </Link>
-            ) : (
-              <div
-                key={`placeholder-${i}`}
-                aria-hidden="true"
-                style={{ opacity: p.muted ? 0.5 : 1, cursor: "default" }}
-              >
-                {cardBody}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ marginTop: 48, display: "flex", justifyContent: "center" }}>
-          <Link to="/browse" className="pill pill-outline">
-            Browse all treatments
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
+// Slice 4 § 11.4b — local FeaturedTreatments deleted. Replaced by the
+// editorial inline-list component in apps/directory/src/components/
+// FeaturedTreatments.tsx (imported above as FeaturedTreatmentsCarousel)
+// per locked Variant B from /design-shotgun Round 1.
 
 function ForPhysicians() {
   return (
-    <section style={{ padding: "100px 0" }}>
-      <div
-        className="container-narrow grid-stack-mobile"
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: 12.5,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--ink-soft)",
-              marginBottom: 18,
-            }}
-          >
-            For Clinicians
+    <section className="ed-section">
+      <div className="ed-section__container">
+        <div className="ed-label">V · For physicians</div>
+        <div className="for-phys-grid">
+          <div>
+            <h2>
+              For treating physicians researching options for a <i>patient</i>.
+            </h2>
+            <p>
+              Each program page includes the full eligibility criteria, current trial phase and
+              published evidence, ETC contact for clinical inquiry, and a downloadable program
+              one-pager for chart review.
+            </p>
+            {/* Slice 4 § 11.7 — disabled CTA wired to /for-clinicians (P1 page).
+                The route ships as a StaticShell placeholder until the P1 content
+                draft per § 32.2 lands; the CTA being live-but-stubbed is honest
+                and removes the slice-3 credibility tax of a disabled button. */}
+            <Link to="/for-clinicians" className="pill pill-outline">
+              Browse the clinical reference <ArrowRight />
+            </Link>
           </div>
-          <h2
-            className="serif"
-            style={{
-              fontSize: "clamp(1.9rem, 3.2vw, 2.6rem)",
-              lineHeight: 1.1,
-              letterSpacing: "-0.015em",
-              marginBottom: 20,
-            }}
-          >
-            For treating physicians researching options for a patient.
-          </h2>
-        </div>
-        <div>
-          <p
-            style={{
-              color: "var(--ink-soft)",
-              fontSize: 16,
-              lineHeight: 1.65,
-              marginBottom: 28,
-            }}
-          >
-            Each program page includes the full eligibility criteria, current trial phase and
-            published evidence, ETC contact for clinical inquiry, and a downloadable program
-            one-pager for chart review.
-          </p>
-          <button
-            type="button"
-            disabled
-            className="pill pill-outline"
-            style={{ opacity: 0.55, cursor: "not-allowed" }}
-          >
-            Browse the clinical reference <ArrowRight />
-          </button>
+          <div className="for-phys__rx" aria-hidden="true">
+            ℞
+          </div>
         </div>
       </div>
     </section>
@@ -576,57 +357,59 @@ const FAQS_PHYS: ReadonlyArray<readonly [string, string]> = [
   ],
 ];
 
-interface AccordionRowProps {
+interface FaqRowProps {
   q: string;
   a: string;
   isOpen: boolean;
   onClick: () => void;
+  rowId: string;
 }
 
-function AccordionRow({ q, a, isOpen, onClick }: AccordionRowProps) {
+function FaqRow({ q, a, isOpen, onClick, rowId }: FaqRowProps) {
+  const panelId = `${rowId}-panel`;
   return (
-    <div className="acc-row" data-open={isOpen}>
-      <button className="acc-q acc-q-mono" onClick={onClick} aria-expanded={isOpen}>
+    <div className="faq-row">
+      <button
+        type="button"
+        className="faq-q"
+        onClick={onClick}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+      >
         <span>{q}</span>
-        <span className="acc-chev">
-          <PlusIcon />
+        <span className="faq-q__icon" aria-hidden="true">
+          {isOpen ? "−" : "+"}
         </span>
       </button>
-      {isOpen && <div className="acc-a">{a}</div>}
+      {isOpen && (
+        <div id={panelId} className="faq-a">
+          {a}
+        </div>
+      )}
     </div>
   );
 }
 
 function FaqSection() {
+  // User override of § 11.8: keep the full 15-question FAQ on the homepage at
+  // the bottom (not abridged to 5). Editorial chrome from locked Variant B
+  // applied — Roman-numeral label, ed-h2 lighter weight, sub-group ed-h3
+  // markers, hairline rows.
   const [open, setOpen] = useState<{ patient: number; phys: number }>({ patient: 0, phys: -1 });
   return (
-    <section style={{ padding: "120px 0", background: "var(--paper-deep)" }}>
-      <div className="container-narrow">
-        <h2
-          className="serif"
-          style={{
-            fontSize: "clamp(2.4rem, 5vw, 3.8rem)",
-            textAlign: "center",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.05,
-            marginBottom: 80,
-          }}
-        >
-          Frequently Asked{" "}
-          <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
-            Questions
-          </span>
+    <section className="ed-section">
+      <div className="ed-section__container">
+        <div className="ed-label">VI · Frequently asked</div>
+        <h2 className="ed-h2">
+          Frequently <i>asked</i>.
         </h2>
-        <div
-          className="serif"
-          style={{ fontSize: 22, textAlign: "center", marginBottom: 28, color: "var(--ink)" }}
-        >
-          For Patients
-        </div>
-        <div>
+
+        <h3 className="ed-h3">For patients.</h3>
+        <div className="faq-list">
           {FAQS_PATIENT.map(([q, a], i) => (
-            <AccordionRow
+            <FaqRow
               key={q}
+              rowId={`faq-patient-${i}`}
               q={q}
               a={a}
               isOpen={open.patient === i}
@@ -634,16 +417,15 @@ function FaqSection() {
             />
           ))}
         </div>
-        <div
-          className="serif"
-          style={{ fontSize: 22, textAlign: "center", margin: "80px 0 28px", color: "var(--ink)" }}
-        >
-          For Physicians and ETCs
-        </div>
-        <div>
+
+        <h3 className="ed-h3" style={{ marginTop: 64 }}>
+          For physicians and ETCs.
+        </h3>
+        <div className="faq-list">
           {FAQS_PHYS.map(([q, a], i) => (
-            <AccordionRow
+            <FaqRow
               key={q}
+              rowId={`faq-phys-${i}`}
               q={q}
               a={a}
               isOpen={open.phys === i}
@@ -658,112 +440,66 @@ function FaqSection() {
 
 function BeginningSection() {
   const items = [
-    { el: <TopicalTube size={70} />, faded: false },
-    { el: <Pen size={90} />, faded: true },
-    { el: <Vial size={70} />, faded: true },
-    { el: <Capsule size={80} rotate={-18} />, faded: true },
-    { el: <RoundTablet size={56} color="#D9A4A4" />, faded: true },
-    { el: <Tablet size={80} color="#D9CAB0" />, faded: true },
-    { el: <IVBag size={72} />, faded: true },
+    { el: <TopicalTube size={64} />, faded: false },
+    { el: <Pen size={80} />, faded: true },
+    { el: <Vial size={64} />, faded: true },
+    { el: <Capsule size={72} rotate={-18} />, faded: true },
+    { el: <RoundTablet size={50} color="#D9A4A4" />, faded: true },
+    { el: <Tablet size={72} color="#D9CAB0" />, faded: true },
+    { el: <IVBag size={66} />, faded: true },
   ];
   return (
-    <section style={{ padding: "140px 0 100px", textAlign: "center" }}>
-      <div className="container">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-end",
-            gap: 8,
-            marginBottom: 8,
-            minHeight: 110,
-            flexWrap: "wrap",
-          }}
-        >
-          {items.map((it, i) => (
-            <div
-              key={i}
-              style={{ opacity: it.faded ? 0.42 : 1, filter: it.faded ? "saturate(0.7)" : "none" }}
-            >
-              {it.el}
-            </div>
-          ))}
+    <section className="ed-section">
+      <div className="ed-section__container">
+        <div className="ed-label" style={{ justifyContent: "center" }}>
+          VII · Coming soon
         </div>
-        <h2
-          className="serif"
-          style={{
-            fontSize: "clamp(2.8rem, 6vw, 5rem)",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.02,
-            marginBottom: 40,
-            fontWeight: 400,
-          }}
+        <div
+          className="beginning-inner"
+          /* The decorative pill row preserves the existing "future programs"
+             motif from slice 1; it's a quiet visual run-in, not a hero. */
+          style={{ marginBottom: 16 }}
+          aria-hidden="true"
         >
-          More treatments are{" "}
-          <span className="italic" style={{ fontWeight: 300, color: "var(--accent)" }}>
-            coming.
-          </span>
-        </h2>
-        <p
-          style={{
-            color: "var(--ink-soft)",
-            maxWidth: 460,
-            margin: "0 auto 36px",
-            fontSize: 15.5,
-          }}
-        >
-          Sign up to be notified when new programs and ETCs are added.
-        </p>
-        <form
-          style={{
-            maxWidth: 480,
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            background: "rgba(27,24,20,0.05)",
-            borderRadius: 9999,
-            padding: 5,
-            opacity: 0.55,
-          }}
-          aria-disabled="true"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <input
-            type="email"
-            placeholder="Email me updates"
-            aria-label="Email address for program updates"
-            disabled
+          <div
             style={{
-              flex: 1,
-              padding: "12px 20px",
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              fontFamily: "var(--sans)",
-              fontSize: 14.5,
-              color: "var(--ink)",
-              cursor: "not-allowed",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-end",
+              gap: 6,
+              minHeight: 88,
+              flexWrap: "wrap",
             }}
-          />
-          <button
-            type="submit"
-            disabled
-            className="pill pill-primary"
-            style={{ cursor: "not-allowed" }}
           >
-            Sign up
-          </button>
-        </form>
-        <p
-          style={{
-            marginTop: 12,
-            fontSize: 12.5,
-            color: "var(--accent)",
-            fontStyle: "italic",
-          }}
-        >
-          Signup endpoint coming soon — your email won't be saved yet.
-        </p>
+            {items.map((it, i) => (
+              <div
+                key={i}
+                style={{
+                  opacity: it.faded ? 0.36 : 0.78,
+                  filter: it.faded ? "saturate(0.6)" : "saturate(0.85)",
+                }}
+              >
+                {it.el}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="beginning-inner">
+          <h2>
+            More treatments are <i>coming</i>.
+          </h2>
+          <p>
+            Get notified when new programs and ETCs are added in Montana. We'll only email you about
+            new directory listings.
+          </p>
+          {/* Slice 4 § 11.9 — disabled email form replaced with real wired
+              EmailSignupForm. Submits to POST /v1/public/marketing-subscriptions
+              via useMarketingSubscription. */}
+          <div className="beginning__form-wrap">
+            <EmailSignupForm source="homepage_beginning" variant="banner" />
+          </div>
+          <div className="beginning__hint">Unsubscribe any time. We'll never share your email.</div>
+        </div>
       </div>
     </section>
   );
@@ -791,12 +527,22 @@ export function HomePage() {
     },
   });
 
+  // Homepage section order. AnnouncementStrip renders globally in
+  // DirectoryLayout (homepage-only). Hero internals UNTOUCHED per user lock.
+  //
+  // Order is a user override of PRD § 11.1: ProblemSection ("Why this
+  // exists") lifts to the FIRST below-hero position so the SB 535 framing is
+  // the first thing a SERP arrival reads when scrolling down. The PRD's
+  // recommended order put FeaturedConditions there; user judgment is that
+  // the framing context lands the legitimacy signal before the catalog.
+  // FaqSection preserved (full 15 questions) per user override of § 11.8.
   return (
     <div className="fade-up">
       <Hero onSearch={(q) => navigate(q ? `/search?q=${encodeURIComponent(q)}` : "/browse")} />
       <ProblemSection />
+      <FeaturedConditions />
+      <FeaturedTreatmentsCarousel />
       <HowItWorks />
-      <FeaturedTreatments />
       <ForPhysicians />
       <FaqSection />
       <BeginningSection />

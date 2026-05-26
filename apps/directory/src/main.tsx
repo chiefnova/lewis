@@ -65,7 +65,7 @@ const EtcDocumentPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.EtcDocumentPage })),
 );
 const EtcsIndexPage = lazy(() =>
-  import("./pages/StaticPages").then((m) => ({ default: m.EtcsIndexPage })),
+  import("./pages/EtcsIndexPage").then((m) => ({ default: m.EtcsIndexPage })),
 );
 const FaqPage = lazy(() => import("./pages/StaticPages").then((m) => ({ default: m.FaqPage })));
 const FeedbackPage = lazy(() =>
@@ -87,6 +87,14 @@ const PrivacyPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.PrivacyPage })),
 );
 const TermsPage = lazy(() => import("./pages/StaticPages").then((m) => ({ default: m.TermsPage })));
+const MarketingConfirmPage = lazy(() =>
+  import("./pages/MarketingConfirmPage").then((m) => ({ default: m.MarketingConfirmPage })),
+);
+const MarketingUnsubscribePage = lazy(() =>
+  import("./pages/MarketingUnsubscribePage").then((m) => ({
+    default: m.MarketingUnsubscribePage,
+  })),
+);
 
 // Lazy-route wrapper — Suspense fallback intentionally minimal (a single
 // shimmer line via the stylesheet). The loaded chunks are small and warm
@@ -173,14 +181,6 @@ const router = createBrowserRouter([
         element: (
           <LazyRoute>
             <EtcDocumentPage kind="etrb-report" />
-          </LazyRoute>
-        ),
-      },
-      {
-        path: "etcs/:slug/ae-summary",
-        element: (
-          <LazyRoute>
-            <EtcDocumentPage kind="ae-summary" />
           </LazyRoute>
         ),
       },
@@ -285,6 +285,22 @@ const router = createBrowserRouter([
         element: (
           <LazyRoute>
             <CookiesPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "marketing/confirm",
+        element: (
+          <LazyRoute>
+            <MarketingConfirmPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "marketing/unsubscribe",
+        element: (
+          <LazyRoute>
+            <MarketingUnsubscribePage />
           </LazyRoute>
         ),
       },
