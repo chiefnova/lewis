@@ -80,6 +80,13 @@ const ForSponsorsPage = lazy(() =>
 const HowItWorksPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.HowItWorksPage })),
 );
+const AboutPage = lazy(() => import("./pages/StaticPages").then((m) => ({ default: m.AboutPage })));
+const PlatformPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.PlatformPage })),
+);
+const ForCliniciansPage = lazy(() =>
+  import("./pages/StaticPages").then((m) => ({ default: m.ForCliniciansPage })),
+);
 const NotFoundPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.NotFoundPage })),
 );
@@ -253,6 +260,30 @@ const router = createBrowserRouter([
         element: (
           <LazyRoute>
             <ForSponsorsPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "for-clinicians",
+        element: (
+          <LazyRoute>
+            <ForCliniciansPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "about",
+        element: (
+          <LazyRoute>
+            <AboutPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "platform",
+        element: (
+          <LazyRoute>
+            <PlatformPage />
           </LazyRoute>
         ),
       },

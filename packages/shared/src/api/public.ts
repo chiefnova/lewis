@@ -138,17 +138,33 @@ export const EtcSlug = z
 // index can render list cards + map pins from a single payload (no per-ETC
 // detail round-trip). lat/lng coherence (both null, or both set with valid
 // ranges) is enforced at the DB layer in migration 0020.
-export const PublicEtcSummary = z.object({
+const latLngCoherence = (val: { lat: number | null; lng: number | null }, ctx: z.RefinementCtx) => {
+  if ((val.lat === null) !== (val.lng === null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["lat"],
+      message: "lat and lng must both be null or both be set",
+    });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["lng"],
+      message: "lat and lng must both be null or both be set",
+    });
+  }
+};
+
+const PublicEtcSummaryObject = z.object({
   slug: EtcSlug,
   name: z.string(),
   city: z.string(),
   state: z.literal("MT"),
   licenseNumber: z.string(),
   acceptingPatients: z.boolean(),
-  lat: z.number().nullable(),
-  lng: z.number().nullable(),
+  lat: z.number().min(-90).max(90).nullable(),
+  lng: z.number().min(-180).max(180).nullable(),
   programCount: z.number().int().nonnegative(),
 });
+export const PublicEtcSummary = PublicEtcSummaryObject.superRefine(latLngCoherence);
 export type PublicEtcSummary = z.infer<typeof PublicEtcSummary>;
 
 // Slice 4 — § 16.2 "For physicians: clinical inquiries" contact line.
@@ -177,7 +193,7 @@ export const PublicEtcOfferedProgram = z.object({
 });
 export type PublicEtcOfferedProgram = z.infer<typeof PublicEtcOfferedProgram>;
 
-export const PublicEtcDetail = PublicEtcSummary.extend({
+export const PublicEtcDetail = PublicEtcSummaryObject.extend({
   about: z.string(),
   address: z.array(z.string()).min(1),
   phone: z.string().nullable(),
@@ -195,7 +211,7 @@ export const PublicEtcDetail = PublicEtcSummary.extend({
       pdfUrl: z.string().url(),
     }),
   ),
-});
+}).superRefine(latLngCoherence);
 export type PublicEtcDetail = z.infer<typeof PublicEtcDetail>;
 
 export const PublicEtcListResponse = z.object({

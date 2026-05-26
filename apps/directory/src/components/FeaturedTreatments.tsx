@@ -41,14 +41,16 @@ function joinWithAnd(items: ReadonlyArray<string>): string {
 
 function deriveIndicationPhrase(rawNames: ReadonlyArray<string>): string {
   // The featured PN conditions all end in "peripheral neuropathy". Strip the
-  // common suffix so the joined phrase reads as "For diabetic, chemotherapy-
-  // induced, HIV-induced, and idiopathic peripheral neuropathy." instead of
-  // a four-fold repetition.
+  // common suffix so the joined phrase reads as "Diabetic, chemotherapy-
+  // induced, HIV-induced, and idiopathic peripheral neuropathy" instead of
+  // a four-fold repetition. Preserve case from the API so acronyms like
+  // HIV and (future) ALS render correctly.
   const SUFFIX = "peripheral neuropathy";
-  const lower = rawNames.map((n) => n.toLowerCase().trim());
-  const allShareSuffix = lower.length >= 2 && lower.every((n) => n.endsWith(SUFFIX));
+  const cleaned = rawNames.map((n) => n.trim());
+  const allShareSuffix =
+    cleaned.length >= 2 && cleaned.every((n) => n.toLowerCase().endsWith(SUFFIX));
   if (allShareSuffix) {
-    const stems = lower.map((n) =>
+    const stems = cleaned.map((n) =>
       n
         .slice(0, -SUFFIX.length)
         .trim()
@@ -63,10 +65,21 @@ function deriveIndicationPhrase(rawNames: ReadonlyArray<string>): string {
 function formatIndicationSentence(names: ReadonlyArray<string>): string {
   const phrase = deriveIndicationPhrase(names);
   if (phrase.length === 0) return "";
-  // Sentence-case the leading letter; preserve internal capitalization
-  // (e.g., HIV-induced).
-  const lead = phrase.charAt(0).toUpperCase() + phrase.slice(1);
-  return `For ${lead.charAt(0).toLowerCase() + lead.slice(1)}.`;
+  // The first stem comes capitalized from the DB ("Diabetic", "Chemotherapy-
+  // induced"). After "For " we want lowercase for proper sentence flow
+  // ("For diabetic, ..."), but acronym stems like "HIV-induced" or "ALS"
+  // (future conditions) must stay uppercase. Lowercase ONLY when the first
+  // word is a regular Capitalized word (single uppercase letter followed
+  // by lowercase letters), never when the lead is an all-caps acronym.
+  const leadWordMatch = phrase.match(/^(\S+)/);
+  if (leadWordMatch) {
+    const leadWord = leadWordMatch[1] ?? "";
+    const isCapitalizedWord = /^[A-Z][a-z]/.test(leadWord);
+    if (isCapitalizedWord) {
+      return `For ${phrase.charAt(0).toLowerCase()}${phrase.slice(1)}.`;
+    }
+  }
+  return `For ${phrase}.`;
 }
 
 export function FeaturedTreatments({ programs }: FeaturedTreatmentsProps) {

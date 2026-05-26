@@ -85,6 +85,28 @@ export function EtcProfilePage() {
     );
   }
 
+  // Order matters: transient fetch failures must render the retry UI, not the
+  // "Center not found" copy. Only a true 404 (notFound flag from the hook)
+  // shows the not-found surface. !etc fallback after both error AND notFound
+  // are handled is a defensive shim and shouldn't trip in practice.
+  if (error) {
+    return (
+      <div className="etcp-wrap">
+        <div className="etcs-error" role="alert">
+          <p className="etcs-error__msg">
+            <FormattedMessage
+              id="directory.etc.error"
+              defaultMessage="We couldn't load this center just now."
+            />
+          </p>
+          <button type="button" className="etcs-error__retry" onClick={retry}>
+            <FormattedMessage id="directory.etc.retry" defaultMessage="Try again" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (notFound || !etc) {
     return (
       <div className="etcp-wrap etcp-notfound">
@@ -100,24 +122,6 @@ export function EtcProfilePage() {
         <Link to="/etcs" className="etcp-rail-cta">
           <FormattedMessage id="directory.etc.notfound.back" defaultMessage="See all centers" />
         </Link>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="etcp-wrap">
-        <div className="etcs-error" role="alert">
-          <p className="etcs-error__msg">
-            <FormattedMessage
-              id="directory.etc.error"
-              defaultMessage="We couldn't load this center just now."
-            />
-          </p>
-          <button type="button" className="etcs-error__retry" onClick={retry}>
-            <FormattedMessage id="directory.etc.retry" defaultMessage="Try again" />
-          </button>
-        </div>
       </div>
     );
   }

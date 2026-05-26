@@ -80,22 +80,36 @@ export function EtcsIndexPage() {
 
   return (
     <>
-      <div className="etcs-wrap etcs-head">
-        <div className="ed-label">
-          <FormattedMessage id="directory.etcs.label" defaultMessage="Licensed centers" />
-        </div>
-        <h1 className="etcs-h1">
-          <FormattedMessage
-            id="directory.etcs.h1"
-            defaultMessage="Licensed Experimental Treatment Centers in Montana."
-          />
-        </h1>
-        <p className="etcs-intro">
-          <FormattedMessage
-            id="directory.etcs.intro"
-            defaultMessage="Montana's ETC licensure is rolling out. Check back as more centers come online — every center here is verified against Montana DPHHS public records."
-          />
-        </p>
+      <div className="etcs-wrap">
+        <header className="masthead">
+          <div className="masthead-eyebrow">
+            <span>
+              <FormattedMessage
+                id="directory.etcs.eyebrow"
+                defaultMessage="Licensed centers · Montana"
+              />
+            </span>
+            <span>
+              <FormattedMessage
+                id="directory.etcs.dateline"
+                defaultMessage="Verified against DPHHS"
+              />
+            </span>
+          </div>
+          <h1 className="serif">
+            <FormattedMessage
+              id="directory.etcs.h1"
+              defaultMessage="Licensed Experimental Treatment Centers in <em>Montana</em>."
+              values={{ em: (chunks) => <em>{chunks}</em> }}
+            />
+          </h1>
+          <p className="masthead-lede">
+            <FormattedMessage
+              id="directory.etcs.intro"
+              defaultMessage="Montana's ETC licensure is rolling out. Check back as more centers come online — every center here is verified against Montana DPHHS public records."
+            />
+          </p>
+        </header>
       </div>
 
       <div className="etcs-wrap etcs-cols">

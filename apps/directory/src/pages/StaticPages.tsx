@@ -116,6 +116,36 @@ export function HowItWorksPage() {
   );
 }
 
+export function AboutPage() {
+  return (
+    <StaticShell
+      title="About"
+      path="/about"
+      body="Lewis is an independent directory and operating platform for Montana's Experimental Treatment Center regime under SB 535 and MAR 2026-427.1. We are not affiliated with any sponsor or ETC. Listings are sourced from Montana DPHHS public records and licensed program operators."
+    />
+  );
+}
+
+export function PlatformPage() {
+  return (
+    <StaticShell
+      title="Operating platform"
+      path="/platform"
+      body="app.lewis.health is the compliant operating platform that sponsors, ETCs, treating physicians, and patients share. It handles patient intake, informed consent, ETRB approvals, adverse-event reporting, and the regulated artifacts each role files. The directory you're on is the anonymous, public face; the platform is the regulated workflow behind it."
+    />
+  );
+}
+
+export function ForCliniciansPage() {
+  return (
+    <StaticShell
+      title="For physicians"
+      path="/for-clinicians"
+      body="Treating physicians can review program clinical evidence, ETRB approvals, IND numbers, and trial registrations on each program page. Download the single-page clinician brief for chart review, and refer patients directly to the licensed Montana ETC offering the treatment. No account required to read; the connect flow surfaces the licensed center handling enrollment."
+    />
+  );
+}
+
 export function FaqPage() {
   return (
     <StaticShell

@@ -94,21 +94,42 @@ publicMarketingRoutes.post(
       );
       subscribeRow = result.rows[0];
     } catch (caught) {
-      // The SECURITY DEFINER helper raises P0001 on invalid_email or
-      // invalid_source. zod has already validated both; if the helper
-      // disagrees that's a contract drift — treat as 400.
-      const message = caught instanceof Error ? caught.message : "unknown subscribe error";
-      logger.warn(
+      // Distinguish helper validation rejects (P0001 with invalid_email /
+      // invalid_source) from genuine DB failures (connection drop, RLS
+      // denial, query timeout). Mapping every error to 400 hides outages
+      // and permission issues behind a misleading "invalid request" UX.
+      const code = (caught as { code?: unknown } | null)?.code;
+      const rawMessage = caught instanceof Error ? caught.message : "unknown subscribe error";
+      const isHelperValidation =
+        code === "P0001" &&
+        (rawMessage.includes("invalid_email") || rawMessage.includes("invalid_source"));
+
+      if (isHelperValidation) {
+        logger.warn(
+          {
+            requestId,
+            route: "/v1/public/marketing-subscriptions",
+            source,
+            // Email is PII-adjacent — never log it.
+            helperMessage: rawMessage,
+          },
+          "marketing subscribe rejected by db helper validation",
+        );
+        return respondWithError(c, "validation_error", "Invalid subscription request.");
+      }
+
+      logger.error(
         {
           requestId,
           route: "/v1/public/marketing-subscriptions",
           source,
           // Email is PII-adjacent — never log it.
-          message,
+          pgCode: code,
+          message: rawMessage,
         },
-        "marketing subscribe rejected by db helper",
+        "marketing subscribe failed (non-validation db error)",
       );
-      return respondWithError(c, "validation_error", "Invalid subscription request.");
+      return respondWithError(c, "internal_error", "Subscription failed.");
     }
 
     if (!subscribeRow) {

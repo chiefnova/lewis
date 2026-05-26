@@ -40,7 +40,7 @@ React 18 · TypeScript · Vite · Tailwind · shadcn/ui · React Router · TanSt
 
 Toolchain and tasks are managed by [mise](https://mise.jdx.dev). After clone, `mise install` provisions Node 20 and pnpm 9 per [mise.toml](mise.toml). Postgres is intentionally NOT installed by mise (the postgres plugin compiles from source and broke every CI workflow on the first try). Local devs run Postgres + Redis via Docker Compose (`mise run db:up`); CI uses a Postgres service container per workflow. If you need `psql` locally for ad-hoc queries: `brew install libpq` (macOS) or `docker exec -it lewis-postgres psql -U lewis lewis_dev`. Run `mise tasks` to list everything.
 
-```
+```bash
 mise install              # provision pinned toolchain
 mise run install          # pnpm install workspace deps
 

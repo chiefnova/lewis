@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { getDatabasePool } from "@lewis/db";
 import {
   MarketingConfirmationJobPayload,
@@ -9,6 +11,13 @@ import type { Job } from "bullmq";
 import { resolveWorkerDatabaseEnv } from "../database-env.js";
 import { logger } from "../logger.js";
 import { registerJobKind } from "../registry.js";
+
+// confirmationToken is a capability — anyone with it can confirm the
+// marketing opt-in for the bound email. Log only an 8-char SHA-256 prefix so
+// failures can be traced to a specific job without exposing the token.
+function hashTokenPrefix(token: string): string {
+  return createHash("sha256").update(token).digest("hex").slice(0, 8);
+}
 
 /**
  * marketing_confirmation_send handler.
@@ -36,7 +45,16 @@ function resolveDirectoryBaseUrl(): string {
   if (fromEnv && fromEnv.trim().length > 0) {
     return fromEnv.replace(/\/+$/, "");
   }
-  // Dev default — matches the directory Vite dev server.
+  // Fail fast in production — emailing localhost confirm/unsubscribe links
+  // to real subscribers is worse than failing the job loudly so operators
+  // notice and provision the env var. Dev + test keep the Vite default so
+  // local e2e doesn't require fnox-setting the var.
+  const nodeEnv = process.env.NODE_ENV ?? "development";
+  if (nodeEnv !== "development" && nodeEnv !== "test") {
+    throw new Error(
+      "LEWIS_DIRECTORY_BASE_URL is required outside development/test (e.g. https://lewis.health or https://staging.lewis.health). Refusing to embed http://localhost:13003 in production marketing emails.",
+    );
+  }
   return "http://localhost:13003";
 }
 
@@ -57,6 +75,7 @@ async function processMarketingConfirmationJob(
   }
 
   const { emailLower, confirmationToken, unsubscribeToken } = parse.data;
+  const hashedTokenPrefix = hashTokenPrefix(confirmationToken);
 
   const baseUrl = resolveDirectoryBaseUrl();
   const confirmUrl = `${baseUrl}/marketing/confirm?token=${encodeURIComponent(confirmationToken)}`;
@@ -74,13 +93,30 @@ async function processMarketingConfirmationJob(
   const sendMs = Date.now() - startMs;
 
   if (result.ok === false && result.skipped === true) {
-    // Dev-time path: RESEND_API_KEY is not provisioned. Log loudly so the
-    // human knows nothing went out, but don't fail the job — the row stays
-    // pending and admin can re-enqueue once the key lands.
+    // RESEND_API_KEY missing. In dev/test this is the documented stub
+    // posture (the queue exercises end-to-end without provisioning Resend).
+    // In production / staging it's an outage signal — throw so BullMQ
+    // retries with backoff and the failure surfaces to operators instead
+    // of silently marking subscribers as "no email needed."
+    const nodeEnv = process.env.NODE_ENV ?? "development";
+    const isDevOrTest = nodeEnv === "development" || nodeEnv === "test";
+    if (!isDevOrTest) {
+      logger.error(
+        {
+          jobId: job.id ?? "unknown",
+          hashedTokenPrefix,
+          sendMs,
+        },
+        "marketing_confirmation_send: RESEND_API_KEY missing in non-dev runtime",
+      );
+      throw new Error(
+        `marketing_confirmation_send: RESEND_API_KEY not configured (NODE_ENV=${nodeEnv}); refusing to silently no-op marketing email`,
+      );
+    }
     logger.warn(
       {
         jobId: job.id ?? "unknown",
-        confirmationToken,
+        hashedTokenPrefix,
         sendMs,
       },
       "marketing_confirmation_send: skipped (RESEND_API_KEY not set; dev-only path)",
@@ -93,7 +129,7 @@ async function processMarketingConfirmationJob(
     logger.error(
       {
         jobId: job.id ?? "unknown",
-        confirmationToken,
+        hashedTokenPrefix,
         sendMs,
         error: result.error,
       },
@@ -115,7 +151,7 @@ async function processMarketingConfirmationJob(
     logger.info(
       {
         jobId: job.id ?? "unknown",
-        confirmationToken,
+        hashedTokenPrefix,
         sendMs,
         messageId: result.messageId,
         wasStamped,
@@ -127,7 +163,7 @@ async function processMarketingConfirmationJob(
     logger.error(
       {
         jobId: job.id ?? "unknown",
-        confirmationToken,
+        hashedTokenPrefix,
         sendMs,
         messageId: result.messageId,
         error: message,

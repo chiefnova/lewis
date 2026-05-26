@@ -157,23 +157,32 @@ export function BrowsePage() {
 
   return (
     <div className="browse-wrap">
-      <div className="browse-head">
-        <div className="ed-label">
-          <FormattedMessage id="directory.browse.label" defaultMessage="Browse treatments" />
+      <header className="masthead">
+        <div className="masthead-eyebrow">
+          <span>
+            <FormattedMessage
+              id="directory.browse.eyebrow"
+              defaultMessage="Treatment directory · Montana"
+            />
+          </span>
+          <span>
+            <FormattedMessage id="directory.browse.dateline" defaultMessage="Updated daily" />
+          </span>
         </div>
-        <h1 className="browse-h1">
+        <h1 className="serif">
           <FormattedMessage
             id="directory.browse.h1"
-            defaultMessage="Browse experimental treatments in Montana."
+            defaultMessage="Browse experimental treatments in <em>Montana</em>."
+            values={{ em: (chunks) => <em>{chunks}</em> }}
           />
         </h1>
-        <p className="browse-intro">
+        <p className="masthead-lede">
           <FormattedMessage
             id="directory.browse.intro"
             defaultMessage="Every investigational treatment available through a licensed Montana ETC. Filter by condition, form, or trial phase."
           />
         </p>
-      </div>
+      </header>
 
       <div className="browse-cols">
         <aside className="browse-rail" aria-label="Filter treatments">

@@ -96,7 +96,8 @@ export function Footer() {
         <div className="foot__bar">
           <FormattedMessage
             id="directory.footer.trust"
-            defaultMessage="© 2026 Lewis Health · Independent directory · Not affiliated with any sponsor or ETC. Information sourced from Montana DPHHS public records and licensed program operators."
+            defaultMessage="© {year} Lewis Health · Independent directory · Not affiliated with any sponsor or ETC. Information sourced from Montana DPHHS public records and licensed program operators."
+            values={{ year: new Date().getFullYear() }}
           />
         </div>
       </div>

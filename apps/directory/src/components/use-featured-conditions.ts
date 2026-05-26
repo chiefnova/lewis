@@ -37,11 +37,18 @@ export function useFeaturedConditions(): FeaturedConditionsState {
           .getCondition(slug, { signal: ctrl.signal })
           .then((detail) => ({ slug, detail }))
           .catch((err: unknown) => {
-            // Per-slug failure: log via console (the directory rules forbid
-            // PHI in console — slug is public, not PHI). The carousel just
-            // omits the failed card. A real outage produces 5 console
-            // errors in dev — visibility without crashing the homepage.
-            console.warn(`useFeaturedConditions: failed to load ${slug}`, err);
+            // Per-slug failure: the carousel omits the failed card silently
+            // and the drift test catches missing slugs before merge. In
+            // development we surface the full error to console for fast
+            // feedback; in production we log only the slug (which is public,
+            // not PHI) so the build artifact carries no raw error payloads
+            // that could leak PII if a downstream handler ever wires here.
+            const isDev = import.meta.env?.DEV === true;
+            if (isDev) {
+              console.warn(`useFeaturedConditions: failed to load ${slug}`, err);
+            } else {
+              console.warn(`useFeaturedConditions: failed to load ${slug}`);
+            }
             return { slug, detail: null as PublicConditionDetail | null };
           }),
       ),

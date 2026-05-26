@@ -133,6 +133,54 @@ describe("POST /v1/public/marketing-subscriptions", () => {
     expect(res.status).toBe(400);
   });
 
+  it("non-validation DB failure (connection drop) returns 500, not 400, and does NOT enqueue", async () => {
+    // The SECURITY DEFINER helper raises P0001 for invalid_email /
+    // invalid_source — those are user-fixable 400s. Everything else
+    // (connection lost, RLS denial, query timeout) is a server outage
+    // and must NOT be reported as a 400 validation error or the
+    // directory will misleadingly tell the user "Invalid subscription
+    // request" while Postgres is on fire.
+    const client = {
+      query: vi.fn(async () => {
+        // Plain Error with no `code` property — simulates pg client losing
+        // its connection mid-request. The catch in routes.ts must classify
+        // this as internal_error.
+        throw new Error("connection terminated unexpectedly");
+      }),
+    } as unknown as ReturnType<typeof fakeClient>;
+    const app = buildApp(client);
+    const res = await app.request("/public/marketing-subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "valid@example.com", source: "announcement_strip" }),
+    });
+    expect(res.status).not.toBe(400);
+    expect(res.status).toBeGreaterThanOrEqual(500);
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it("helper P0001 with invalid_email DOES return 400 (still a user error)", async () => {
+    // Contract-drift check — zod validates email shape upstream, so a
+    // P0001 from the helper here implies a regex disagreement between the
+    // app schema and the DB function. Either way: user-facing 400, no
+    // enqueue, no 500.
+    const client = {
+      query: vi.fn(async () => {
+        const err = new Error("invalid_email") as Error & { code?: string };
+        err.code = "P0001";
+        throw err;
+      }),
+    } as unknown as ReturnType<typeof fakeClient>;
+    const app = buildApp(client);
+    const res = await app.request("/public/marketing-subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "edge@example.com", source: "homepage_beginning" }),
+    });
+    expect(res.status).toBe(400);
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
   it("returns 200 even when enqueue fails (row persisted; ops re-enqueues)", async () => {
     enqueueMock.mockRejectedValueOnce(new Error("Redis is down"));
     const client = fakeClient([

@@ -69,16 +69,22 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       ...(input.replyTo ? { replyTo: input.replyTo } : {}),
     });
 
+    // Return stable, sanitized error codes instead of raw provider text.
+    // Resend's error.message can echo the recipient address (PII; PHI when
+    // the recipient is a Lewis patient), and the caller (the worker handler)
+    // logs `result.error` + rethrows it — sanitizing at the source keeps
+    // worker logs, Sentry, and BullMQ failure messages PHI-free per
+    // CLAUDE.md § Security #3. Provider-side detail remains observable via
+    // the Resend dashboard.
     if (result.error) {
-      return { ok: false, skipped: false, error: result.error.message };
+      return { ok: false, skipped: false, error: "RESEND_PROVIDER_ERROR" };
     }
     if (!result.data?.id) {
-      return { ok: false, skipped: false, error: "Resend returned no message id" };
+      return { ok: false, skipped: false, error: "NO_MESSAGE_ID" };
     }
     return { ok: true, messageId: result.data.id };
-  } catch (caught) {
-    const message = caught instanceof Error ? caught.message : "Unknown Resend error";
-    return { ok: false, skipped: false, error: message };
+  } catch {
+    return { ok: false, skipped: false, error: "UNKNOWN_PROVIDER_ERROR" };
   }
 }
 

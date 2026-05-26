@@ -21,14 +21,14 @@ import { useFeaturedConditions } from "./use-featured-conditions";
 
 const ROMAN = ["i.", "ii.", "iii.", "iv.", "v.", "vi.", "vii."];
 
-const SUBLINE_DEFAULT = "Available now via WST-057® at Big Sky ETC, Bozeman";
-
 interface FeaturedConditionsProps {
-  /** Sub-line copy for live cards. Defaults to the WST-057 / Big Sky line. */
+  /** Sub-line copy override for live cards. When unset (the common case)
+   *  the card renders the canonical i18n message
+   *  `directory.homepage.featured_conditions.subline`. */
   subline?: string;
 }
 
-export function FeaturedConditions({ subline = SUBLINE_DEFAULT }: FeaturedConditionsProps) {
+export function FeaturedConditions({ subline }: FeaturedConditionsProps) {
   const { live, comingSoon, loading } = useFeaturedConditions();
 
   return (
@@ -77,7 +77,14 @@ export function FeaturedConditions({ subline = SUBLINE_DEFAULT }: FeaturedCondit
               >
                 <div className="featured-conditions__num">{ROMAN[i] ?? `${i + 1}.`}</div>
                 <div className="featured-conditions__name">{cond.name}</div>
-                <div className="featured-conditions__sub">{subline}</div>
+                <div className="featured-conditions__sub">
+                  {subline ?? (
+                    <FormattedMessage
+                      id="directory.homepage.featured_conditions.subline"
+                      defaultMessage="Available now via WST-057® at Big Sky ETC, Bozeman"
+                    />
+                  )}
+                </div>
                 <div className="featured-conditions__chev">
                   <FormattedMessage
                     id="directory.homepage.featured_conditions.read"

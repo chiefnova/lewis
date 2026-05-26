@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 
 import { ApiNetworkError, ApiSchemaError, publicApi } from "../api/client";
 import { useSeo } from "../seo/useSeo";
@@ -13,21 +13,38 @@ import { useSeo } from "../seo/useSeo";
  * the API, and renders a calm status screen. Token URLs are never indexed
  * (noIndex), and the success/failed responses both return 200 + a boolean
  * so the page never leaks whether a specific token previously existed.
+ *
+ * After capturing the token we strip it from the visible URL so it does
+ * not persist in browser history or get exposed if the user shares their
+ * screen on the success page.
  */
 
 type Phase = "loading" | "confirmed" | "already" | "invalid" | "error";
 
 export function MarketingConfirmPage() {
   const [params] = useSearchParams();
-  const token = params.get("token") ?? "";
+  const tokenRef = useRef<string>(params.get("token") ?? "");
   const [phase, setPhase] = useState<Phase>("loading");
+  const intl = useIntl();
 
   useSeo({
-    title: "Subscription confirmation — Lewis Health",
+    title: intl.formatMessage({
+      id: "directory.marketing.confirm.seo_title",
+      defaultMessage: "Subscription confirmation — Lewis Health",
+    }),
     noIndex: true,
   });
 
   useEffect(() => {
+    const token = tokenRef.current;
+    if (token && typeof window !== "undefined" && window.history?.replaceState) {
+      try {
+        window.history.replaceState({}, "", "/marketing/confirm");
+      } catch {
+        // SecurityError in sandbox — leave the URL as-is; the call below
+        // still runs and the result is unaffected.
+      }
+    }
     if (!token) {
       setPhase("invalid");
       return;
@@ -49,7 +66,7 @@ export function MarketingConfirmPage() {
         setPhase("error");
       });
     return () => ctrl.abort();
-  }, [token]);
+  }, []);
 
   return (
     <div className="mkt-wrap">

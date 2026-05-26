@@ -68,7 +68,11 @@ export function EmailSignupForm({ source, variant, successOverride }: EmailSignu
         <span className="email-signup__success-mark" aria-hidden="true">
           ✓
         </span>
-        <span className="email-signup__success-text">{successOverride ?? state.message}</span>
+        <span className="email-signup__success-text">
+          {successOverride ?? (
+            <FormattedMessage id={state.messageId} defaultMessage={state.messageDefault} />
+          )}
+        </span>
       </div>
     );
   }
@@ -115,7 +119,7 @@ export function EmailSignupForm({ source, variant, successOverride }: EmailSignu
       </button>
       {isError && (
         <p id={errorId} className="email-signup__error" role="alert">
-          {state.message}
+          <FormattedMessage id={state.messageId} defaultMessage={state.messageDefault} />
         </p>
       )}
     </form>

@@ -42,18 +42,50 @@ const SECONDARY_LINKS = [
 
 export function SecondaryNavDrawer({ open, onClose }: SecondaryNavDrawerProps) {
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const priorActiveRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    // Save the element focused before the drawer opened so we can restore
+    // focus on close — required for aria-modal="true" consumers.
+    priorActiveRef.current =
+      typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
     firstLinkRef.current?.focus();
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
+        return;
+      }
+      // Focus trap: aria-modal="true" promises focus stays inside the panel.
+      // Without intercepting Tab, screen-reader and keyboard users can tab
+      // into background content while the dialog is "modal".
+      if (e.key === "Tab" && panelRef.current) {
+        const focusables = panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0]!;
+        const last = focusables[focusables.length - 1]!;
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey && active === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      // Restore focus to the element that opened the drawer (e.g., the
+      // hamburger button) so keyboard flow resumes where the user left off.
+      priorActiveRef.current?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -66,7 +98,7 @@ export function SecondaryNavDrawer({ open, onClose }: SecondaryNavDrawerProps) {
         aria-label="Close menu"
         onClick={onClose}
       />
-      <div className="nav-drawer__panel">
+      <div className="nav-drawer__panel" ref={panelRef}>
         <button
           type="button"
           className="nav-drawer__close"

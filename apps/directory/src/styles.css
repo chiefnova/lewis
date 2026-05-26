@@ -1227,12 +1227,16 @@ section.hero-section {
   padding-bottom: 80px;
 }
 
-.conditions-index .masthead {
+/* Shared page-header block. Originally landed on the Conditions index (the
+ * design reference for /browse + /etcs too); de-scoped here so every patient
+ * directory index lands with the same eyebrow/H1/lede rhythm and the same
+ * 3px double rule that closes the header. */
+.masthead {
   border-bottom: 3px double var(--ink);
   padding: 64px 0 28px;
   margin-bottom: 32px;
 }
-.conditions-index .masthead-eyebrow {
+.masthead-eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.18em;
@@ -1243,7 +1247,7 @@ section.hero-section {
   justify-content: space-between;
   gap: 16px;
 }
-.conditions-index .masthead h1 {
+.masthead h1 {
   font-family: var(--font-serif);
   font-variation-settings: "opsz" 56;
   font-weight: 400;
@@ -1253,12 +1257,12 @@ section.hero-section {
   margin-bottom: 18px;
   max-width: 880px;
 }
-.conditions-index .masthead h1 em {
+.masthead h1 em {
   font-style: italic;
   color: var(--ink-soft);
   font-weight: 400;
 }
-.conditions-index .masthead-lede {
+.masthead-lede {
   font-family: var(--font-serif);
   font-variation-settings: "opsz" 14;
   font-size: 18px;
@@ -3392,7 +3396,6 @@ section.hero-section {
   cursor: pointer;
   width: 100%;
   padding: 0;
-  font-family: var(--serif);
 }
 .faq-q:focus-visible {
   outline: 2px solid var(--accent-ring);
@@ -3459,29 +3462,15 @@ section.hero-section {
  * ==========================================================================
  */
 .etcs-wrap {
-  max-width: 1180px;
+  /* 1240px matches the global .container used by /conditions — keeps the
+   * masthead double-rule and content column the same width across all three
+   * patient directory indexes. */
+  max-width: 1240px;
   margin: 0 auto;
   padding: 0 32px;
 }
-.etcs-head {
-  padding: 64px 0 40px;
-}
-.etcs-h1 {
-  font-family: var(--serif);
-  font-weight: 300;
-  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  margin: 0 0 18px;
-  max-width: 760px;
-}
-.etcs-intro {
-  color: var(--ink-soft);
-  font-size: 16.5px;
-  line-height: 1.6;
-  max-width: 600px;
-  margin: 0;
-}
+/* .etcs-head / .etcs-h1 / .etcs-intro removed — /etcs now uses the shared
+ * .masthead block to match /conditions and /browse exactly. */
 .etcs-cols {
   display: grid;
   grid-template-columns: 190px 1fr 330px;
@@ -4166,7 +4155,7 @@ section.hero-section {
   font-size: 15px;
   color: var(--accent);
   text-decoration: none;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .etcp-md__phone {
   font-size: 13.5px;
@@ -4219,27 +4208,16 @@ section.hero-section {
  * ==========================================================================
  */
 .browse-wrap {
-  max-width: 1180px;
+  /* 1240px + 80px bottom matches /conditions exactly (.container width and the
+   * .conditions-index padding-bottom) so all three patient directory indexes
+   * land on the same content width and footer rhythm. */
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 0 32px 90px;
+  padding: 0 32px 80px;
 }
-.browse-head {
-  padding: 54px 0 24px;
-}
-.browse-h1 {
-  font-family: var(--serif);
-  font-weight: 300;
-  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  margin: 12px 0 14px;
-}
-.browse-intro {
-  color: var(--ink-soft);
-  font-size: 16px;
-  max-width: 580px;
-  margin: 0;
-}
+/* .browse-head / .browse-h1 / .browse-intro removed — /browse now uses the
+ * shared .masthead block (eyebrow + serif H1 + serif italic lede + 3px double
+ * rule) to match /conditions and /etcs exactly. */
 
 .browse-cols {
   display: grid;

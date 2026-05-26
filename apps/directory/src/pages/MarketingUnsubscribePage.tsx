@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 
 import { ApiNetworkError, ApiSchemaError, publicApi } from "../api/client";
 import { useSeo } from "../seo/useSeo";
@@ -11,21 +11,46 @@ import { useSeo } from "../seo/useSeo";
  * Reads ?token=<uuid> and calls the SECURITY DEFINER unsubscribe helper via
  * the API. Token URLs are noIndex. The success/failed paths both return 200
  * + a boolean so the page never confirms whether the token existed before.
+ *
+ * After capturing the token we immediately strip it from the browser URL via
+ * history.replaceState so it does not persist in history, doesn't leak via
+ * window.location to any non-essential analytics that may eventually wire
+ * here, and is not visible if the user shares their screen on the success
+ * page.
  */
 
 type Phase = "loading" | "unsubscribed" | "already" | "invalid" | "error";
 
 export function MarketingUnsubscribePage() {
   const [params] = useSearchParams();
-  const token = params.get("token") ?? "";
+  // Snapshot the token once on mount via a ref so the effect doesn't re-fire
+  // after we strip the query string. The dep array becomes empty; the token
+  // value moves into a stable ref.
+  const tokenRef = useRef<string>(params.get("token") ?? "");
   const [phase, setPhase] = useState<Phase>("loading");
+  const intl = useIntl();
 
   useSeo({
-    title: "Unsubscribe — Lewis Health",
+    title: intl.formatMessage({
+      id: "directory.marketing.unsub.seo_title",
+      defaultMessage: "Unsubscribe — Lewis Health",
+    }),
     noIndex: true,
   });
 
   useEffect(() => {
+    const token = tokenRef.current;
+    // Strip the token from the visible URL immediately. Use replaceState so
+    // there's no extra history entry, and only do this when a token is
+    // actually present (otherwise we'd no-op against the bare URL).
+    if (token && typeof window !== "undefined" && window.history?.replaceState) {
+      try {
+        window.history.replaceState({}, "", "/marketing/unsubscribe");
+      } catch {
+        // SecurityError on some sandboxes — swallowing is fine, token then
+        // simply stays visible. The actual revocation still runs below.
+      }
+    }
     if (!token) {
       setPhase("invalid");
       return;
@@ -47,7 +72,9 @@ export function MarketingUnsubscribePage() {
         setPhase("error");
       });
     return () => ctrl.abort();
-  }, [token]);
+    // tokenRef.current is the stable mount-time snapshot; running once is
+    // exactly what we want (the token is single-use server-side anyway).
+  }, []);
 
   return (
     <div className="mkt-wrap">

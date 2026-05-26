@@ -58,20 +58,35 @@ async function processStubJob(
 /**
  * Dispatch router. Each incoming job is looked up by `${queueName}:${job.name}`
  * in the per-job-kind handler registry (apps/workers/src/registry.ts).
- * If a handler is registered, it runs. Otherwise the job falls through to
- * the stub processor — this preserves the slice-1 stub posture for queues
- * (and kinds) that haven't gained real consumers yet, instead of erroring.
+ *
+ * Behavior on miss is gated by `isStub` (computed once at startup from
+ * `stubWorkersEnabled()`):
+ *   - stub mode (dev / test / explicit ENABLE_STUB_WORKERS=true): fall through
+ *     to processStubJob so queues without real consumers keep their slice-1
+ *     posture for local iteration.
+ *   - non-stub mode (production, or any future per-queue activation): throw
+ *     a descriptive Error so BullMQ retries with backoff and the failure is
+ *     observable via the worker.on("failed", …) pino log, instead of
+ *     silently marking a real business job (e.g., a patient invite or a PDF
+ *     render) as completed.
  */
-async function dispatchJob(job: Job, definition: WorkerDefinition): Promise<unknown> {
+async function dispatchJob(
+  job: Job,
+  definition: WorkerDefinition,
+  isStub: boolean,
+): Promise<unknown> {
   const handler = lookupJobHandler(definition.queueName, job.name);
   if (handler) {
     return handler(job);
   }
-  return processStubJob(job, definition);
+  if (isStub) {
+    return processStubJob(job, definition);
+  }
+  throw new Error(`No handler for job ${job.name} on queue ${definition.queueName}`);
 }
 
-async function registerWorker(definition: WorkerDefinition): Promise<void> {
-  const worker = new Worker(definition.queueName, (job) => dispatchJob(job, definition), {
+async function registerWorker(definition: WorkerDefinition, isStub: boolean): Promise<void> {
+  const worker = new Worker(definition.queueName, (job) => dispatchJob(job, definition, isStub), {
     connection: createRedisConnection(`worker:${definition.queueName}`),
     concurrency: definition.concurrency,
   });
@@ -142,7 +157,8 @@ async function assertWorkerRuntimeRole(): Promise<void> {
 }
 
 async function startup(): Promise<void> {
-  if (!stubWorkersEnabled()) {
+  const isStub = stubWorkersEnabled();
+  if (!isStub) {
     throw new Error(
       "Worker processors are still scaffolded. Set ENABLE_STUB_WORKERS=true only for intentional non-production stub execution.",
     );
@@ -164,10 +180,10 @@ async function startup(): Promise<void> {
   startupRedis.disconnect();
 
   for (const definition of workerDefinitions) {
-    await registerWorker(definition);
+    await registerWorker(definition, isStub);
   }
 
-  logger.info({ queues: workerDefinitions.map((d) => d.queueName) }, "lewis workers ready");
+  logger.info({ queues: workerDefinitions.map((d) => d.queueName), isStub }, "lewis workers ready");
 }
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
