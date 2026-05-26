@@ -31,6 +31,11 @@
 
   --color-rule: #c2bfae;
   --color-rule-soft: #e4dcc8;
+  /* Translucent warm ink for chrome separators (nav group + footer dividers)
+   * rendered as a 0.5px hairline. 0.5px is the physical floor (1 device pixel
+   * on retina), so the low alpha is what makes the line read as a fine thread
+   * rather than a solid rule, while staying visible against --paper. */
+  --color-rule-strong: rgba(58, 52, 42, 0.34);
 
   /* ---- Type ------------------------------------------------- */
   /* "Fraunces" comes first so apps that load Google Fonts (e.g. the public
@@ -93,6 +98,7 @@
 
   --rule: var(--color-rule);
   --rule-soft: var(--color-rule-soft);
+  --rule-strong: var(--color-rule-strong);
 
   --serif: var(--font-serif);
   --sans: var(--font-sans);

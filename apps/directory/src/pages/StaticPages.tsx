@@ -116,6 +116,36 @@ export function HowItWorksPage() {
   );
 }
 
+export function AboutPage() {
+  return (
+    <StaticShell
+      title="About"
+      path="/about"
+      body="Lewis is an independent directory and operating platform for Montana's Experimental Treatment Center regime under SB 535 and MAR 2026-427.1. We are not affiliated with any sponsor or ETC. Listings are sourced from Montana DPHHS public records and licensed program operators."
+    />
+  );
+}
+
+export function PlatformPage() {
+  return (
+    <StaticShell
+      title="Operating platform"
+      path="/platform"
+      body="app.lewis.health is the compliant operating platform that sponsors, ETCs, treating physicians, and patients share. It handles patient intake, informed consent, ETRB approvals, adverse-event reporting, and the regulated artifacts each role files. The directory you're on is the anonymous, public face; the platform is the regulated workflow behind it."
+    />
+  );
+}
+
+export function ForCliniciansPage() {
+  return (
+    <StaticShell
+      title="For physicians"
+      path="/for-clinicians"
+      body="Treating physicians can review program clinical evidence, ETRB approvals, IND numbers, and trial registrations on each program page. Download the single-page clinician brief for chart review, and refer patients directly to the licensed Montana ETC offering the treatment. No account required to read; the connect flow surfaces the licensed center handling enrollment."
+    />
+  );
+}
+
 export function FaqPage() {
   return (
     <StaticShell
@@ -139,28 +169,22 @@ export function NotFoundPage() {
 // ConditionsIndexPage now lives at apps/directory/src/pages/conditions/ConditionsIndexPage.tsx
 // (replaced the StaticShell placeholder in Slice 2 — directoryprd.md § 14).
 
-export function EtcsIndexPage() {
-  return (
-    <StaticShell
-      title="Experimental Treatment Centers"
-      path="/etcs"
-      body="Index of all licensed Montana Experimental Treatment Centers. The launch ETC is in Bozeman; additional centers will appear here as they are licensed by DPHHS."
-    />
-  );
-}
+// EtcsIndexPage moved to its own module (apps/directory/src/pages/EtcsIndexPage.tsx)
+// in slice 4 — it's now a real API-driven page, no longer a StaticShell stub.
 
-export function EtcDocumentPage({ kind }: { kind: "manual" | "etrb-report" | "ae-summary" }) {
+// § 16.4 — `ae-summary` removed; folded into the ETRB annual report. Only the
+// manual + etrb-report documents remain.
+export function EtcDocumentPage({ kind }: { kind: "manual" | "etrb-report" }) {
   const { slug = "" } = useParams<{ slug: string }>();
   const titles: Record<typeof kind, string> = {
     manual: "Policy & Procedures Manual",
     "etrb-report": "ETRB Annual Report",
-    "ae-summary": "Adverse Event Summary",
   };
   return (
     <StaticShell
       title={titles[kind]}
       path={`/etcs/${slug}/${kind}`}
-      body="ETC public documents are surfaced here in HTML and downloadable PDF form. Versions are immutable; new revisions create a new version, never overwrite. [COUNSEL REVIEW] — confirm the rendering policy for redacted patient identifiers in AE summaries (RULE 16(6)(c))."
+      body="ETC public documents are surfaced here in HTML and downloadable PDF form once auto-rendered from app.lewis.health. Versions are immutable; new revisions create a new version, never overwrite."
     />
   );
 }

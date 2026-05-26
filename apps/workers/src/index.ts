@@ -7,8 +7,9 @@ import {
 import { QueueEvents, Worker, type Job } from "bullmq";
 
 import { resolveWorkerDatabaseEnv } from "./database-env.js";
+import { registerMarketingConfirmationHandler } from "./handlers/marketing-confirmation.js";
 import { logger } from "./logger.js";
-import { workerDefinitions, type WorkerDefinition } from "./registry.js";
+import { lookupJobHandler, workerDefinitions, type WorkerDefinition } from "./registry.js";
 import { closeRedisConnections, createRedisConnection } from "./redis.js";
 
 type WorkerRuntime = {
@@ -44,8 +45,8 @@ async function processStubJob(
   definition: WorkerDefinition,
 ): Promise<Record<string, string>> {
   logger.debug(
-    { queueName: definition.queueName, jobId: job.id ?? "unknown" },
-    "stub processor invoked",
+    { queueName: definition.queueName, jobId: job.id ?? "unknown", jobName: job.name },
+    "stub processor invoked (no registered handler for this kind)",
   );
   return {
     status: "stubbed",
@@ -54,8 +55,38 @@ async function processStubJob(
   };
 }
 
-async function registerWorker(definition: WorkerDefinition): Promise<void> {
-  const worker = new Worker(definition.queueName, (job) => processStubJob(job, definition), {
+/**
+ * Dispatch router. Each incoming job is looked up by `${queueName}:${job.name}`
+ * in the per-job-kind handler registry (apps/workers/src/registry.ts).
+ *
+ * Behavior on miss is gated by `isStub` (computed once at startup from
+ * `stubWorkersEnabled()`):
+ *   - stub mode (dev / test / explicit ENABLE_STUB_WORKERS=true): fall through
+ *     to processStubJob so queues without real consumers keep their slice-1
+ *     posture for local iteration.
+ *   - non-stub mode (production, or any future per-queue activation): throw
+ *     a descriptive Error so BullMQ retries with backoff and the failure is
+ *     observable via the worker.on("failed", …) pino log, instead of
+ *     silently marking a real business job (e.g., a patient invite or a PDF
+ *     render) as completed.
+ */
+async function dispatchJob(
+  job: Job,
+  definition: WorkerDefinition,
+  isStub: boolean,
+): Promise<unknown> {
+  const handler = lookupJobHandler(definition.queueName, job.name);
+  if (handler) {
+    return handler(job);
+  }
+  if (isStub) {
+    return processStubJob(job, definition);
+  }
+  throw new Error(`No handler for job ${job.name} on queue ${definition.queueName}`);
+}
+
+async function registerWorker(definition: WorkerDefinition, isStub: boolean): Promise<void> {
+  const worker = new Worker(definition.queueName, (job) => dispatchJob(job, definition, isStub), {
     connection: createRedisConnection(`worker:${definition.queueName}`),
     concurrency: definition.concurrency,
   });
@@ -126,7 +157,8 @@ async function assertWorkerRuntimeRole(): Promise<void> {
 }
 
 async function startup(): Promise<void> {
-  if (!stubWorkersEnabled()) {
+  const isStub = stubWorkersEnabled();
+  if (!isStub) {
     throw new Error(
       "Worker processors are still scaffolded. Set ENABLE_STUB_WORKERS=true only for intentional non-production stub execution.",
     );
@@ -134,6 +166,11 @@ async function startup(): Promise<void> {
 
   await initializeDatabase(resolveWorkerDatabaseEnv());
   await assertWorkerRuntimeRole();
+
+  // Register per-job-kind handlers before workers start consuming. The order
+  // matters: registerJobKind throws on duplicate registration, which would
+  // surface a bug if two handlers tried to claim the same kind.
+  registerMarketingConfirmationHandler();
 
   const startupRedis = createRedisConnection("worker:startup");
   const redisPing = await startupRedis.ping();
@@ -143,10 +180,10 @@ async function startup(): Promise<void> {
   startupRedis.disconnect();
 
   for (const definition of workerDefinitions) {
-    await registerWorker(definition);
+    await registerWorker(definition, isStub);
   }
 
-  logger.info({ queues: workerDefinitions.map((d) => d.queueName) }, "lewis workers ready");
+  logger.info({ queues: workerDefinitions.map((d) => d.queueName), isStub }, "lewis workers ready");
 }
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {

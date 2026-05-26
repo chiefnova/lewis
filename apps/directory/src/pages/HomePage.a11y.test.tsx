@@ -8,7 +8,8 @@ import { HomePage } from "./HomePage";
 import messages from "../messages/en.json";
 import { SearchOverlayProvider } from "../search/SearchContext";
 
-// Stub the search API — the new HeroSearchTypeahead uses it on mount.
+// Stub the search API — HeroSearchTypeahead, FeaturedConditions, and the
+// slice-4 demoted FeaturedTreatments all hit the public API on mount.
 vi.mock("../api/client", () => ({
   ApiNetworkError: class ApiNetworkError extends Error {},
   ApiSchemaError: class ApiSchemaError extends Error {},
@@ -17,6 +18,40 @@ vi.mock("../api/client", () => ({
       sections: { conditions: [], treatments: [], etcs: [] },
       totals: { conditions: 0, treatments: 0, etcs: 0 },
       query: "",
+    }),
+    getCondition: vi.fn().mockResolvedValue({
+      slug: "diabetic-peripheral-neuropathy",
+      name: "Diabetic peripheral neuropathy",
+      state: "live",
+      summary: null,
+      icd10Codes: ["E11.40"],
+      programCount: 1,
+      href: "/conditions/diabetic-peripheral-neuropathy",
+      linkedPrograms: [
+        {
+          slug: "wst-057",
+          name: "WST-057",
+          drug: "WST-057",
+          phase: "Phase 2",
+          form: "Topical",
+          manufacturer: null,
+        },
+      ],
+    }),
+    listPrograms: vi.fn().mockResolvedValue({
+      programs: [
+        {
+          slug: "wst-057",
+          name: "WST-057",
+          indication: "for peripheral neuropathy",
+          manufacturer: null,
+          form: "Topical",
+          phase: "Phase 2",
+          etcCount: 1,
+          available: true,
+        },
+      ],
+      total: 1,
     }),
   },
 }));

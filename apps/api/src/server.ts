@@ -15,6 +15,8 @@ import { etcRoutes } from "./domains/etcs/routes.js";
 import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
 import { patientRoutes } from "./domains/patients/routes.js";
 import { publicConditionsRoutes } from "./domains/public-conditions/routes.js";
+import { publicEtcsRoutes } from "./domains/public-etcs/routes.js";
+import { publicMarketingRoutes } from "./domains/public-marketing/routes.js";
 import { publicProgramsRoutes } from "./domains/public-programs/routes.js";
 import { publicSearchRoutes } from "./domains/public-search/routes.js";
 import { searchRoutes } from "./domains/search/routes.js";
@@ -243,6 +245,29 @@ v1Public.use("/public/programs/*", async (c, next) => {
 });
 v1Public.use("/public/programs/*", withPublicDbContext);
 v1Public.route("/public/programs", publicProgramsRoutes);
+
+// /v1/public/etcs — ETC catalog surface (per directoryprd.md § 16). Same
+// anonymous-RLS posture as conditions/programs; new ETC profile columns
+// (medical director contact, address, lat/lng, etc.) inherit the existing
+// etcs_directory_public_read policy from migration 0018. 60/min/IP matches
+// programs/conditions — list+detail navigation has comparable per-session
+// volume.
+v1Public.use("/public/etcs/*", rateLimit({ bucket: "public_etcs", max: 60, windowSeconds: 60 }));
+v1Public.use("/public/etcs/*", withPublicDbContext);
+v1Public.route("/public/etcs", publicEtcsRoutes);
+
+// /v1/public/marketing-subscriptions — anonymous email signup (slice 4
+// § 11.2 / 11.9 / 7.5). All three handlers (POST subscribe, GET confirm,
+// GET unsubscribe) go through SECURITY DEFINER helpers added in migration
+// 0020. Tighter 10/min/IP bucket because the subscribe path is the most
+// abuse-attractive endpoint on the directory surface (a script could spam
+// confirmation emails to arbitrary addresses without it).
+v1Public.use(
+  "/public/marketing-subscriptions/*",
+  rateLimit({ bucket: "public_marketing", max: 10, windowSeconds: 60 }),
+);
+v1Public.use("/public/marketing-subscriptions/*", withPublicDbContext);
+v1Public.route("/public/marketing-subscriptions", publicMarketingRoutes);
 
 // ---------------------------------------------------------------------------
 // /v1 — authed sub-router (every route below this gate requires Clerk auth +

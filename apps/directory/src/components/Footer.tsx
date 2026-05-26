@@ -1,77 +1,104 @@
 import { Link } from "react-router-dom";
+import { FormattedMessage } from "react-intl";
 
-import montanaFlag from "../assets/montana-flag.svg";
+/**
+ * Slice 4 § 10.2 — Footer restructure per locked Variant B.
+ *
+ * Five-column layout (PATIENTS / CLINICIANS / PARTNERS / COMPANY / LEGAL) +
+ * non-negotiable bottom-bar trust signal that establishes Lewis's
+ * independence on every page.
+ */
+
+interface FooterColumn {
+  heading: { id: string; default: string };
+  links: ReadonlyArray<{ to: string; id: string; default: string }>;
+}
+
+const COLUMNS: ReadonlyArray<FooterColumn> = [
+  {
+    heading: { id: "directory.footer.col.patients", default: "Patients" },
+    links: [
+      { to: "/browse", id: "directory.footer.patients.browse", default: "Browse treatments" },
+      { to: "/conditions", id: "directory.footer.patients.conditions", default: "Conditions" },
+      { to: "/etcs", id: "directory.footer.patients.etcs", default: "ETCs" },
+    ],
+  },
+  {
+    heading: { id: "directory.footer.col.clinicians", default: "Clinicians" },
+    links: [
+      {
+        to: "/for-clinicians",
+        id: "directory.footer.clinicians.physicians",
+        default: "For physicians",
+      },
+      {
+        to: "/for-clinicians",
+        id: "directory.footer.clinicians.briefs",
+        default: "Clinical briefs",
+      },
+    ],
+  },
+  {
+    heading: { id: "directory.footer.col.partners", default: "Partners" },
+    links: [
+      { to: "/for-sponsors", id: "directory.footer.partners.sponsors", default: "For sponsors" },
+      { to: "/for-etcs", id: "directory.footer.partners.etcs", default: "For ETCs" },
+      { to: "/platform", id: "directory.footer.partners.platform", default: "Operating platform" },
+    ],
+  },
+  {
+    heading: { id: "directory.footer.col.company", default: "Company" },
+    links: [
+      { to: "/about", id: "directory.footer.company.about", default: "About" },
+      { to: "/how-it-works", id: "directory.footer.company.how", default: "How it works" },
+      { to: "/faq", id: "directory.footer.company.faq", default: "Frequently asked" },
+    ],
+  },
+  {
+    heading: { id: "directory.footer.col.legal", default: "Legal" },
+    links: [
+      { to: "/privacy", id: "directory.footer.legal.privacy", default: "Privacy" },
+      { to: "/terms", id: "directory.footer.legal.terms", default: "Terms" },
+      { to: "/cookies", id: "directory.footer.legal.cookies", default: "Cookies" },
+      { to: "/feedback", id: "directory.footer.legal.feedback", default: "Share feedback" },
+    ],
+  },
+];
 
 export function Footer() {
   return (
-    <footer style={{ background: "var(--paper)", paddingTop: 40, paddingBottom: 56 }}>
-      <div className="container">
-        <div className="rule" style={{ marginBottom: 32 }} />
-        <div
-          className="footer-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            alignItems: "center",
-            gap: 24,
-            fontSize: 12.5,
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-            color: "var(--ink-soft)",
-          }}
-        >
-          <div className="footer-attribution">
-            {/* Flag + wordmark mirror the header treatment exactly:
-                serif "lewis." + italic ink-soft "health". Footer keeps the
-                smaller 18px size so it stays a quiet attribution mark, not
-                a second brand banner. */}
-            <img
-              src={montanaFlag}
-              alt=""
-              aria-hidden="true"
-              className="footer-flag-img"
-              width={51}
-              height={34}
-              loading="lazy"
-              decoding="async"
-            />
-            <span
-              className="footer-wordmark-inline"
-              style={{
-                display: "inline-flex",
-                alignItems: "baseline",
-                textTransform: "none",
-              }}
-            >
-              <span className="serif footer-wordmark-primary">lewis.</span>
-              <span className="serif footer-wordmark-secondary italic">health</span>
-            </span>
-          </div>
-          <div
-            className="footer-links"
-            style={{
-              display: "flex",
-              gap: 22,
-              justifyContent: "flex-end",
-              flexWrap: "wrap",
-            }}
-          >
-            <Link to="/privacy" style={{ borderBottom: "1px solid var(--rule)" }}>
-              Privacy
-            </Link>
-            <Link to="/terms" style={{ borderBottom: "1px solid var(--rule)" }}>
-              Terms
-            </Link>
-            <Link to="/feedback" style={{ borderBottom: "1px solid var(--rule)" }}>
-              Share Feedback
-            </Link>
-            <Link to="/for-etcs" style={{ borderBottom: "1px solid var(--rule)" }}>
-              For ETCs
-            </Link>
-            <Link to="/for-sponsors" style={{ borderBottom: "1px solid var(--rule)" }}>
-              For Sponsors
-            </Link>
-          </div>
+    <footer className="foot">
+      <div className="foot__inner">
+        <div className="foot__brand">
+          <span className="serif foot__brand-primary">Lewis.</span>
+          <span className="serif foot__brand-secondary italic">Health</span>
+        </div>
+
+        <div className="foot__cols">
+          {COLUMNS.map((col) => (
+            <div key={col.heading.id} className="foot__col">
+              <h4 className="foot__col-heading">
+                <FormattedMessage id={col.heading.id} defaultMessage={col.heading.default} />
+              </h4>
+              <ul className="foot__col-list">
+                {col.links.map((link) => (
+                  <li key={`${link.id}-${link.to}`}>
+                    <Link to={link.to} className="foot__col-link">
+                      <FormattedMessage id={link.id} defaultMessage={link.default} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="foot__bar">
+          <FormattedMessage
+            id="directory.footer.trust"
+            defaultMessage="© {year} Lewis Health · Independent directory · Not affiliated with any sponsor or ETC. Information sourced from Montana DPHHS public records and licensed program operators."
+            values={{ year: new Date().getFullYear() }}
+          />
         </div>
       </div>
     </footer>

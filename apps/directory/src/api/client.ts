@@ -11,14 +11,44 @@ import {
   EligibilityStartResponse,
   type LinkAnonymousScreenRequest,
   LinkAnonymousScreenResponse,
+  MarketingConfirmResponse,
+  type MarketingSubscriptionRequest,
+  MarketingSubscriptionResponse,
+  MarketingUnsubscribeResponse,
   PublicConditionDetail,
   PublicConditionListResponse,
   PublicEtcDetail,
+  PublicEtcListResponse,
   PublicProgramDetail,
+  PublicProgramFacets,
   PublicProgramListResponse,
 } from "@lewis/shared/api/public";
 import { PublicSearchResponse } from "@lewis/shared/api/search";
 import type { ZodType } from "zod";
+
+// Slice 4 — faceted /browse query params. Empty arrays / unset sort produce a
+// no-op WHERE clause server-side, matching the slice-3 baseline list shape.
+export type ProgramListParams = {
+  conditions?: ReadonlyArray<string>;
+  forms?: ReadonlyArray<string>;
+  phases?: ReadonlyArray<string>;
+  etcs?: ReadonlyArray<string>;
+  manufacturers?: ReadonlyArray<string>;
+  sort?: "alphabetical" | "recent" | "etc_count";
+};
+
+function buildProgramListQuery(params?: ProgramListParams): string {
+  if (!params) return "";
+  const u = new URLSearchParams();
+  for (const v of params.conditions ?? []) u.append("condition", v);
+  for (const v of params.forms ?? []) u.append("form", v);
+  for (const v of params.phases ?? []) u.append("phase", v);
+  for (const v of params.etcs ?? []) u.append("etc", v);
+  for (const v of params.manufacturers ?? []) u.append("manufacturer", v);
+  if (params.sort) u.set("sort", params.sort);
+  const q = u.toString();
+  return q ? `?${q}` : "";
+}
 
 // Distinct error types let callers tell network failures apart from server
 // contract drift — important once analytics + retry logic land.
@@ -69,6 +99,19 @@ async function getJson<T>(path: string, schema: ZodType<T>, init?: RequestInit):
   return parsed.data;
 }
 
+async function postJson<TBody, TResponse>(
+  path: string,
+  body: TBody,
+  schema: ZodType<TResponse>,
+  init?: RequestInit,
+): Promise<TResponse> {
+  return getJson(path, schema, {
+    ...init,
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export const publicApi = {
   /**
    * Programs catalog list — drives the homepage carousels + browse grid
@@ -76,10 +119,30 @@ export const publicApi = {
    * program with summary metadata + ETC count via the SECURITY DEFINER
    * helper added in migration 0019.
    */
-  listPrograms(options?: { signal?: AbortSignal }) {
-    return getJson("/v1/public/programs", PublicProgramListResponse, {
-      ...(options?.signal ? { signal: options.signal } : {}),
-    });
+  listPrograms(options?: { signal?: AbortSignal; params?: ProgramListParams }) {
+    return getJson(
+      `/v1/public/programs${buildProgramListQuery(options?.params)}`,
+      PublicProgramListResponse,
+      {
+        ...(options?.signal ? { signal: options.signal } : {}),
+      },
+    );
+  },
+  /**
+   * Faceted counts for the /browse filter rail. Same query params as
+   * listPrograms; counts respect every OTHER active filter but not the
+   * filter for the same facet (Amazon-style "what would the count be if I
+   * added this value to the active filter"). See directoryprd.md § 33.1
+   * "/browse filter rail wired".
+   */
+  getProgramFacets(options?: { signal?: AbortSignal; params?: ProgramListParams }) {
+    return getJson(
+      `/v1/public/programs/facets${buildProgramListQuery(options?.params)}`,
+      PublicProgramFacets,
+      {
+        ...(options?.signal ? { signal: options.signal } : {}),
+      },
+    );
   },
   /**
    * Single program detail — primary clinician + SERP-arrival waypoint per
@@ -102,8 +165,44 @@ export const publicApi = {
   briefPdfUrl(slug: string): string {
     return `${getBaseUrl()}/v1/public/programs/${encodeURIComponent(slug)}/brief.pdf`;
   },
-  getEtc(slug: string) {
-    return getJson(`/v1/public/etcs/${encodeURIComponent(slug)}`, PublicEtcDetail);
+  /**
+   * ETC catalog list — drives the /etcs page (list + Mapbox map). One round
+   * trip carries everything the index needs (lat/lng for pins, programCount
+   * for list cards). See directoryprd.md § 16.1.
+   */
+  listEtcs(options?: { signal?: AbortSignal }) {
+    return getJson("/v1/public/etcs", PublicEtcListResponse, {
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
+  },
+  getEtc(slug: string, options?: { signal?: AbortSignal }) {
+    return getJson(`/v1/public/etcs/${encodeURIComponent(slug)}`, PublicEtcDetail, {
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
+  },
+  /**
+   * Marketing-subscription signup (slice 4 § 11.2 / 11.9). Single-shot POST
+   * against the public-marketing domain. The API enqueues a Resend
+   * confirmation email via the notifications worker queue; this call only
+   * acks that the row was persisted. UX: render "check your email" on
+   * success, error inline on 400/5xx.
+   */
+  subscribeMarketing(payload: MarketingSubscriptionRequest) {
+    return postJson("/v1/public/marketing-subscriptions", payload, MarketingSubscriptionResponse);
+  },
+  confirmMarketing(token: string, options?: { signal?: AbortSignal }) {
+    return getJson(
+      `/v1/public/marketing-subscriptions/confirm?token=${encodeURIComponent(token)}`,
+      MarketingConfirmResponse,
+      { ...(options?.signal ? { signal: options.signal } : {}) },
+    );
+  },
+  unsubscribeMarketing(token: string, options?: { signal?: AbortSignal }) {
+    return getJson(
+      `/v1/public/marketing-subscriptions/unsubscribe?token=${encodeURIComponent(token)}`,
+      MarketingUnsubscribeResponse,
+      { ...(options?.signal ? { signal: options.signal } : {}) },
+    );
   },
   startEligibility(programSlug: string) {
     return getJson(
