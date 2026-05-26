@@ -196,6 +196,183 @@ describe("GET /public/programs (list)", () => {
   });
 });
 
+describe("GET /public/programs (faceted query — slice 4)", () => {
+  it("forwards condition filter as parameterized array against program_conditions", async () => {
+    const client = fakeClient([
+      {
+        match: (sql, params) =>
+          sql.includes("from programs p") &&
+          sql.includes("from program_conditions pc") &&
+          Array.isArray(params[0]) &&
+          (params[0] as string[]).includes("diabetic-peripheral-neuropathy"),
+        result: { rows: [WST_057_LIST_ROW] },
+      },
+    ]);
+    const res = await buildApp(client).request(
+      "/public/programs?condition=diabetic-peripheral-neuropathy",
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { programs: unknown[] };
+    expect(body.programs).toHaveLength(1);
+  });
+
+  it("normalizes display-cased form filter (Topical) to internal code (topical)", async () => {
+    const client = fakeClient([
+      {
+        match: (sql, params) =>
+          sql.includes("p.treatment_form = any") &&
+          Array.isArray(params[0]) &&
+          (params[0] as string[]).includes("topical"),
+        result: { rows: [WST_057_LIST_ROW] },
+      },
+    ]);
+    const res = await buildApp(client).request("/public/programs?form=Topical");
+    expect(res.status).toBe(200);
+  });
+
+  it("normalizes display-cased phase filter (Phase 2) to internal code (phase_2)", async () => {
+    const client = fakeClient([
+      {
+        match: (sql, params) =>
+          sql.includes("p.phase = any") &&
+          Array.isArray(params[0]) &&
+          (params[0] as string[]).includes("phase_2"),
+        result: { rows: [WST_057_LIST_ROW] },
+      },
+    ]);
+    const res = await buildApp(client).request("/public/programs?phase=Phase+2");
+    expect(res.status).toBe(200);
+  });
+
+  it("etc filter calls SECURITY DEFINER directory_program_offered_at_etcs", async () => {
+    const client = fakeClient([
+      {
+        match: (sql, params) =>
+          sql.includes("app.directory_program_offered_at_etcs") &&
+          Array.isArray(params[0]) &&
+          (params[0] as string[]).includes("big-sky"),
+        result: { rows: [WST_057_LIST_ROW] },
+      },
+    ]);
+    const res = await buildApp(client).request("/public/programs?etc=big-sky");
+    expect(res.status).toBe(200);
+  });
+
+  it("manufacturer filter is accepted but does not affect SQL (deferred)", async () => {
+    const client = fakeClient([
+      {
+        match: (sql) => sql.includes("from programs p") && !sql.includes("manufacturer = any"),
+        result: { rows: [WST_057_LIST_ROW] },
+      },
+    ]);
+    const res = await buildApp(client).request("/public/programs?manufacturer=WinSanTor");
+    expect(res.status).toBe(200);
+  });
+
+  it("multiple values for same key OR-within (?condition=a&condition=b)", async () => {
+    const client = fakeClient([
+      {
+        match: (_sql, params) =>
+          Array.isArray(params[0]) &&
+          (params[0] as string[]).length === 2 &&
+          (params[0] as string[]).includes("diabetic-peripheral-neuropathy") &&
+          (params[0] as string[]).includes("ptsd"),
+        result: { rows: [] },
+      },
+    ]);
+    const res = await buildApp(client).request(
+      "/public/programs?condition=diabetic-peripheral-neuropathy&condition=ptsd",
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("sort=etc_count uses the SECURITY DEFINER count helper in ORDER BY", async () => {
+    const client = fakeClient([
+      {
+        match: (sql) => sql.includes("order by app.directory_program_etc_count(p.id) desc"),
+        result: { rows: [WST_057_LIST_ROW] },
+      },
+    ]);
+    const res = await buildApp(client).request("/public/programs?sort=etc_count");
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects unknown sort value with 400", async () => {
+    const client = fakeClient([{ match: () => true, result: { rows: [] } }]);
+    const res = await buildApp(client).request("/public/programs?sort=random");
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /public/programs/facets (slice 4)", () => {
+  it("returns counts for conditions / forms / phases / etcs (manufacturers always empty)", async () => {
+    const client = fakeClient([
+      {
+        match: (sql) => sql.includes("from conditions c") && sql.includes("group by"),
+        result: {
+          rows: [{ slug: "diabetic-peripheral-neuropathy", name: "Diabetic PN", count: 1 }],
+        },
+      },
+      {
+        match: (sql) => sql.includes("p.treatment_form as code"),
+        result: { rows: [{ code: "topical", display: "topical", count: 1 }] },
+      },
+      {
+        match: (sql) => sql.includes("p.phase as code"),
+        result: { rows: [{ code: "phase_2", display: "phase_2", count: 1 }] },
+      },
+      {
+        match: (sql) => sql.includes("from etcs e") && sql.includes("group by e.directory_slug"),
+        result: { rows: [{ slug: "big-sky", name: "Big Sky ETC", count: 1 }] },
+      },
+    ]);
+    const res = await buildApp(client).request("/public/programs/facets");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toContain("max-age=60");
+    const body = (await res.json()) as Record<string, unknown[]>;
+    expect(body.conditions).toEqual([
+      { slug: "diabetic-peripheral-neuropathy", name: "Diabetic PN", count: 1 },
+    ]);
+    expect(body.forms).toEqual([{ code: "topical", display: "Topical", count: 1 }]);
+    expect(body.phases).toEqual([{ code: "phase_2", display: "Phase 2", count: 1 }]);
+    expect(body.etcs).toEqual([{ slug: "big-sky", name: "Big Sky ETC", count: 1 }]);
+    expect(body.manufacturers).toEqual([]);
+  });
+
+  it("excludes the same-facet filter from each facet's WHERE clause (Amazon-style)", async () => {
+    // When ?condition=ptsd is set, the conditions facet count must reflect
+    // "what would the count be if I added each condition value to the
+    // active filter" — i.e., should NOT filter by the condition filter when
+    // computing condition counts. Verifying via the params arity per query.
+    const client = fakeClient([
+      {
+        // conditions facet: condition filter should be EXCLUDED, so params is empty.
+        match: (sql, params) =>
+          sql.includes("from conditions c") && sql.includes("group by") && params.length === 0,
+        result: { rows: [] },
+      },
+      {
+        // forms facet: condition filter SHOULD be applied.
+        match: (sql, params) =>
+          sql.includes("p.treatment_form as code") &&
+          params.length === 1 &&
+          Array.isArray(params[0]),
+        result: { rows: [] },
+      },
+      {
+        match: (sql, params) => sql.includes("p.phase as code") && params.length === 1,
+        result: { rows: [] },
+      },
+      {
+        match: (sql, params) => sql.includes("from etcs e") && params.length === 1,
+        result: { rows: [] },
+      },
+    ]);
+    const res = await buildApp(client).request("/public/programs/facets?condition=ptsd");
+    expect(res.status).toBe(200);
+  });
+});
+
 describe("GET /public/programs/:slug (detail)", () => {
   it("returns full WST-057 detail with clinical evidence + 5min cache header", async () => {
     const client = fakeClient([

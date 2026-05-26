@@ -24,12 +24,23 @@ import {
   PublicSearchQueryParams,
   PublicSearchResponse,
   ConditionSlug,
+  EtcSlug,
+  MarketingConfirmResponse,
+  MarketingSubscriptionRequest,
+  MarketingSubscriptionResponse,
+  MarketingUnsubscribeResponse,
+  MedicalDirectorContact,
   ProgramSlug,
   PublicConditionDetail,
   PublicConditionListResponse,
   PublicConditionSummary,
+  PublicEtcDetail,
+  PublicEtcListResponse,
+  PublicEtcOfferedProgram,
+  PublicEtcSummary,
   PublicProgramDetail,
   PublicProgramEtrb,
+  PublicProgramFacets,
   PublicProgramListResponse,
   PublicProgramPublishedPaper,
   PublicProgramSummary,
@@ -97,6 +108,17 @@ export function buildOpenApiDocument(baseUrl: string) {
   registry.register("PublicProgramEtrb", PublicProgramEtrb);
   registry.register("PublicProgramDetail", PublicProgramDetail);
   registry.register("PublicProgramListResponse", PublicProgramListResponse);
+  registry.register("PublicProgramFacets", PublicProgramFacets);
+  registry.register("EtcSlug", EtcSlug);
+  registry.register("MedicalDirectorContact", MedicalDirectorContact);
+  registry.register("PublicEtcSummary", PublicEtcSummary);
+  registry.register("PublicEtcDetail", PublicEtcDetail);
+  registry.register("PublicEtcOfferedProgram", PublicEtcOfferedProgram);
+  registry.register("PublicEtcListResponse", PublicEtcListResponse);
+  registry.register("MarketingSubscriptionRequest", MarketingSubscriptionRequest);
+  registry.register("MarketingSubscriptionResponse", MarketingSubscriptionResponse);
+  registry.register("MarketingConfirmResponse", MarketingConfirmResponse);
+  registry.register("MarketingUnsubscribeResponse", MarketingUnsubscribeResponse);
 
   // -- Security schemes -----------------------------------------------------
 
@@ -341,11 +363,93 @@ export function buildOpenApiDocument(baseUrl: string) {
     },
     "/v1/public/programs": {
       get: {
-        summary: "Anonymous public programs catalog (list)",
+        summary: "Anonymous public programs catalog (list, faceted)",
         description:
-          "Returns every directory_published program with summary metadata and a count of ETCs offering each (via active sponsor↔ETC PPAs). Drives the directory's browse surface. Rate limited at 60 req/min/IP. See docs/directoryprd.md § 15.",
+          "Returns directory_published programs with summary metadata and a count of ETCs offering each (via active sponsor↔ETC PPAs). Slice 4: accepts repeated query params for filtering — `condition`, `form`, `phase`, `etc`, `manufacturer` — multiple values OR-within a key, AND across keys. `manufacturer` is parsed but currently a no-op (deferred to slice 5+ when the public sponsor display-name path lands). `sort` accepts alphabetical (default) | recent | etc_count. Rate limited at 60 req/min/IP. See docs/directoryprd.md § 15 + § 33.1.",
+        parameters: [
+          {
+            name: "condition",
+            in: "query",
+            required: false,
+            schema: {
+              oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+            },
+            description: "Filter by condition slug. Repeat for multiple (OR).",
+          },
+          {
+            name: "form",
+            in: "query",
+            required: false,
+            schema: {
+              oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+            },
+            description:
+              "Filter by treatment form (Topical/Oral/Injection/Infusion/Device). Repeat for multiple (OR).",
+          },
+          {
+            name: "phase",
+            in: "query",
+            required: false,
+            schema: {
+              oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+            },
+            description:
+              "Filter by trial phase (Phase 1 / Phase 2 / Phase 3). Repeat for multiple (OR).",
+          },
+          {
+            name: "etc",
+            in: "query",
+            required: false,
+            schema: {
+              oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+            },
+            description:
+              "Filter by ETC slug — programs offered (via active PPA) at any of the listed ETCs.",
+          },
+          {
+            name: "manufacturer",
+            in: "query",
+            required: false,
+            schema: {
+              oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+            },
+            description:
+              "Filter by manufacturer slug. Accepted but server-side wiring deferred to slice 5+.",
+          },
+          {
+            name: "sort",
+            in: "query",
+            required: false,
+            schema: {
+              type: "string",
+              enum: ["alphabetical", "recent", "etc_count"],
+              default: "alphabetical",
+            },
+          },
+        ],
         responses: {
           200: ok("PublicProgramListResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/programs/facets": {
+      get: {
+        summary: "Anonymous public programs facet counts (Amazon-style)",
+        description:
+          "Returns count buckets for each filterable facet (conditions / forms / phases / etcs / manufacturers). Each facet's count is computed against the active filter MINUS that facet's own filter, so the count reflects 'what would the result count be if I added this value to the active filter'. Same query params as /v1/public/programs. Manufacturers facet is always empty until the sponsor display-name path lands (slice 5+).",
+        parameters: [
+          { name: "condition", in: "query", required: false, schema: { type: "string" } },
+          { name: "form", in: "query", required: false, schema: { type: "string" } },
+          { name: "phase", in: "query", required: false, schema: { type: "string" } },
+          { name: "etc", in: "query", required: false, schema: { type: "string" } },
+          { name: "manufacturer", in: "query", required: false, schema: { type: "string" } },
+        ],
+        responses: {
+          200: ok("PublicProgramFacets"),
+          400: { $ref: "#/components/responses/ValidationError" },
           429: { $ref: "#/components/responses/RateLimited" },
           500: { $ref: "#/components/responses/InternalError" },
         },
@@ -399,6 +503,110 @@ export function buildOpenApiDocument(baseUrl: string) {
           404: { $ref: "#/components/responses/NotFound" },
           429: { $ref: "#/components/responses/RateLimited" },
           503: { $ref: "#/components/responses/ServiceUnavailable" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/etcs": {
+      get: {
+        summary: "Anonymous public ETCs catalog (list)",
+        description:
+          "Returns every directory_published ETC with city, license number, accepting-new-patients flag, lat/lng (for the Mapbox map on /etcs), and a programCount derived from the SECURITY DEFINER directory_etc_program_offerings helper. Rate limited at 60 req/min/IP. See docs/directoryprd.md § 16.",
+        responses: {
+          200: ok("PublicEtcListResponse"),
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/etcs/{slug}": {
+      get: {
+        summary: "Anonymous public ETC detail",
+        description:
+          "Returns a single directory_published ETC plus its medical-director clinical contact, address lines, hours, and offered programs (joined via active sponsor↔ETC PPA). See docs/directoryprd.md § 16.2.",
+        parameters: [
+          {
+            name: "slug",
+            in: "path",
+            required: true,
+            schema: { $ref: "#/components/schemas/EtcSlug" },
+          },
+        ],
+        responses: {
+          200: ok("PublicEtcDetail"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/marketing-subscriptions": {
+      post: {
+        summary: "Anonymous marketing subscription (slice 4 § 11.2 / 11.9)",
+        description:
+          "Records an email signup against one of three sources (announcement_strip, homepage_beginning, browse_bottom). Idempotent on email — a second submission for an existing email is a no-op (no duplicate confirmation email). Always returns 200 { ok: true } regardless of new-vs-existing to defeat email-existence timing attacks. The Resend confirmation email is sent asynchronously via the notifications worker queue. Rate limited at 10 req/min/IP.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/MarketingSubscriptionRequest" },
+            },
+          },
+        },
+        responses: {
+          200: ok("MarketingSubscriptionResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/marketing-subscriptions/confirm": {
+      get: {
+        summary: "Confirm an anonymous marketing subscription via token",
+        description:
+          "Flips a pending subscription to confirmed. Returns { confirmed: false } for unknown tokens, already-confirmed rows, and unsubscribed rows alike — no token-validity oracle.",
+        parameters: [
+          {
+            name: "token",
+            in: "query",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          200: ok("MarketingConfirmResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/marketing-subscriptions/unsubscribe": {
+      get: {
+        summary: "Unsubscribe from anonymous marketing via token",
+        description:
+          "Flips a pending or confirmed subscription to unsubscribed. Returns { unsubscribed: false } for unknown tokens or already-unsubscribed rows.",
+        parameters: [
+          {
+            name: "token",
+            in: "query",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MarketingUnsubscribeResponse" },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/ValidationError" },
+          429: { $ref: "#/components/responses/RateLimited" },
           500: { $ref: "#/components/responses/InternalError" },
         },
       },
