@@ -9,7 +9,7 @@ paths:
 # Frontend Rules
 
 - Frontends call the Hono API only; no browser-side Supabase database client.
-- `apps/app` is the staff/business console; keep sponsor, ETC, and internal admin modules under `apps/app/src/portals/*`.
+- `apps/app` is the staff/business console; keep manufacturer, ETC, and internal admin modules under `apps/app/src/portals/*`.
 - `apps/patient` is the separate patient-facing product; keep patient portal modules under `apps/patient/src/portal`.
 - `apps/directory` is the public, anonymous patient directory served at `lewis.health`. It is anonymous-first and SEO-critical:
   - Only call `/v1/public/*` endpoints plus the two narrowly-scoped semi-authenticated endpoints (`/v1/patient/me/context`, `/v1/patient/account/link-anonymous-screen`). Never reach into PHI-handling endpoints from the directory bundle.

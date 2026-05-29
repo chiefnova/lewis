@@ -1,11 +1,11 @@
 # Lewis
 
-Operating platform for Montana's Experimental Treatment Center (ETC) regime under SB 535 + MAR 2026-427.1. Serves sponsors/biotech manufacturers, ETCs, patients, boards, Lewis internal users, and anonymous public-directory visitors over one RLS'd data layer. See [b2bprd.md](docs/b2bprd.md) for the regulated operating platform spec and [directoryprd.md](docs/directoryprd.md) for the public directory spec — **every feature must trace to a section of SB 535, a RULE in MAR 2026-427.1, or the applicable directory PRD section**.
+Operating platform for Montana's Experimental Treatment Center (ETC) regime under SB 535 + MAR 2026-427.1. Serves biotech manufacturers, ETCs, patients, boards, Lewis internal users, and anonymous public-directory visitors over one RLS'd data layer. See [b2bprd.md](docs/b2bprd.md) for the regulated operating platform spec and [directoryprd.md](docs/directoryprd.md) for the public directory spec — **every feature must trace to a section of SB 535, a RULE in MAR 2026-427.1, or the applicable directory PRD section**.
 
 ## Architecture
 
 - `lewis.health` — anonymous public directory (Vite/React, SEO-critical, no PHI)
-- `app.lewis.health` — sponsor + ETC + internal admin portal (Vite/React)
+- `app.lewis.health` — manufacturer + ETC + internal admin portal (Vite/React)
 - `patient.lewis.health` — patient portal (Vite/React, mobile-first)
 - API — Node + Hono, Dockerized on Railway (also renders the public program brief PDF synchronously via Puppeteer + apt-installed Chromium per slice 3 — see Gotchas)
 - Workers — BullMQ on Redis, Dockerized on Railway
@@ -17,7 +17,7 @@ Frontend deployment boundaries are intentionally asymmetric across three indepen
 ```mermaid
 flowchart LR
   AppHost[app.lewis.health] --> App[apps/app]
-  App --> Sponsor[apps/app/src/portals/sponsor]
+  App --> Manufacturer[apps/app/src/portals/manufacturer]
   App --> ETC[apps/app/src/portals/etc]
   App --> Admin[apps/app/src/portals/admin]
   PatientHost[patient.lewis.health] --> Patient[apps/patient]
@@ -28,7 +28,7 @@ flowchart LR
   Directory --> API
 ```
 
-`apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Lewis internal admin workflows. `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk. `apps/directory` is a third anonymous-first public product served at `lewis.health` — only `/v1/public/*` API endpoints, Clerk lazy-loaded only inside the connect-request flow, 120 KB above-the-fold JS budget.
+`apps/app` is the authenticated staff/business console for biotech manufacturer, ETC, and Lewis internal admin workflows. `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk. `apps/directory` is a third anonymous-first public product served at `lewis.health` — only `/v1/public/*` API endpoints, Clerk lazy-loaded only inside the connect-request flow, 120 KB above-the-fold JS budget.
 
 Monorepo layout: `apps/app`, `apps/patient`, `apps/directory` (anonymous public directory), `apps/api`, `apps/workers`, `packages/shared` (zod schemas, types), `packages/db` (migrations, RLS policies), `packages/ui` (design tokens + shared components), `packages/notifications`, `packages/pdf`, `packages/rbac`, plus `packages/gate` (TEMPORARY — Vercel Edge Middleware password gate in front of all three frontends; deleted before public launch per the cleanup sequence in [packages/gate/README.md](packages/gate/README.md)).
 
@@ -47,7 +47,7 @@ mise run install          # pnpm install workspace deps
 mise run dev              # Docker infra + API + workers + all three frontends
 mise run dev:infra        # Docker Postgres + Redis
 mise run dev:all          # API + workers + all three frontends, without starting Docker
-mise run dev:app          # staff/business console: sponsor + ETC + admin
+mise run dev:app          # staff/business console: manufacturer + ETC + admin
 mise run dev:patient      # patient portal
 mise run dev:directory    # public directory (lewis.health)
 mise run dev:api          # Hono API
@@ -108,7 +108,7 @@ PHI is in scope from day one. Lewis is a Business Associate.
 4. **No PHI to unapproved subprocessors.** The approved list is in [b2bprd.md § 17.9](docs/b2bprd.md). Adding a new third-party dependency that will see PHI requires a BAA before it reaches staging, let alone prod.
 5. **File uploads go to the HIPAA-eligible Supabase bucket** with SHA-256 on write. Regulated objects (patient agreements, informed consent recordings, ETRB approvals, AE reports) are immutable — replacement creates a new version, never overwrites.
 6. **Retention locks are enforced in the database**, not application code: patient files 5 years post-discharge (RULE 12(4)), ETRB records 5 years (RULE 16(6)(d)), QAPI minutes 3 years (RULE 15(5)), audit log 7 years. Do not add delete paths that bypass retention.
-7. **TLS 1.3 only.** Clerk MFA is required for sponsor and ETC users. Break-glass admin access requires a ticket reference and is audit-logged.
+7. **TLS 1.3 only.** Clerk MFA is required for manufacturer and ETC users. Break-glass admin access requires a ticket reference and is audit-logged.
 8. **Secrets management:** local + CI secrets go through [fnox.toml](fnox.toml) (age-encrypted in-repo, recipient-gated by profile: `api_dev`, `workers_dev`, `workers_elevated_dev`, `frontend_app_dev`, `frontend_patient_dev`, `ci`). Each app's package.json `dev` script wraps in `fnox run -P <profile> -- <cmd>` so secrets land in env at startup. `SUPABASE_SERVICE_ROLE_KEY` is allowed only in `workers_elevated_dev`; it must never be present in `api_dev`, `workers_dev`, frontend, or `ci` profiles. **Production and staging secrets live in Vercel/Railway env vars only — never in fnox, never in the repo, never in CLAUDE.md, never in test fixtures.** Onboarding a dev: generate an age key, hand the pubkey to an existing recipient, who appends it to the `recipients` array under `[providers.age]` and runs `fnox reencrypt`. Revocation: remove the pubkey, re-encrypt, rotate values that the revoked party held. Plaintext `.env*` is gitignored — prefer fnox for anything beyond well-known local defaults.
 
 ## Product principles (resolve trade-offs with these)

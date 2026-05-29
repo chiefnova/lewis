@@ -21,7 +21,7 @@
 6. MVP 1 Scope
 7. Out of Scope (Phase 2)
 8. Information Architecture
-9. Sponsor Portal — Detailed Specification
+9. Manufacturer Portal — Detailed Specification
 10. ETC Portal — Detailed Specification
 11. Patient Portal — Detailed Specification
 12. Admin Portal — Detailed Specification
@@ -42,13 +42,13 @@
 
 ## 1. Executive Summary
 
-Lewis is the operating platform for Montana's new Experimental Treatment Center (ETC) regime, established by Senate Bill 535 (signed May 13, 2025) and operationalized by MAR Notice 2026-427.1. Lewis serves sponsor/biotech manufacturer, ETC, patient, board reviewer, and Lewis internal users with one platform and one shared data layer. The frontend has two deployable products: `apps/app` for the authenticated staff/business console and `apps/patient` for the patient-facing portal.
+Lewis is the operating platform for Montana's new Experimental Treatment Center (ETC) regime, established by Senate Bill 535 (signed May 13, 2025) and operationalized by MAR Notice 2026-427.1. Lewis serves biotech manufacturer, ETC, patient, board reviewer, and Lewis internal users with one platform and one shared data layer. The frontend has two deployable products: `apps/app` for the authenticated staff/business console and `apps/patient` for the patient-facing portal.
 
-MVP 1 launches with WinSanTor as the design-partner sponsor, WST-057 as the launch program, and Montana as the launch geography. The product makes WinSanTor the first Phase 3 biotech to commercially deliver an investigational drug under a state Right-to-Try framework, and gives the ETC operating it a turnkey compliance-and-operations spine that satisfies every requirement in the 25 ETC rules.
+MVP 1 launches with WinSanTor as the design-partner manufacturer, WST-057 as the launch program, and Montana as the launch geography. The product makes WinSanTor the first Phase 3 biotech to commercially deliver an investigational drug under a state Right-to-Try framework, and gives the ETC operating it a turnkey compliance-and-operations spine that satisfies every requirement in the 25 ETC rules.
 
 The product's strategic intent is twofold. First, to be the system of record for the regulatory regime — meaning every protocol, patient agreement, informed consent recording, adverse event report, ETRB review, QAPI minute, and DPHHS submission flows through Lewis. Second, to position Lewis's operator (us) for vertical integration into ETC ownership in Phase 3+ by accumulating privileged operational data on what works, what scales, and where unit economics break.
 
-Sponsors are the primary buyers. ETCs are the primary operators. Patients are users — they pay only for the drug, never for the platform.
+Manufacturers are the primary buyers. ETCs are the primary operators. Patients are users — they pay only for the drug, never for the platform.
 
 ---
 
@@ -69,11 +69,11 @@ No tooling exists for any of this. Today, the WinSanTor team would coordinate ET
 
 ### 2.2 The persona problems
 
-**Sponsors** (biotech manufacturers like WinSanTor) need to commercially deliver investigational drugs through ETCs in Montana, track patient outcomes, manage adverse event flow, support ETC partners, and have visibility into program performance. Their alternative today is to do this with bespoke internal tooling per program — expensive, slow, and hostile to multi-ETC scale.
+**Manufacturers** (biotech manufacturers like WinSanTor) need to commercially deliver investigational drugs through ETCs in Montana, track patient outcomes, manage adverse event flow, support ETC partners, and have visibility into program performance. Their alternative today is to do this with bespoke internal tooling per program — expensive, slow, and hostile to multi-ETC scale.
 
 **ETCs** need to operate a brand-new facility class with no playbook, no off-the-shelf software, no peer benchmark, and a regulatory deadline they cannot miss. They need licensure assistance, a P&P manual that doesn't take six months to write, a patient intake flow that holds up under DPHHS audit, an ETRB workflow, a QAPI program, and the ability to file every required report on time without dedicating a full-time compliance officer to it.
 
-**Patients** with serious peripheral neuropathy (in WinSanTor's case) — or whatever indication a future sponsor brings — need a clear, dignified path to discover whether they're eligible for an experimental treatment, complete eligibility verification, give meaningful informed consent, sign a patient agreement, pay for the drug, receive treatment, and have their outcomes (good or adverse) captured in a way that protects their interests.
+**Patients** with serious peripheral neuropathy (in WinSanTor's case) — or whatever indication a future manufacturer brings — need a clear, dignified path to discover whether they're eligible for an experimental treatment, complete eligibility verification, give meaningful informed consent, sign a patient agreement, pay for the drug, receive treatment, and have their outcomes (good or adverse) captured in a way that protects their interests.
 
 ### 2.3 The unmet need
 
@@ -105,15 +105,15 @@ When we eventually operate our own ETCs while continuing to serve other ETCs as 
 
 ## 4. Personas
 
-### 4.1 Persona 1: Sponsor (Biotech Manufacturer)
+### 4.1 Persona 1: Manufacturer (Biotech Manufacturer)
 
 **Archetype:** WinSanTor — Phase 3 biotech, WST-057 topical neuropathy treatment, has Maruho (Japan) / Lupin (Canada) deals as commercial validation, eight to fifteen people on the team, technical sophistication high.
 
-**Sponsor sub-roles:**
+**Manufacturer sub-roles:**
 
-- **Sponsor Admin** — full access; typically the Chief of Staff or Head of BD; configures programs, manages ETC relationships, reviews aggregate data.
-- **Sponsor Clinical** — read access to patient-level data on programs they're cleared for; reviews AE reports; receives outcome reports from ETCs.
-- **Sponsor Finance** — read access to billing, treatment volumes, payment reconciliation; manages payouts to ETCs and HFAR Path A reconciliation if applicable.
+- **Manufacturer Admin** — full access; typically the Chief of Staff or Head of BD; configures programs, manages ETC relationships, reviews aggregate data.
+- **Manufacturer Clinical** — read access to patient-level data on programs they're cleared for; reviews AE reports; receives outcome reports from ETCs.
+- **Manufacturer Finance** — read access to billing, treatment volumes, payment reconciliation; manages payouts to ETCs and HFAR Path A reconciliation if applicable.
 
 **Jobs to be done:**
 
@@ -125,10 +125,10 @@ When we eventually operate our own ETCs while continuing to serve other ETCs as 
 - Visibility across all ETCs running the program
 - Export-quality reporting for internal stakeholders, board, and regulators
 
-**Success criteria for the sponsor:**
+**Success criteria for the manufacturer:**
 
 - Time from "decided to enable Montana RTT" to "first patient dosed" < 90 days
-- AE reporting fidelity matching what FDA-IRB sponsor pharmacovigilance would demand
+- AE reporting fidelity matching what FDA-IRB manufacturer pharmacovigilance would demand
 - Cross-ETC outcome data aggregable into clinical and regulatory submissions
 
 ### 4.2 Persona 2: ETC (Experimental Treatment Center Operator)
@@ -216,7 +216,7 @@ Patients in this system have serious illnesses. The product never uses gamificat
 Every state change — every patient file edit, every protocol approval, every consent recording, every payment — is immutably logged with actor, timestamp, before/after, and IP. A DPHHS or FDA inspector should be able to receive a read-only export covering any time window in under five minutes.
 
 **Principle 5 — Multi-tenant from line one.**
-The data model uses Postgres Row-Level Security with Clerk JWT-based tenant scoping. There is no admin path that bypasses RLS. ETCs cannot see other ETCs' patient data. Sponsors cannot see other sponsors' programs. Lewis staff have explicit, audited access only.
+The data model uses Postgres Row-Level Security with Clerk JWT-based tenant scoping. There is no admin path that bypasses RLS. ETCs cannot see other ETCs' patient data. Manufacturers cannot see other manufacturers' programs. Lewis staff have explicit, audited access only.
 
 **Principle 6 — Boring tech, careful integrations.**
 Stack choices favor maturity over novelty. Where we integrate (Stripe, Plaid, Clerk, Resend, Sentry), we follow the platform's idiomatic patterns. We do not build what we can buy at this stage.
@@ -229,9 +229,9 @@ The MVP 1 release covers, end-to-end, the operations required for an outpatient 
 
 ### 6.1 Included in MVP 1
 
-- Sponsor onboarding and program configuration
+- Manufacturer onboarding and program configuration
 - ETC onboarding with licensure application assistance (RULE 5)
-- ETC ↔ Sponsor relationship management (program participation agreements)
+- ETC ↔ Manufacturer relationship management (program participation agreements)
 - ETC P&P manual generator and version control (RULE 6, all 20 categories)
 - ETC staff file management (RULE 10)
 - ETC roles: administrator, medical director with multi-site support (RULES 7, 8)
@@ -255,13 +255,13 @@ The MVP 1 release covers, end-to-end, the operations required for an outpatient 
 - Grievance management
 - Tenant-scoped search across operational records
 - Audit log across every state change
-- Four portals — Sponsor, ETC, Patient, Internal Admin
+- Four portals — Manufacturer, ETC, Patient, Internal Admin
 - BAAs with all subprocessors
 - Architecture-preserved schema stubs for device registry, inpatient fields, alt-currency rails, HFAR Path A, and state-first regulated objects
 
-### 6.2 Sponsor scope clarification
+### 6.2 Manufacturer scope clarification
 
-The launch sponsor is WinSanTor. The launch program is WST-057 for peripheral neuropathy. The launch ETC is the WinSanTor-affiliated outpatient ETC in Montana. Lewis is multi-tenant and multi-program-capable on day one, but this PRD's flows, data examples, and worked cases use WinSanTor / WST-057 throughout.
+The launch manufacturer is WinSanTor. The launch program is WST-057 for peripheral neuropathy. The launch ETC is the WinSanTor-affiliated outpatient ETC in Montana. Lewis is multi-tenant and multi-program-capable on day one, but this PRD's flows, data examples, and worked cases use WinSanTor / WST-057 throughout.
 
 ---
 
@@ -271,7 +271,7 @@ These are deliberately deferred. The PRD acknowledges them so that engineering d
 
 **7.1 RULE 25 outside-physician network.** The "community physician partner" workflow that lets an ETC distribute pre-approved low-risk treatments through private practicing physicians across Montana. This is the strategic scale lever for WST-057 and any topical/low-risk treatment, but it depends on the ETRB having issued a RULE 16(6)(f) safety determination, which itself requires the ETC to be operating with a track record. Phase 2.
 
-**7.2 Investigational medical device registry depth (RULE 21).** WinSanTor's WST-057 is a topical drug, not a device. The MVP 1 schema includes a basic device registry table for forward compatibility, but the full RULE 21 cybersecurity, device-specific consent, and long-term tracking workflows are Phase 2 and would be triggered by a sponsor whose program includes a connected device.
+**7.2 Investigational medical device registry depth (RULE 21).** WinSanTor's WST-057 is a topical drug, not a device. The MVP 1 schema includes a basic device registry table for forward compatibility, but the full RULE 21 cybersecurity, device-specific consent, and long-term tracking workflows are Phase 2 and would be triggered by a manufacturer whose program includes a connected device.
 
 **7.3 Inpatient ETC physical plant complexity (RULE 24).** MVP 1 targets outpatient ETCs. The schema supports inpatient as a facility type and stores the additional fields, but the validation rules for sprinkler systems, generator backup, AIA-compliant call systems, and so on are Phase 2.
 
@@ -287,7 +287,7 @@ These are deliberately deferred. The PRD acknowledges them so that engineering d
 
 **7.9 Multi-state expansion.** Montana-only in MVP 1. Schema supports state as a first-class field on every regulated object.
 
-**7.10 Public ETC directory / patient marketplace.** Patient discovery in MVP 1 is sponsor-driven (you find Lewis through WinSanTor, your treating physician, or direct outreach). A public-facing directory of all licensed ETCs and the programs they offer is Phase 2 once there are more than two or three ETCs operating.
+**7.10 Public ETC directory / patient marketplace.** Patient discovery in MVP 1 is manufacturer-driven (you find Lewis through WinSanTor, your treating physician, or direct outreach). A public-facing directory of all licensed ETCs and the programs they offer is Phase 2 once there are more than two or three ETCs operating.
 
 ---
 
@@ -295,55 +295,55 @@ These are deliberately deferred. The PRD acknowledges them so that engineering d
 
 ### 8.1 Four portals, one data layer
 
-- **app.lewis.health** — the primary application. Routes by role to Sponsor, ETC, or Internal Admin views post-login.
+- **app.lewis.health** — the primary application. Routes by role to Manufacturer, ETC, or Internal Admin views post-login.
 - **patient.lewis.health** — patient-only, simplified UX, mobile-first responsive.
 - **www.lewis.health** — marketing site. Out of PRD scope, mentioned for completeness.
 
-The two app domains share one Postgres database with RLS. Clerk handles authentication for all of them with a unified user identity that can hold multiple role memberships (a person could be both a sponsor admin at WinSanTor and a clinical staff member at an ETC, though this is uncommon).
+The two app domains share one Postgres database with RLS. Clerk handles authentication for all of them with a unified user identity that can hold multiple role memberships (a person could be both a manufacturer admin at WinSanTor and a clinical staff member at an ETC, though this is uncommon).
 
 ### 8.2 Tenancy model
 
 Five tenant kinds form the platform's security boundary:
 
-- **Sponsor** — owns programs, has many users with sponsor roles
+- **Manufacturer** — owns programs, has many users with manufacturer roles
 - **ETC** — owns operations, has many users with ETC roles
 - **Patient** — tenant scoped to one human, plus explicitly authorized representatives
 - **Board** — Experimental Treatment Review Board with reviewer users and cross-ETC associations
 - **Lewis Internal** — internal support/admin tenant, access only through ticket-scoped support grants
 
-Legal/business entities are separate from the security boundary. Sponsor and ETC organization records store legal names, tax IDs, addresses, licensure details, and billing data, but RLS policies key off tenants and explicit tenant relationships, not a generic organization type.
+Legal/business entities are separate from the security boundary. Manufacturer and ETC organization records store legal names, tax IDs, addresses, licensure details, and billing data, but RLS policies key off tenants and explicit tenant relationships, not a generic organization type.
 
 Boards (ETRBs) are first-class entities, not subordinate to a single ETC. A board can serve many ETCs (RULE 16(2)(b), 16(4)). A board has its own users (reviewers).
 
-Programs are owned by sponsors. ETCs participate in programs via Program Participation Agreements. Patients enroll in programs through ETCs.
+Programs are owned by manufacturers. ETCs participate in programs via Program Participation Agreements. Patients enroll in programs through ETCs.
 
 ### 8.3 Top-level navigation
 
-- **Sponsor Portal nav:** Programs · ETC Network · Patients (de-identified aggregate) · Adverse Events · Reports · Billing · Settings
+- **Manufacturer Portal nav:** Programs · ETC Network · Patients (de-identified aggregate) · Adverse Events · Reports · Billing · Settings
 - **ETC Portal nav:** Dashboard · Patients · Treatments · ETRB · QAPI · Adverse Events · Compliance · Staff · Reports · Settings
 - **Patient Portal nav:** Home · My Treatment · Documents · Messages · Payments · Help
 - **Internal Admin Portal nav:** Tenants · Users · Audit Log · Compliance Watch · Support · Feature Flags · Subprocessors
 
 ---
 
-## 9. Sponsor Portal — Detailed Specification
+## 9. Manufacturer Portal — Detailed Specification
 
-### 9.1 Sponsor onboarding
+### 9.1 Manufacturer onboarding
 
-**Trigger:** A Lewis sales conversation closes with a signed Master Services Agreement and BAA. Internal admin provisions the sponsor tenant and creates the first sponsor admin user via Clerk invite.
+**Trigger:** A Lewis sales conversation closes with a signed Master Services Agreement and BAA. Internal admin provisions the manufacturer tenant and creates the first manufacturer admin user via Clerk invite.
 
 **Flow:**
 
-1. Sponsor admin clicks Clerk invite email, sets credentials, lands on welcome screen.
+1. Manufacturer admin clicks Clerk invite email, sets credentials, lands on welcome screen.
 2. Onboarding wizard collects: legal entity name, primary contact, billing contact, mailing address, federal tax ID (encrypted at rest, not stored as PHI but as confidential business data), regulatory contact for AE flow-down.
-3. Sponsor admin invites additional sponsor users with role assignment.
-4. Sponsor reaches the "Create your first program" CTA.
+3. Manufacturer admin invites additional manufacturer users with role assignment.
+4. Manufacturer reaches the "Create your first program" CTA.
 
-**Data captured:** `sponsor_id`, `legal_name`, `primary_contact_user_id`, `billing_contact_user_id`, `mailing_address`, `tax_id_encrypted`, `regulatory_contact_email`, `ae_flowdown_email`, `msa_signed_at`, `baa_signed_at`, `status`.
+**Data captured:** `manufacturer_id`, `legal_name`, `primary_contact_user_id`, `billing_contact_user_id`, `mailing_address`, `tax_id_encrypted`, `regulatory_contact_email`, `ae_flowdown_email`, `msa_signed_at`, `baa_signed_at`, `status`.
 
 ### 9.2 Program configuration
 
-**Trigger:** Sponsor admin creates a new program.
+**Trigger:** Manufacturer admin creates a new program.
 
 **Fields:**
 
@@ -358,7 +358,7 @@ Programs are owned by sponsors. ETCs participate in programs via Program Partici
 - Anticipated cost to patient
 - Pricing model (cash-pay, sliding scale, free)
 - HFAR path selection (Path A or Path B; default Path B)
-- Adverse event reporting configuration: sponsor pharmacovigilance contact, escalation thresholds
+- Adverse event reporting configuration: manufacturer pharmacovigilance contact, escalation thresholds
 - Eligibility criteria (structured: age range, indication confirmation requirements, concurrent therapy restrictions, contraindications)
 - Treatment plan template: visit cadence, expected duration, milestones, required documentation, and clinical-owner roles
 - Outcome measures: measure name, source (provider / patient PRO / lab / validated scale), cadence, unit, expected direction, required/optional status, and reporting label
@@ -371,22 +371,22 @@ Programs are owned by sponsors. ETCs participate in programs via Program Partici
 
 - The program protocol PDF is the artifact ETRBs review under RULE 16(6)(a). Lewis stores it in Supabase Storage with an immutable SHA-256 hash, version history, and audit log entries on every replacement.
 - Eligibility criteria are structured (not free text) so that the patient eligibility self-screen can run them programmatically.
-- The "what patients see during discovery" field is the only patient-facing surface from the sponsor; Lewis does not allow sponsor-direct patient marketing per Principle 3.
+- The "what patients see during discovery" field is the only patient-facing surface from the manufacturer; Lewis does not allow manufacturer-direct patient marketing per Principle 3.
 
 ### 9.3 ETC Network
 
-**Purpose:** Lets the sponsor establish, view, and manage relationships with ETCs that will deliver the program.
+**Purpose:** Lets the manufacturer establish, view, and manage relationships with ETCs that will deliver the program.
 
 **Sub-flows:**
 
-- **Invite ETC to participate.** Sponsor admin enters ETC legal name and primary contact email. Lewis checks if the ETC tenant exists; if yes, sends an in-app invitation; if no, sends a Clerk-style email invitation that creates a new ETC tenant on acceptance. The invitation references the program.
-- **Program Participation Agreement (PPA).** When an ETC accepts, Lewis generates a PPA PDF (template per program, populated with sponsor and ETC details). The PPA covers: scope of program, supply chain logistics, pricing terms, AE flow-down obligations to sponsor pharmacovigilance, data sharing, term, and termination. Both sides sign in-platform via embedded signature flow (HelloSign or Stripe Identity equivalent — picked in implementation; treated as a black-box signing primitive in this PRD).
+- **Invite ETC to participate.** Manufacturer admin enters ETC legal name and primary contact email. Lewis checks if the ETC tenant exists; if yes, sends an in-app invitation; if no, sends a Clerk-style email invitation that creates a new ETC tenant on acceptance. The invitation references the program.
+- **Program Participation Agreement (PPA).** When an ETC accepts, Lewis generates a PPA PDF (template per program, populated with manufacturer and ETC details). The PPA covers: scope of program, supply chain logistics, pricing terms, AE flow-down obligations to manufacturer pharmacovigilance, data sharing, term, and termination. Both sides sign in-platform via embedded signature flow (HelloSign or Stripe Identity equivalent — picked in implementation; treated as a black-box signing primitive in this PRD).
 - **ETC Network table view.** For each participating ETC: legal name, primary contact, status (Invited / PPA Pending / Active / Paused / Terminated), date of first patient dosed, total patients dosed, active patients in treatment, AE count (last 30 days), last AE date.
-- **Per-ETC drill-down.** Same fields plus de-identified outcome aggregates, billing reconciliation, drug-accountability status, and supply chain status (Phase 2: integration with sponsor's manufacturing/distribution).
+- **Per-ETC drill-down.** Same fields plus de-identified outcome aggregates, billing reconciliation, drug-accountability status, and supply chain status (Phase 2: integration with manufacturer's manufacturing/distribution).
 
 ### 9.4 Patients (de-identified aggregate)
 
-The sponsor never sees identified PHI in MVP 1. The sponsor sees de-identified, aggregated data:
+The manufacturer never sees identified PHI in MVP 1. The manufacturer sees de-identified, aggregated data:
 
 - Total patients enrolled, by ETC and program
 - Treatment status counts (in screening / active / completed / discontinued)
@@ -394,15 +394,15 @@ The sponsor never sees identified PHI in MVP 1. The sponsor sees de-identified, 
 - Outcome distributions (per the program's defined outcome measures)
 - Anonymized longitudinal cohort views
 
-MVP 1 PPAs may choose either `aggregate_only` or `deidentified_line_level_safety`. De-identified line-level safety access supports sponsor pharmacovigilance review without direct identifiers, patient contact data, free-text PHI, or small-cell cohorts. Identified patient-level sponsor access is not in MVP 1. It requires a future `patient_data_sharing_consents` workflow with patient-visible scope, revocation, disclosure accounting, and RLS/audit tests before activation.
+MVP 1 PPAs may choose either `aggregate_only` or `deidentified_line_level_safety`. De-identified line-level safety access supports manufacturer pharmacovigilance review without direct identifiers, patient contact data, free-text PHI, or small-cell cohorts. Identified patient-level manufacturer access is not in MVP 1. It requires a future `patient_data_sharing_consents` workflow with patient-visible scope, revocation, disclosure accounting, and RLS/audit tests before activation.
 
 ### 9.5 Adverse Events
 
-**View:** Per-program AE list, filterable by program, severity, date range, and status. Each row shows: AE ID, ETC token, date, severity, treatment, and status. ETC legal name is shown only where the PPA permits ETC-level operational visibility; patient identity is never shown to sponsors in MVP 1.
+**View:** Per-program AE list, filterable by program, severity, date range, and status. Each row shows: AE ID, ETC token, date, severity, treatment, and status. ETC legal name is shown only where the PPA permits ETC-level operational visibility; patient identity is never shown to manufacturers in MVP 1.
 
-**Drilldown:** Read-only AE detail with de-identified RULE 17(3) fields appropriate for sponsor pharmacovigilance. Sponsor users can add internal notes visible only to the sponsor tenant. Every sponsor line-level safety view/export writes `sponsor_data_access_events` and patient disclosure-accounting events where applicable.
+**Drilldown:** Read-only AE detail with de-identified RULE 17(3) fields appropriate for manufacturer pharmacovigilance. Manufacturer users can add internal notes visible only to the manufacturer tenant. Every manufacturer line-level safety view/export writes `manufacturer_data_access_events` and patient disclosure-accounting events where applicable.
 
-**Flow-down:** When an ETC submits an AE under RULE 17, Lewis immediately notifies the sponsor's regulatory contact via email per the PPA configuration, with a deep link to the AE detail.
+**Flow-down:** When an ETC submits an AE under RULE 17, Lewis immediately notifies the manufacturer's regulatory contact via email per the PPA configuration, with a deep link to the AE detail.
 
 ### 9.6 Reports
 
@@ -410,24 +410,24 @@ MVP 1 PPAs may choose either `aggregate_only` or `deidentified_line_level_safety
 
 - Program performance (treatments delivered, patients dosed, outcome aggregates) — exportable as PDF and CSV
 - Adverse event summary — by program, by ETC, by severity
-- HFAR contribution summary (Path A: free-product allocation by program; Path B: contribution amounts) — for sponsor's tax and disclosure purposes
+- HFAR contribution summary (Path A: free-product allocation by program; Path B: contribution amounts) — for manufacturer's tax and disclosure purposes
 - ETC network health — onboarding pipeline, active partners, churn
 
-Each report supports a date range, JSON export for sponsor's BI pipelines, and PDF export for board / regulatory submission.
+Each report supports a date range, JSON export for manufacturer's BI pipelines, and PDF export for board / regulatory submission.
 
 ### 9.7 Billing
 
-The sponsor is the payer of Lewis's platform fee. MVP 1 supports:
+The manufacturer is the payer of Lewis's platform fee. MVP 1 supports:
 
-- Per-program flat monthly fee (configurable per sponsor in admin tooling)
+- Per-program flat monthly fee (configurable per manufacturer in admin tooling)
 - Per-treatment-delivered variable fee
 - Combination
 
-Stripe Billing handles invoicing. Sponsor sees their invoice history, payment methods, and upcoming invoice. Billing is a sponsor-only surface; ETCs and patients do not see Lewis's financial relationship with the sponsor.
+Stripe Billing handles invoicing. Manufacturer sees their invoice history, payment methods, and upcoming invoice. Billing is a manufacturer-only surface; ETCs and patients do not see Lewis's financial relationship with the manufacturer.
 
 ### 9.8 Settings
 
-Standard: organization profile, users and roles, API keys (Phase 2), webhooks (Phase 2), audit log scoped to this sponsor's actions, BAA status and renewal, MSA status.
+Standard: organization profile, users and roles, API keys (Phase 2), webhooks (Phase 2), audit log scoped to this manufacturer's actions, BAA status and renewal, MSA status.
 
 ---
 
@@ -437,7 +437,7 @@ This is the largest portal in MVP 1 by surface area. Forty percent of engineerin
 
 ### 10.1 ETC onboarding and licensure assistance
 
-**Trigger:** Either a sponsor invites the ETC, or a prospective ETC operator signs up directly via marketing site.
+**Trigger:** Either a manufacturer invites the ETC, or a prospective ETC operator signs up directly via marketing site.
 
 **Flow:**
 
@@ -636,7 +636,7 @@ ETC clinical staff schedules the patient's visits. Patient sees schedule in pati
 No treatment visit may be scheduled, checked in, or documented unless Lewis has a current `treatment_authorization` pass for the enrollment. The gate is evaluated by the API immediately before visit creation, check-in, and treatment documentation. It checks, at minimum:
 
 - ETC license is active or otherwise permitted for the action being taken
-- Active Program Participation Agreement for sponsor ↔ ETC ↔ program
+- Active Program Participation Agreement for manufacturer ↔ ETC ↔ program
 - ETRB associated with the ETC
 - Protocol approved for the ETC/program
 - RULE 16(6)(f) risk/outside-ETC evaluation exists for the treatment/device, even if outside-ETC administration is not enabled in MVP 1
@@ -669,9 +669,9 @@ The authorization result is stored with pass/fail status, evaluated version, tim
 
 **Treatment plan:** A program-level treatment plan template is instantiated per patient and tracks visit cadence, expected duration, milestones, required documentation, and outcome measures. Visits and treatment documentation are linked back to the instantiated plan so missing visits, overdue milestones, and missing outcomes are reportable.
 
-**Outcome capture:** Provider observations, patient-reported outcomes, labs, and validated scales are stored as structured `outcome_measure_observations` mapped to the program's outcome definitions. After each visit, the patient receives an emailed link to a brief patient-reported outcome survey scoped to the program. Responses are stored in the patient file under interdisciplinary progress notes (RULE 12(2)(j)) and are available for sponsor aggregates and ETRB safety/outcome reports only after de-identification rules are applied.
+**Outcome capture:** Provider observations, patient-reported outcomes, labs, and validated scales are stored as structured `outcome_measure_observations` mapped to the program's outcome definitions. After each visit, the patient receives an emailed link to a brief patient-reported outcome survey scoped to the program. Responses are stored in the patient file under interdisciplinary progress notes (RULE 12(2)(j)) and are available for manufacturer aggregates and ETRB safety/outcome reports only after de-identification rules are applied.
 
-**Drug accountability:** WST-057 inventory is tracked by product, lot/batch, expiration, storage location, condition logs, receipt, dispensing, waste/return/destruction, and reconciliation. Treatment documentation cannot reference an expired, quarantined, or unaccounted lot. Expiration monitoring feeds RULE 19 safety alerts and sponsor operational reports without exposing identified patient data.
+**Drug accountability:** WST-057 inventory is tracked by product, lot/batch, expiration, storage location, condition logs, receipt, dispensing, waste/return/destruction, and reconciliation. Treatment documentation cannot reference an expired, quarantined, or unaccounted lot. Expiration monitoring feeds RULE 19 safety alerts and manufacturer operational reports without exposing identified patient data.
 
 ### 10.7 Transfer agreement and emergency transfer (RULES 13(2)–(4), 14)
 
@@ -706,7 +706,7 @@ The authorization result is stored with pass/fail status, evaluated version, tim
 
 **Protocol review (RULE 16(6)(a)):**
 
-- Sponsor uploads protocol (per § 9.2) → ETC associates protocol with their board
+- Manufacturer uploads protocol (per § 9.2) → ETC associates protocol with their board
 - Reviewers receive notification, access read-only protocol artifact
 - Each reviewer:
   - Confirms or updates conflict declaration
@@ -786,7 +786,7 @@ The authorization result is stored with pass/fail status, evaluated version, tim
   - **MVP 1:** Lewis generates a DPHHS-formatted AE report PDF; ETC submits via DPHHS's electronic system; ETC records submission timestamp in Lewis
   - **Phase 2:** Direct API integration with DPHHS's electronic system if/when available
 - AE record routed to:
-  - Sponsor's regulatory contact per program's PPA (immediate notification)
+  - Manufacturer's regulatory contact per program's PPA (immediate notification)
   - QAPI program's review queue (RULE 17(4))
   - ETRB's review queue (RULE 16(6)(e))
 
@@ -970,7 +970,7 @@ For Lewis's internal team only.
 
 ### 12.1 Tenants
 
-List of all sponsor tenants and ETC tenants with status, key counts, and risk flags.
+List of all manufacturer tenants and ETC tenants with status, key counts, and risk flags.
 
 ### 12.2 Users
 
@@ -1006,7 +1006,7 @@ Every state change writes an audit log entry: `tenant_id`, `actor_user_id`, `act
 
 ### 13.2 Notifications
 
-Email-only in MVP 1, via Resend. Templates per event type. Patient-facing emails are warm and plain. Sponsor and ETC emails are operational and concise. SMS is Phase 2 — abstracted notification interface so the channel is a parameter.
+Email-only in MVP 1, via Resend. Templates per event type. Patient-facing emails are warm and plain. Manufacturer and ETC emails are operational and concise. SMS is Phase 2 — abstracted notification interface so the channel is a parameter.
 
 ### 13.3 File storage
 
@@ -1048,7 +1048,7 @@ The following is a logical data model. Postgres-specific column types and constr
 
 ### 14.1 Tenancy
 
-- `tenants` — security boundary. Kind enum: sponsor, etc, patient, board, lewis_internal.
+- `tenants` — security boundary. Kind enum: manufacturer, etc, patient, board, lewis_internal.
 - `users` — Clerk identity, email, name, phone (optional)
 - `tenant_memberships` — user ↔ tenant with role, status, starts_at, ends_at
 - `tenant_relationships` — cross-tenant grants and relationships (PPA, board-to-ETC, caregiver/guardian, future partner grants), with scope_json and status
@@ -1058,18 +1058,18 @@ The following is a logical data model. Postgres-specific column types and constr
 
 Every regulated object created in MVP 1 carries a `jurisdiction_id` and, where a rule interpretation matters, the applicable `regulatory_rule_version_id`. This includes programs, ETC profiles, license applications, P&P manuals, consents, agreements, AEs, QAPI, reports, HFAR filings, device stubs, and payment obligations.
 
-### 14.2 Sponsor domain
+### 14.2 Manufacturer domain
 
-- `sponsor_organizations` — legal/business profile for sponsor tenants; tenant_id, legal_name, billing profile, tax_id_encrypted, regulatory contacts
-- `programs` — name, drug, indication, phase, IND number, protocol_file_id, treatment_form, pricing_model, hfar_path, eligibility_criteria_json, patient_facing_description, status, sponsor_tenant_id
+- `manufacturer_organizations` — legal/business profile for manufacturer tenants; tenant_id, legal_name, billing profile, tax_id_encrypted, regulatory contacts
+- `programs` — name, drug, indication, phase, IND number, protocol_file_id, treatment_form, pricing_model, hfar_path, eligibility_criteria_json, patient_facing_description, status, manufacturer_tenant_id
 - `program_versions` — immutable history of program edits
-- `program_participation_agreements` — PPA between sponsor tenant and ETC tenant for a program; status, signed_at, terms_file_id, ae_flowdown_email, data_sharing_level (`aggregate_only` / `deidentified_line_level_safety` in MVP 1); creates the relevant tenant_relationship grant
+- `program_participation_agreements` — PPA between manufacturer tenant and ETC tenant for a program; status, signed_at, terms_file_id, ae_flowdown_email, data_sharing_level (`aggregate_only` / `deidentified_line_level_safety` in MVP 1); creates the relevant tenant_relationship grant
 - `program_treatment_plan_templates` — program-level treatment plan template with expected duration, visit cadence, milestones, required documentation, and owner role
 - `program_visit_schedule_templates` — visit sequence definitions, timing windows, required provider role, required outcome measures, and treatment documentation requirements
-- `program_outcome_measures` — structured outcomes with source, unit, cadence, expected direction, required flag, and sponsor/ETRB reporting label
-- `sponsor_data_access_events` — sponsor read/export events for aggregate and de-identified line-level safety data; actor, program, PPA, sharing level, data scope, occurred_at
-- `sponsor_deidentified_exports` — export manifests with cohort rules, k-anonymity checks, de-identification version, file_id, and generated_by
-- `patient_data_sharing_consents` — Phase 2/8 stub for future identified sponsor PHI sharing; patient_tenant_id, sponsor_tenant_id, program_id, scope_json, starts_at, revoked_at, inactive in MVP 1
+- `program_outcome_measures` — structured outcomes with source, unit, cadence, expected direction, required flag, and manufacturer/ETRB reporting label
+- `manufacturer_data_access_events` — manufacturer read/export events for aggregate and de-identified line-level safety data; actor, program, PPA, sharing level, data scope, occurred_at
+- `manufacturer_deidentified_exports` — export manifests with cohort rules, k-anonymity checks, de-identification version, file_id, and generated_by
+- `patient_data_sharing_consents` — Phase 2/8 stub for future identified manufacturer PHI sharing; patient_tenant_id, manufacturer_tenant_id, program_id, scope_json, starts_at, revoked_at, inactive in MVP 1
 
 ### 14.3 ETC domain
 
@@ -1090,8 +1090,8 @@ Every regulated object created in MVP 1 carries a `jurisdiction_id` and, where a
 - `infection_surveillance_events` — suspected infection/communicable disease observations, corrective/preventive action, qapi_routed_at
 - `safety_reports` — hazard, near miss, adverse incident, medication error, fall/injury, reporter, severity, corrective_action, qapi_routed_at
 - `expiring_products` — medication/reagent/solution/product name, lot, expiration_date, disposition_status, disposed_at
-- `drug_products` — program-linked treatment products; sponsor tenant, program, name, form, strength/concentration, storage requirements, active status
-- `drug_lots` — product lot/batch, manufacturer/sponsor lot reference, expiration date, quantity received, certificate/file references, quarantine/disposition status
+- `drug_products` — program-linked treatment products; manufacturer tenant, program, name, form, strength/concentration, storage requirements, active status
+- `drug_lots` — product lot/batch, manufacturer/manufacturer lot reference, expiration date, quantity received, certificate/file references, quarantine/disposition status
 - `drug_inventory_locations` — ETC storage locations with temperature/security requirements and responsible staff
 - `drug_inventory_movements` — receive, transfer, dispense, waste, quarantine, return, destroy; quantity, lot, location, actor, reason, evidence file
 - `drug_storage_condition_logs` — storage temperature/condition observations, excursions, corrective actions, qapi_routed_at
@@ -1149,7 +1149,7 @@ Every regulated object created in MVP 1 carries a `jurisdiction_id` and, where a
 
 ### 14.6 Adverse events
 
-- `adverse_events` — RULE 17; treatment_id, patient_id, etc_id, program_id, severity, occurred_at, detected_at, became_aware_at, reported_at, clock_basis, dphhs_deadline_at, dphhs_submitted_at, sponsor_notified_at, qapi_reviewed_at, etrb_reviewed_at, status (open / under_review / resolved / closed), corrective_actions, patient_medical_condition
+- `adverse_events` — RULE 17; treatment_id, patient_id, etc_id, program_id, severity, occurred_at, detected_at, became_aware_at, reported_at, clock_basis, dphhs_deadline_at, dphhs_submitted_at, manufacturer_notified_at, qapi_reviewed_at, etrb_reviewed_at, status (open / under_review / resolved / closed), corrective_actions, patient_medical_condition
 - `ae_attachments` — supporting files
 
 ### 14.7 QAPI
@@ -1176,7 +1176,7 @@ Every regulated object created in MVP 1 carries a `jurisdiction_id` and, where a
 
 These tables ship in MVP 1 even when their workflows are inactive. They protect the architecture from later primary-key rewrites, RLS rewrites, or payment-data rewrites when Phase 2 programs activate.
 
-- `investigational_devices` — program-linked device stubs with sponsor tenant, device type, identifier schema, connectivity flag, status, and protocol file references
+- `investigational_devices` — program-linked device stubs with manufacturer tenant, device type, identifier schema, connectivity flag, status, and protocol file references
 - `payment_rails` — rail abstraction for Stripe/card/ACH active in MVP 1 and disabled future rails such as digital or alternative currency
 - `payment_obligations` — patient/program/ETC obligation with amount, currency, selected rail, legal basis, due date, waiver status, and jurisdiction
 - `payment_transactions` — concrete payment attempts/settlements linked to an obligation and rail; external provider reference, amount, currency, status, occurred_at
@@ -1200,7 +1200,7 @@ These tables ship in MVP 1 even when their workflows are inactive. They protect 
 Every PHI-containing table has RLS policies keyed off transaction-local application context set by the Hono API after Clerk JWT verification. Clerk authenticates the user; Postgres tenant memberships and tenant relationships authorize access.
 
 - ETC users see only rows owned by their active ETC tenant.
-- Sponsor users see their sponsor tenant's rows, plus PPA-scoped aggregate or de-identified line-level safety data from ETC tenants. Identified patient data is unavailable in MVP 1 and remains blocked unless a future patient-consented grant is implemented and active.
+- Manufacturer users see their manufacturer tenant's rows, plus PPA-scoped aggregate or de-identified line-level safety data from ETC tenants. Identified patient data is unavailable in MVP 1 and remains blocked unless a future patient-consented grant is implemented and active.
 - Patient users see only their own patient tenant records.
 - Board reviewers see only records assigned to their board tenant and associated ETC relationships.
 - Patient representatives see only the records granted through caregiver, guardian, or minor-representative tenant relationships.
@@ -1216,17 +1216,17 @@ Application and worker database roles do not have `BYPASSRLS` and must not own a
 
 REST over Hono. JSON request/response. Clerk JWT for authentication. Versioned at `/v1`.
 
-### 15.1 Sponsor endpoints
+### 15.1 Manufacturer endpoints
 
-- `POST /v1/sponsors/:id/programs` — create program
-- `GET /v1/sponsors/:id/programs` — list
-- `PATCH /v1/sponsors/:id/programs/:programId` — update (creates new version)
-- `POST /v1/sponsors/:id/programs/:programId/protocol` — upload protocol file
-- `POST /v1/sponsors/:id/etcs/invite` — invite an ETC to participate
-- `GET /v1/sponsors/:id/etcs` — ETC network
-- `GET /v1/sponsors/:id/programs/:programId/aggregates` — de-identified aggregate data
-- `GET /v1/sponsors/:id/adverse-events` — AE feed (aggregate or de-identified line-level safety depending on PPA; no identified PHI in MVP 1)
-- `GET /v1/sponsors/:id/reports/...` — reports
+- `POST /v1/manufacturers/:id/programs` — create program
+- `GET /v1/manufacturers/:id/programs` — list
+- `PATCH /v1/manufacturers/:id/programs/:programId` — update (creates new version)
+- `POST /v1/manufacturers/:id/programs/:programId/protocol` — upload protocol file
+- `POST /v1/manufacturers/:id/etcs/invite` — invite an ETC to participate
+- `GET /v1/manufacturers/:id/etcs` — ETC network
+- `GET /v1/manufacturers/:id/programs/:programId/aggregates` — de-identified aggregate data
+- `GET /v1/manufacturers/:id/adverse-events` — AE feed (aggregate or de-identified line-level safety depending on PPA; no identified PHI in MVP 1)
+- `GET /v1/manufacturers/:id/reports/...` — reports
 
 ### 15.2 ETC endpoints
 
@@ -1310,7 +1310,7 @@ Each verified via signature header per provider's spec.
 
 ### 15.6 Webhooks (outbound, Phase 2)
 
-Sponsor webhook subscriptions for AE events, treatment milestones, etc.
+Manufacturer webhook subscriptions for AE events, treatment milestones, etc.
 
 ### 15.7 Public endpoints
 
@@ -1366,7 +1366,7 @@ BullMQ queues backed by Redis on Railway. Job classes:
   ```mermaid
   flowchart LR
     AppHost[app.lewis.health] --> App[apps/app]
-    App --> Sponsor[apps/app/src/portals/sponsor]
+    App --> Manufacturer[apps/app/src/portals/manufacturer]
     App --> ETC[apps/app/src/portals/etc]
     App --> Admin[apps/app/src/portals/admin]
     PatientHost[patient.lewis.health] --> Patient[apps/patient]
@@ -1374,7 +1374,7 @@ BullMQ queues backed by Redis on Railway. Job classes:
     App --> API[apps/api]
     Patient --> API
   ```
-- `apps/app` is the authenticated staff/business console for sponsor/biotech manufacturer, ETC, and Lewis internal admin workflows.
+- `apps/app` is the authenticated staff/business console for biotech manufacturer, ETC, and Lewis internal admin workflows.
 - `apps/patient` is a separate patient-facing product because it has different auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
 - Tailwind CSS for styling
 - shadcn/ui for component primitives
@@ -1479,7 +1479,7 @@ The choice of mise (over plain pnpm scripts or Make) is motivated by reproducibi
 
 ### 18.1 PHI scope
 
-PHI is in scope from MVP 1 day one. Lewis is a Business Associate to ETCs (which are Covered Entities) and to sponsors when sponsors receive identifiable patient data.
+PHI is in scope from MVP 1 day one. Lewis is a Business Associate to ETCs (which are Covered Entities) and to manufacturers when manufacturers receive identifiable patient data.
 
 ### 18.2 Encryption
 
@@ -1491,7 +1491,7 @@ PHI is in scope from MVP 1 day one. Lewis is a Business Associate to ETCs (which
 
 ### 18.3 Access control
 
-- Clerk MFA required for all sponsor and ETC users
+- Clerk MFA required for all manufacturer and ETC users
 - Patient MFA optional (encouraged during onboarding)
 - RLS as the primary tenant-isolation enforcement
 - Role-based access within tenants (admin, MD, clinical, ops, reviewer, etc.)
@@ -1503,7 +1503,7 @@ Per Principle 4. Every state change writes an immutable audit log entry. Logs re
 
 ### 18.5 Data minimization
 
-PII collection limited to what each persona needs. Sponsors never see identified patients in MVP 1. Aggregate and de-identified line-level safety views enforce k-anonymity and redaction rules to prevent re-identification of small cohorts.
+PII collection limited to what each persona needs. Manufacturers never see identified patients in MVP 1. Aggregate and de-identified line-level safety views enforce k-anonymity and redaction rules to prevent re-identification of small cohorts.
 
 ### 18.6 Backups and disaster recovery
 
@@ -1625,7 +1625,7 @@ This section explicitly maps every regulatory requirement to a feature in MVP 1.
 
 ### 20.3 Scalability
 
-- MVP 1 designed to comfortably handle 10 ETCs, 5 sponsors, 1,000 active patients, 50,000 visits/year
+- MVP 1 designed to comfortably handle 10 ETCs, 5 manufacturers, 1,000 active patients, 50,000 visits/year
 - Architecture supports 10x without changes; 100x requires Postgres read replicas (Phase 2)
 
 ### 20.4 Accessibility
@@ -1667,11 +1667,11 @@ Per ETC, composite of:
 - Transfer agreement current
 - Last QAPI meeting < 100 days ago
 
-Score 0–100. Surfaced on ETC dashboard, Internal Admin compliance watch, and aggregate metric to sponsor for their ETC network view.
+Score 0–100. Surfaced on ETC dashboard, Internal Admin compliance watch, and aggregate metric to manufacturer for their ETC network view.
 
 ### 21.3 Funnel metrics
 
-**Sponsor funnel:** MSA signed → first program created → first ETC invited → first PPA signed → first patient enrolled → first treatment delivered.
+**Manufacturer funnel:** MSA signed → first program created → first ETC invited → first PPA signed → first patient enrolled → first treatment delivered.
 
 **ETC funnel:** Tenant created → license application started → application submitted to DPHHS → license granted → ETRB associated → first protocol approved → first patient enrolled → first treatment delivered.
 
@@ -1687,7 +1687,7 @@ Score 0–100. Surfaced on ETC dashboard, Internal Admin compliance watch, and a
 
 ### 21.5 Event taxonomy
 
-Events follow `domain.subject.verb` (e.g., `etc.patient.enrolled`, `sponsor.program.created`, `etrb.protocol.approved`). Routed to PostHog (or Amplitude — chosen in implementation) with tenant-scoping and PHI redaction.
+Events follow `domain.subject.verb` (e.g., `etc.patient.enrolled`, `manufacturer.program.created`, `etrb.protocol.approved`). Routed to PostHog (or Amplitude — chosen in implementation) with tenant-scoping and PHI redaction.
 
 ---
 
@@ -1710,15 +1710,15 @@ Events follow `domain.subject.verb` (e.g., `etc.patient.enrolled`, `sponsor.prog
 - Clerk auth integrated end-to-end on app and patient portals
 - Supabase project with first migrations: tenants, users, tenant_memberships, tenant_relationships, support_access_grants, audit_log, file_storage_objects
 - RLS policy patterns established and tested
-- Empty Sponsor/ETC/Internal Admin product surfaces inside `apps/app`, plus Patient product surface inside `apps/patient`, with role-based routing
+- Empty Manufacturer/ETC/Internal Admin product surfaces inside `apps/app`, plus Patient product surface inside `apps/patient`, with role-based routing
 - Resend integration, basic notification dispatcher
 
-**Sprint 2 — Sponsor and ETC onboarding.**
+**Sprint 2 — Manufacturer and ETC onboarding.**
 
-- Sponsor onboarding + program creation (§ 9.1, 9.2)
+- Manufacturer onboarding + program creation (§ 9.1, 9.2)
 - ETC tenant creation
 - ETC licensure wizard (§ 10.1)
-- ETC ↔ Sponsor invitation and PPA flow (§ 9.3)
+- ETC ↔ Manufacturer invitation and PPA flow (§ 9.3)
 
 **Sprint 3 — ETC operational backbone.**
 
@@ -1748,7 +1748,7 @@ Events follow `domain.subject.verb` (e.g., `etc.patient.enrolled`, `sponsor.prog
 - DPHHS annual report (§ 10.13)
 - HFAR Path B annual flow (§ 10.12)
 - Grievance workflow (§ 10.14)
-- Sponsor de-identified aggregates and reports (§ 9.4, 9.6)
+- Manufacturer de-identified aggregates and reports (§ 9.4, 9.6)
 
 **Sprint 6 — Hardening and launch.**
 
@@ -1778,7 +1778,7 @@ MVP 1 ships when:
 - Iterate on patient flow based on first cohort feedback
 - Phase 2 prioritization based on actual usage patterns
 - Begin SOC 2 evidence collection
-- Onboard second sponsor and second ETC
+- Onboard second manufacturer and second ETC
 
 ---
 
@@ -1789,7 +1789,7 @@ These are either resolved MVP guardrails or remaining decisions that do not bloc
 1. **"Net annual profits" definition.** SB 535 § 2 leaves this undefined. Decision pending DPHHS guidance or counsel opinion. MVP 1 supports both GAAP and tax-basis interpretations side-by-side.
 2. **ETRB-as-a-service business decision.** Architecture supports it; operating decision deferred to Phase 2+.
 3. **Direct DPHHS API integration.** RULE 22(1) references DPHHS's electronic licensing system. MVP 1 generates DPHHS-formatted PDFs; ETC files via the system. If DPHHS exposes an API, we integrate.
-4. **Sponsor data sharing default.** Resolved for MVP 1: sponsor sees aggregate data and, if the PPA allows it, de-identified line-level safety/AE records only. Identified sponsor PHI access is Phase 2/8 and requires explicit patient data-sharing consent, revocation, disclosure accounting, and new RLS tests.
+4. **Manufacturer data sharing default.** Resolved for MVP 1: manufacturer sees aggregate data and, if the PPA allows it, de-identified line-level safety/AE records only. Identified manufacturer PHI access is Phase 2/8 and requires explicit patient data-sharing consent, revocation, disclosure accounting, and new RLS tests.
 5. **Video provider final selection.** Daily.co vs. alternatives. Decision in Sprint 4 implementation.
 6. **E-signature provider final selection.** HelloSign vs. Stripe Identity vs. Documenso. Decision in Sprint 2 implementation.
 7. **Public ETC slug strategy.** Per-ETC subdomain (`etc-name.lewis.health`) vs path-based (`lewis.health/etcs/etc-name`). Subdomain is cleaner; pricing on Cloudflare for wildcard + per-ETC certs needs validation.
@@ -1808,8 +1808,8 @@ These are either resolved MVP guardrails or remaining decisions that do not bloc
 - **ETRB** — Experimental Treatment Review Board, RULE 16's protocol-and-safety review body
 - **HFAR** — Health Freedom and Access Requirement, SB 535 § 2's 2%-of-net-profits obligation
 - **QAPI** — Quality Assurance and Performance Improvement program, RULE 15
-- **PPA** — Program Participation Agreement, the contract between a sponsor and an ETC to deliver a program
-- **MSA** — Master Services Agreement, the contract between Lewis and a sponsor or ETC tenant
+- **PPA** — Program Participation Agreement, the contract between a manufacturer and an ETC to deliver a program
+- **MSA** — Master Services Agreement, the contract between Lewis and a manufacturer or ETC tenant
 - **BAA** — Business Associate Agreement, HIPAA-required contract between a CE and BA
 - **DPHHS** — Montana Department of Public Health and Human Services
 - **PHI** — Protected Health Information per HIPAA
@@ -1828,7 +1828,7 @@ These are either resolved MVP guardrails or remaining decisions that do not bloc
 - **Product:** Gabriel Viggers (Founding Product)
 - **Engineering:** TBD — lead engineer hire is concurrent with this PRD's review
 - **Counsel:** TBD — biotech / health IT counsel
-- **Design partner sponsor:** WinSanTor — Stanley Kim (CEO), Gabriel Viggers (Chief of Staff)
+- **Design partner manufacturer:** WinSanTor — Stanley Kim (CEO), Gabriel Viggers (Chief of Staff)
 - **Design partner ETC:** TBD pending licensure
 - **Compliance / regulatory:** Angela (pharmacovigilance contact)
 

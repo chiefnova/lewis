@@ -210,7 +210,7 @@ reviews:
         mode: warning
         instructions: |
           Verify frontend changes preserve the two-product boundary:
-          apps/app is the staff/business console with sponsor, ETC, and internal
+          apps/app is the staff/business console with manufacturer, ETC, and internal
           admin modules under apps/app/src/portals/*; apps/patient is the separate
           patient-facing product under apps/patient/src/portal. Patient code should
           not pull staff/admin bundles or copy patient PHI into app URLs/storage.
@@ -319,7 +319,7 @@ reviews:
       instructions: |
         - Enforce strict TypeScript with no any, typed errors, explicit null
           handling, and zod validation at every external boundary.
-        - Treat patient, representative, sponsor, ETC, board, staff, payment,
+        - Treat patient, representative, manufacturer, ETC, board, staff, payment,
           document, message, audit, and treatment data as PHI/PII or PHI-adjacent.
         - Flag PHI in logs, Sentry, analytics, queue payloads, localStorage,
           sessionStorage, URL params, thrown errors, or test fixtures.
@@ -338,7 +338,7 @@ reviews:
         - This is app.lewis.health, the staff/business console. Verify route
           protection, Clerk session use, active tenant selection, role checks, and
           least-privilege data fetching before rendering sensitive UI.
-        - Keep sponsor, ETC, and admin modules under apps/app/src/portals/*.
+        - Keep manufacturer, ETC, and admin modules under apps/app/src/portals/*.
         - Do not introduce patient-facing UX patterns, patient auth assumptions,
           or browser-side Supabase DB access here.
         - Review React Query invalidation, loading/error states, stale cache after
@@ -346,9 +346,9 @@ reviews:
           useEffect dependency bugs, missing abort handling, and accidental PHI in
           component state beyond the current session.
 
-    - path: "apps/app/src/portals/sponsor/**/*.{ts,tsx}"
+    - path: "apps/app/src/portals/manufacturer/**/*.{ts,tsx}"
       instructions: |
-        - Sponsor/biotech manufacturer users must not receive identified patient
+        - Manufacturer/biotech manufacturer users must not receive identified patient
           PHI in MVP 1. Verify aggregate-only or de-identified line-level safety
           data, k-anonymity/redaction assumptions, export audit events, and PPA
           data-sharing limits.
@@ -396,11 +396,11 @@ reviews:
           skip audit logging, double-parse request bodies, swallow async failures,
           or apply auth after route handlers have already run.
 
-    - path: "apps/api/src/domains/sponsors/**/*.{ts,tsx}"
+    - path: "apps/api/src/domains/manufacturers/**/*.{ts,tsx}"
       instructions: |
-        - Enforce sponsor tenant ownership and PPA-scoped access. MVP 1 sponsor
+        - Enforce manufacturer tenant ownership and PPA-scoped access. MVP 1 manufacturer
           responses are aggregate or de-identified safety data only.
-        - Require sponsor read/export audit events and no identified PHI unless
+        - Require manufacturer read/export audit events and no identified PHI unless
           the future patient_data_sharing_consents workflow is explicitly built.
 
     - path: "apps/api/src/domains/etcs/**/*.{ts,tsx}"
@@ -463,7 +463,7 @@ reviews:
 
     - path: "packages/db/test/rls/**/*.sql"
       instructions: |
-        - RLS tests must cover allowed sponsor, ETC, patient, board reviewer,
+        - RLS tests must cover allowed manufacturer, ETC, patient, board reviewer,
           representative, support-grant, and cross-tenant denial cases with
           synthetic data only.
         - Include negative tests proving unrelated tenants cannot infer rows
@@ -485,7 +485,7 @@ reviews:
 
     - path: "packages/rbac/src/**/*.{ts,tsx}"
       instructions: |
-        - RBAC must be least-privilege and tenant-scoped. Sponsor, ETC, patient,
+        - RBAC must be least-privilege and tenant-scoped. Manufacturer, ETC, patient,
           representative, board, support, and lewis_internal roles should map
           cleanly to PRD permissions and RLS tests.
         - Frontend RBAC is advisory only; backend and RLS remain authoritative.
@@ -588,7 +588,7 @@ reviews:
       instructions: |
         - Legal templates need immutable counsel-approved versions before use:
           P&P templates, informed consent, patient agreement, 50-12-110 text,
-          grievance policy, PPA language, privacy rights, and sponsor data-sharing.
+          grievance policy, PPA language, privacy rights, and manufacturer data-sharing.
 
     - path: "docs/subprocessors.md"
       instructions: |

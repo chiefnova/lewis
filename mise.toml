@@ -37,7 +37,7 @@ description = "Start local Docker Postgres and Redis"
 run = "pnpm run dev:infra"
 
 [tasks."dev:app"]
-description = "Sponsor + ETC + internal admin portal"
+description = "Manufacturer + ETC + internal admin portal"
 run = "pnpm --filter app dev"
 
 [tasks."dev:patient"]

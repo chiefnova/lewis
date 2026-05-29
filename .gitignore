@@ -97,3 +97,6 @@ tests/e2e/node_modules/
 .claude/.lock
 .claude/projects/
 .gstack/
+
+# === Codex CLI (local tool config, not project source) ===
+.codex/
