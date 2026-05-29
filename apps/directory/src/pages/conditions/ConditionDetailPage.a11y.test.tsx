@@ -117,9 +117,13 @@ describe("ConditionDetailPage a11y", () => {
   it("coming-soon state has no axe violations and the disabled signup form is correctly marked", async () => {
     apiMock.getCondition.mockResolvedValue(COMING_SOON);
     const { container } = mount("ptsd");
-    await screen.findByRole("heading", { level: 1 });
 
-    const signupInput = screen.getByPlaceholderText(/Get notified when .* is listed/);
+    // The loading skeleton renders a visually-hidden <h1>Loading…</h1> (also
+    // level 1), so waiting on "any level-1 heading" can resolve before the
+    // coming-soon content mounts — a race that passes locally but loses under
+    // slower CI. Wait on the signup input itself, which only exists once the
+    // coming-soon state has rendered.
+    const signupInput = await screen.findByPlaceholderText(/Get notified when .* is listed/);
     expect(signupInput.hasAttribute("disabled")).toBe(true);
     expect(signupInput.getAttribute("aria-disabled")).toBe("true");
 
