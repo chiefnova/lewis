@@ -147,7 +147,7 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
               margin: 0,
             }}
           >
-            <span className="hero-headline__lead">Find experimental</span>{" "}
+            <span className="hero-headline__lead">A new medical</span>{" "}
             <span
               className="serif hero-headline__accent italic"
               style={{
@@ -157,7 +157,7 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
                 color: "var(--accent)",
               }}
             >
-              treatments
+              frontier
             </span>
           </h1>
         </div>
@@ -171,8 +171,8 @@ function Hero({ onSearch }: { onSearch: (q: string) => void }) {
             lineHeight: 1.55,
           }}
         >
-          Lewis Health connects patients to Montana's licensed Experimental Treatment Centers
-          offering investigational treatments under the state's Right to Try framework.
+          Lewis is the connecting tissue between you, your clinician, and the manufacturers and ETCs
+          running investigational treatments at Montana's licensed Experimental Treatment Centers.
         </p>
 
         <div style={{ maxWidth: 620, margin: "40px auto 0" }}>
@@ -191,8 +191,40 @@ function ProblemSection() {
         <h2 className="ed-h2">
           Some treatments don't <i>exist</i> anywhere else.
         </h2>
-        <div className="problem-grid">
-          <div>
+        {/* Aesop-style two-column split: eyebrow + H2 above span the
+            container's full natural width; below, the section divides
+            into a 2-col grid with the Montana landscape photo on the
+            left (~45% — visual anchor that hooks the eye before the
+            text explains) and the body paragraphs stacked on the right
+            (~55% — comfortable reading column). Photo + caption + body
+            all start at the same top baseline (align-items: start). On
+            mobile (≤720px) the grid collapses to a single column with
+            the photo above the body. Photo is decorative (aria-hidden)
+            with an italic Fraunces caption that anchors it into the
+            page's typographic voice. */}
+        <div className="problem-split">
+          <figure className="problem-split__photo" aria-hidden="true">
+            {/* Museum print mat treatment (/design-shotgun Round 8 winner:
+                variant B). 14px cream-paper mat (#faf5e8 — slightly warmer
+                than --paper) with a 1px hairline at the outer edge for
+                definition; the photo sits inside with 4px rounded corners.
+                Reads as a fine-art print mounted on archival board —
+                directly matches Lewis's "careful record / documented
+                specimen" brand metaphor (Lewis & Clark catalogued
+                Montana's plants in exactly this register). */}
+            <span className="problem-split__photo-mat">
+              <img
+                src="/images/montana/glacier-beargrass.jpeg"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width={540}
+                height={360}
+              />
+            </span>
+            <figcaption>Glacier National Park, Montana</figcaption>
+          </figure>
+          <div className="problem-split__body">
             <p>
               In 2025, Montana enacted the country's most expansive Right to Try framework.
               Investigational drugs that have completed Phase 1 — and passed safety review by a
@@ -200,15 +232,13 @@ function ProblemSection() {
               Experimental Treatment Centers to patients who have evaluated standard-of-care options
               and chosen to try something else.
             </p>
-          </div>
-          <div>
             <p>
               For patients, Lewis is the public directory of every Montana program — what's
               available, what's coming, and where to begin. Beneath it is the operating platform
-              connecting sponsors, ETCs, treating physicians, and patients in one place:
+              connecting manufacturers, ETCs, treating clinicians, and patients in one place:
               coordinating ETRB review, informed consent, treatment delivery, and adverse-event
-              reporting so a Right to Try program can move from a sponsor's IND to a patient's first
-              dose under one compliant workflow.
+              reporting so a Right to Try program can move from a manufacturer's IND to a patient's
+              first dose under one compliant workflow.
             </p>
           </div>
         </div>
@@ -229,7 +259,7 @@ function HowItWorks() {
     },
     {
       title: "Work with their clinical team to enroll.",
-      body: "The ETC reviews your treating physician's recommendation, walks you through informed consent, and schedules your first visit.",
+      body: "The ETC reviews your treating clinician's recommendation, walks you through informed consent, and schedules your first visit.",
     },
   ];
   const numerals = ["i", "ii", "iii"];
@@ -259,15 +289,15 @@ function HowItWorks() {
 // FeaturedTreatments.tsx (imported above as FeaturedTreatmentsCarousel)
 // per locked Variant B from /design-shotgun Round 1.
 
-function ForPhysicians() {
+function ForClinicians() {
   return (
     <section className="ed-section">
       <div className="ed-section__container">
-        <div className="ed-label">V · For physicians</div>
+        <div className="ed-label">V · For clinicians</div>
         <div className="for-phys-grid">
           <div>
             <h2>
-              For treating physicians researching options for a <i>patient</i>.
+              For treating clinicians researching options for a <i>patient</i>.
             </h2>
             <p>
               Each program page includes the full eligibility criteria, current trial phase and
@@ -282,9 +312,30 @@ function ForPhysicians() {
               Browse the clinical reference <ArrowRight />
             </Link>
           </div>
-          <div className="for-phys__rx" aria-hidden="true">
-            ℞
-          </div>
+          {/* Right column — museum-mat scholarly plate replacing the
+              previous faded ℞ ornament. Cajal's 1899 ink drawing of a
+              giant pyramidal cell from the hippocampus (Ammon's horn),
+              scanned by the Wellcome Collection (CC BY 4.0). The
+              hand-drawn single-specimen register matches AboutPage's
+              1836 Hooker bitterroot plate — both speak the visual
+              language of "careful clinical record," which is exactly
+              what this section promises clinicians. */}
+          <figure className="for-phys__plate" aria-hidden="true">
+            <span className="for-phys__plate-mat">
+              <img
+                src="/images/cajal/pyramidal-ammon-1899.webp"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width={1200}
+                height={1608}
+              />
+            </span>
+            <figcaption>
+              Santiago Ramón y Cajal — giant pyramidal cell, Ammon's horn. (1899 · Wellcome
+              Collection)
+            </figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -298,7 +349,7 @@ const FAQS_PATIENT: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "What is a Right to Try program in Montana?",
-    "In 2025 Montana enacted a framework allowing licensed facilities to deliver investigational drugs (Phase 1 and beyond, pre-FDA-approval) to patients who have evaluated standard-of-care options. Treatments are administered under a treating physician's supervision after informed consent.",
+    "In 2025 Montana enacted a framework allowing licensed facilities to deliver investigational drugs (Phase 1 and beyond, pre-FDA-approval) to patients who have evaluated standard-of-care options. Treatments are administered under a treating clinician's supervision after informed consent.",
   ],
   [
     "Do I need an account to browse?",
@@ -330,14 +381,14 @@ const FAQS_PATIENT: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "What happens if I have a bad reaction?",
-    "ETCs are required by Montana law to monitor adverse events and report them to the state. Each program page lists known risks. Your treating physician and the ETC clinical team are the right people to ask program-specific questions.",
+    "ETCs are required by Montana law to monitor adverse events and report them to the state. Each program page lists known risks. Your treating clinician and the ETC clinical team are the right people to ask program-specific questions.",
   ],
 ];
 
 const FAQS_PHYS: ReadonlyArray<readonly [string, string]> = [
   [
     "How does my patient get enrolled at an ETC?",
-    "Your patient submits a connect request from a treatment page. The ETC reviews their situation, requests your physician recommendation and a current H&P, and schedules informed consent before any treatment is delivered.",
+    "Your patient submits a connect request from a treatment page. The ETC reviews their situation, requests your referral letter and a current H&P, and schedules informed consent before any treatment is delivered.",
   ],
   [
     "Can I refer patients to a specific ETC?",
@@ -349,7 +400,7 @@ const FAQS_PHYS: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "How are adverse events reported?",
-    "ETCs are required to report adverse events to the Montana DPHHS and to the program's sponsor. Annual safety summaries are published on each ETC's profile.",
+    "ETCs are required to report adverse events to the Montana DPHHS and to the program's manufacturer. Annual safety summaries are published on each ETC's profile.",
   ],
   [
     "Is Lewis affiliated with any specific manufacturer or ETC?",
@@ -419,7 +470,7 @@ function FaqSection() {
         </div>
 
         <h3 className="ed-h3" style={{ marginTop: 64 }}>
-          For physicians and ETCs.
+          For clinicians and ETCs.
         </h3>
         <div className="faq-list">
           {FAQS_PHYS.map(([q, a], i) => (
@@ -434,6 +485,38 @@ function FaqSection() {
           ))}
         </div>
       </div>
+    </section>
+  );
+}
+
+/* Transitional photo between FaqSection and BeginningSection ("VII ·
+ * Coming soon" — the newsletter signup). Wide panoramic Montana big sky
+ * over native prairie. The unbroken horizon and active cumulus give the
+ * page its visual exhale before the ask — friction (FAQ) resolved, then
+ * a quiet Montana beat, then "more is coming, get notified." Museum-mat
+ * treatment matches ProblemSection's Glacier photo (slot #1) and
+ * AboutPage's founding plate (slot #4). Photo is decorative
+ * (aria-hidden); the italic Fraunces caption anchors it into the
+ * typographic voice and credits the public-domain USFWS source. */
+function PrairieTransition() {
+  return (
+    <section className="home-prairie" aria-label="Montana big sky">
+      <figure className="home-prairie__figure" aria-hidden="true">
+        <span className="home-prairie__mat">
+          <img
+            src="/images/montana/bowdoin-bigsky.webp"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width={1600}
+            height={451}
+          />
+        </span>
+        <figcaption>
+          Native prairie under big sky, Bowdoin National Wildlife Refuge, Phillips County. (USFWS ·
+          Public Domain)
+        </figcaption>
+      </figure>
     </section>
   );
 }
@@ -508,9 +591,9 @@ function BeginningSection() {
 export function HomePage() {
   const navigate = useNavigate();
   useSeo({
-    title: "Lewis Health — Patient Directory",
+    title: "Lewis — A new medical frontier in Montana",
     description:
-      "Find experimental treatments available in Montana through licensed Experimental Treatment Centers. Anonymous to browse; an account is only required to connect with an ETC.",
+      "Lewis is the connecting tissue between patients, clinicians, manufacturers, and Montana's licensed Experimental Treatment Centers — the country's first state-licensed Right to Try regime under SB 535. Search investigational treatments by your condition. Anonymous to browse.",
     canonical: siteUrl("/"),
     jsonLd: {
       "@context": "https://schema.org",
@@ -543,8 +626,9 @@ export function HomePage() {
       <FeaturedConditions />
       <FeaturedTreatmentsCarousel />
       <HowItWorks />
-      <ForPhysicians />
+      <ForClinicians />
       <FaqSection />
+      <PrairieTransition />
       <BeginningSection />
     </div>
   );

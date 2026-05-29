@@ -8,11 +8,11 @@ import { SecondaryNavDrawer } from "./SecondaryNavDrawer";
 import { NavDropdown, type NavDropdownLink } from "./NavDropdown";
 
 /** Partner + company clusters fold into two header dropdowns (full footer
- * parity minus Legal). For Physicians stays a flat link — it's a distinct
+ * parity minus Legal). For Clinicians stays a flat link — it's a distinct
  * patient-adjacent audience, not a business "partner". The mobile drawer
  * carries the same set. */
 const PARTNER_LINKS: ReadonlyArray<NavDropdownLink> = [
-  { to: "/for-sponsors", id: "directory.nav.for_sponsors", default: "For Sponsors" },
+  { to: "/for-manufacturers", id: "directory.nav.for_manufacturers", default: "For Manufacturers" },
   { to: "/for-etcs", id: "directory.nav.for_etcs", default: "For ETCs" },
   { to: "/platform", id: "directory.nav.platform", default: "Operating platform" },
 ];
@@ -30,14 +30,14 @@ const COMPANY_LINKS: ReadonlyArray<NavDropdownLink> = [
  * destination (minus Legal) in ≤2 clicks, without 10 flat links crowding the
  * bar:
  *   [wordmark]
- *     Conditions · Browse Treatments · ETCs · For Physicians
- *   | Partners ▾  (For Sponsors · For ETCs · Operating platform)
+ *     Conditions · Browse Treatments · ETCs · For Clinicians
+ *   | Partners ▾  (For Manufacturers · For ETCs · Operating platform)
  *   | Company ▾   (About · How it works · Frequently asked)
  *                                                       [magnifier]
  *
- * The three patient links render at full ink weight; For Physicians and the
+ * The three patient links render at full ink weight; For Clinicians and the
  * two dropdown triggers render at ink-soft so the patient surface still leads.
- * For Physicians stays flat (not in Partners) — it's a patient-adjacent
+ * For Clinicians stays flat (not in Partners) — it's a patient-adjacent
  * audience, not a business partner.
  *
  * Magnifier opens the in-place search overlay (NOT navigation to /search).
@@ -57,7 +57,7 @@ export function TopNav() {
   // /etcs (patient discovery) must not light up on /for-etcs (B2B).
   const isEtcs = location.pathname === "/etcs" || location.pathname.startsWith("/etcs/");
   const isConditions = location.pathname.startsWith("/conditions");
-  const isForPhysicians = location.pathname.startsWith("/for-clinicians");
+  const isForClinicians = location.pathname.startsWith("/for-clinicians");
 
   return (
     <header className="topnav">
@@ -71,11 +71,15 @@ export function TopNav() {
           className="topnav__logo"
         >
           <span className="serif topnav__logo-primary">Lewis.</span>
-          <span className="serif topnav__logo-secondary italic">Health</span>
+          <span className="serif topnav__logo-secondary italic">health</span>
         </Link>
 
-        {/* Primary row: 3 patient links (full ink) + For Physicians (secondary,
-            patient-adjacent audience kept visible rather than buried). */}
+        {/* Primary row: 3 patient links (full ink) + For Clinicians (secondary,
+            patient-adjacent audience kept visible rather than buried). Per
+            slice-5 terminology unification: "clinicians" is the umbrella term
+            because § 50-12-102(4)'s statutory "health care provider" is
+            Montana-Title-37-scoped and would mischaracterize the out-of-state
+            referring audience this page also addresses. */}
         <nav aria-label="Primary navigation" className="topnav__group topnav__group--primary">
           <Link
             to="/conditions"
@@ -104,16 +108,16 @@ export function TopNav() {
           <Link
             to="/for-clinicians"
             className="topnav__link topnav__link--secondary"
-            aria-current={isForPhysicians ? "page" : undefined}
-            data-active={isForPhysicians ? "true" : undefined}
+            aria-current={isForClinicians ? "page" : undefined}
+            data-active={isForClinicians ? "true" : undefined}
           >
-            <FormattedMessage id="directory.nav.for_physicians" defaultMessage="For Physicians" />
+            <FormattedMessage id="directory.nav.for_clinicians" defaultMessage="For Clinicians" />
           </Link>
         </nav>
 
         <span className="topnav__sep" aria-hidden="true" />
 
-        {/* Partner cluster — Sponsors / ETCs / Operating platform. */}
+        {/* Partner cluster — Manufacturers / ETCs / Operating platform. */}
         <NavDropdown
           label={{ id: "directory.nav.group.partners", default: "Partners" }}
           links={PARTNER_LINKS}

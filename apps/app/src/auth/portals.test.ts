@@ -15,15 +15,15 @@ describe("readStaffPortals", () => {
   });
 
   it("filters invalid portal names from lewisPortals", () => {
-    expect(readStaffPortals({ lewisPortals: ["sponsor", "evil", "etc"] })).toEqual([
-      "sponsor",
+    expect(readStaffPortals({ lewisPortals: ["manufacturer", "evil", "etc"] })).toEqual([
+      "manufacturer",
       "etc",
     ]);
   });
 
   it("returns valid portals from lewisPortals", () => {
-    expect(readStaffPortals({ lewisPortals: ["sponsor", "etc", "admin"] })).toEqual([
-      "sponsor",
+    expect(readStaffPortals({ lewisPortals: ["manufacturer", "etc", "admin"] })).toEqual([
+      "manufacturer",
       "etc",
       "admin",
     ]);

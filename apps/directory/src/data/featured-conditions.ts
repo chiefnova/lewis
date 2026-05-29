@@ -3,7 +3,7 @@
  *
  * The carousel renders 4 LIVE peripheral-neuropathy condition cards (each
  * sub-lined "Available now via WST-057® at Big Sky ETC, Bozeman") + 1 muted
- * "Coming soon for PTSD" card foreshadowing Phase 2 sponsor onboarding.
+ * "Coming soon for PTSD" card foreshadowing Phase 2 manufacturer onboarding.
  * Each live card links to /conditions/:slug; the muted card links to
  * /conditions/ptsd (state=coming_soon, renders graceful fallback).
  *

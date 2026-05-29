@@ -184,7 +184,7 @@ export function TreatmentDetailPage() {
                     {program.manufacturer ??
                       intl.formatMessage({
                         id: "directory.program.manufacturer.fallback",
-                        defaultMessage: "the sponsor",
+                        defaultMessage: "the manufacturer",
                       })}
                   </span>
                 ),
@@ -205,6 +205,39 @@ export function TreatmentDetailPage() {
               ))}
               {!content?.aboutParagraphs.length && program.about && <p>{program.about}</p>}
             </div>
+            {/* Closing visual for the About section — Cajal's 1899 ink
+                drawing of sensory nerve endings in skin and hair (after
+                Retzius), scanned by the Wellcome Collection (CC BY 4.0).
+                The plate visualizes the biological structure the
+                treatment is aimed at: the hair follicle descending into
+                dermis with sensory nerve endings wrapping its base, the
+                exact peripheral architecture targeted by WST-057.
+                Same museum-mat treatment as the HomePage ForClinicians
+                Ammon's-horn plate, the /for-clinicians frontispiece, and
+                the AboutPage 1836 Hooker bitterroot — one visual grammar
+                across every scholarly artifact on the site. Decorative
+                (aria-hidden); italic Fraunces caption credits the
+                source. Conditionally shipped only for programs targeting
+                peripheral nerves so this doesn't appear on future
+                non-PN programs. */}
+            {program.slug === "wst-057" ? (
+              <figure className="program-plate" aria-hidden="true">
+                <span className="program-plate-mat">
+                  <img
+                    src="/images/cajal/nerve-endings-skin-cajal.webp"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width={1400}
+                    height={1149}
+                  />
+                </span>
+                <figcaption>
+                  Santiago Ramón y Cajal — sensory nerve endings in skin and hair, after Retzius.
+                  (Wellcome Collection)
+                </figcaption>
+              </figure>
+            ) : null}
           </section>
 
           <section className="program-panel" id="evidence">
@@ -324,7 +357,7 @@ export function TreatmentDetailPage() {
               <li>
                 <FormattedMessage
                   id="directory.program.enrollment.step2"
-                  defaultMessage="Provide your treating physician's recommendation and a current H&P."
+                  defaultMessage="Provide your treating clinician's recommendation and a current H&P."
                 />
               </li>
               <li>

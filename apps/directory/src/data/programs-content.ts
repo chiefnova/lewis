@@ -28,7 +28,7 @@ export const PROGRAM_CONTENT: Record<string, ProgramContent> = {
       "Currently in Phase 2 clinical evaluation. Available in Montana under SB 535's Experimental Treatment Center framework, with treatment provided by a licensed ETC under an ETRB-approved protocol.",
     ],
     whoThisIsForIntro:
-      "Adults with confirmed diabetic peripheral neuropathy who have evaluated standard-of-care options including gabapentinoids, SNRIs, and topical agents, and have discussed experimental options with their treating physician.",
+      "Adults with confirmed diabetic peripheral neuropathy who have evaluated standard-of-care options including gabapentinoids, SNRIs, and topical agents, and have discussed experimental options with their treating clinician.",
   },
 };
 

@@ -193,7 +193,7 @@ test.describe("Conditions browse flow", () => {
     await expect(page.getByText("You may want to:")).toBeVisible();
     await expect(page.getByRole("link", { name: /Open ClinicalTrials\.gov/ })).toBeVisible();
     await expect(
-      page.getByText("Talk to your treating physician about other options."),
+      page.getByText("Talk to your treating clinician about other options."),
     ).toBeVisible();
 
     const signupInput = page.getByPlaceholder(/Get notified if a Montana ETC adds a program/);

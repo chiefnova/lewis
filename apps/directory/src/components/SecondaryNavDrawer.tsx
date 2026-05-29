@@ -11,7 +11,7 @@ import { FormattedMessage } from "react-intl";
  * Carries all 10 nav destinations (full parity with the footer minus Legal),
  * grouped to match the desktop layout:
  *   Primary (patient discovery): Conditions, Browse Treatments, ETCs
- *   Secondary (pro + company):   For Physicians, For Sponsors, For ETCs,
+ *   Secondary (pro + company):   For Clinicians, For Manufacturers, For ETCs,
  *                                Operating platform, How it works,
  *                                Frequently asked, About
  *
@@ -31,8 +31,8 @@ const PRIMARY_LINKS = [
 ] as const;
 
 const SECONDARY_LINKS = [
-  { to: "/for-clinicians", id: "directory.nav.for_physicians", default: "For Physicians" },
-  { to: "/for-sponsors", id: "directory.nav.for_sponsors", default: "For Sponsors" },
+  { to: "/for-clinicians", id: "directory.nav.for_clinicians", default: "For Clinicians" },
+  { to: "/for-manufacturers", id: "directory.nav.for_manufacturers", default: "For Manufacturers" },
   { to: "/for-etcs", id: "directory.nav.for_etcs", default: "For ETCs" },
   { to: "/platform", id: "directory.nav.platform", default: "Operating platform" },
   { to: "/how-it-works", id: "directory.nav.how_it_works", default: "How it works" },

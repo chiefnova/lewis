@@ -131,7 +131,7 @@ describe("ConditionDetailPage a11y", () => {
     apiMock.getCondition.mockResolvedValue(NOT_OFFERED);
     const { container } = mount("als");
     await screen.findByRole("heading", { level: 1 });
-    expect(screen.getByText("Talk to your treating physician about other options.")).toBeTruthy();
+    expect(screen.getByText("Talk to your treating clinician about other options.")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Open ClinicalTrials\.gov/ })).toBeTruthy();
     const results = await axe.run(container, AXE_OPTIONS);
     expect(results.violations).toEqual([]);

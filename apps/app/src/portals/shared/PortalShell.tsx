@@ -10,7 +10,7 @@ export function PortalShell({ title, description, navItems }: PortalShellProps) 
   return (
     <main className="app-shell">
       <nav aria-label="Primary">
-        <Link to="/sponsor">Sponsor</Link>
+        <Link to="/manufacturer">Manufacturer</Link>
         <Link to="/etc">ETC</Link>
         <Link to="/admin">Internal Admin</Link>
       </nav>

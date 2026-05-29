@@ -9,7 +9,7 @@ import { useFeaturedConditions } from "./use-featured-conditions";
  * Editorial table-of-contents per locked Variant B. Each row is a numbered
  * (i. ii. iii. iv.) entry: condition name + sub-line "Available now via
  * WST-057® at Big Sky ETC, Bozeman" + italic chev. The 5th row is a muted
- * "Coming soon for PTSD — Phase 2 sponsor onboarding next" entry that
+ * "Coming soon for PTSD — Phase 2 manufacturer onboarding next" entry that
  * foreshadows future expansion without overstating availability.
  *
  * Reads per-slug from /v1/public/conditions via useFeaturedConditions
@@ -110,7 +110,7 @@ export function FeaturedConditions({ subline }: FeaturedConditionsProps) {
               <div className="featured-conditions__sub">
                 <FormattedMessage
                   id="directory.homepage.featured_conditions.coming_soon_sub"
-                  defaultMessage="Phase 2 sponsor onboarding next."
+                  defaultMessage="Phase 2 manufacturer onboarding next."
                 />
               </div>
               <div className="featured-conditions__chev" aria-hidden="true" />

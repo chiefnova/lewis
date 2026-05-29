@@ -14,9 +14,9 @@ import { publicApi } from "../api/client";
 //   1. "On this page" — anchor links to body sections, with a scroll-spy
 //      indicator on the active section.
 //   2. "For patients" — primary CTA: Check my eligibility (the conversion).
-//   3. "For physicians" — secondary CTAs: Refer this patient + Download brief.
+//   3. "For clinicians" — secondary CTAs: Refer this patient + Download brief.
 //
-// Patient CTA sits ABOVE the physician group because business priority is
+// Patient CTA sits ABOVE the clinician group because business priority is
 // patient conversion; clinician actions are supporting per § 14.0 ("the
 // door, not the conversion") + § 15 ("conversion surface").
 //
@@ -95,7 +95,7 @@ export function ProgramSectionNav({ program, sections }: ProgramSectionNavProps)
         <div className="psn-label">
           {intl.formatMessage({
             id: "directory.program.cta.physician.heading",
-            defaultMessage: "For physicians",
+            defaultMessage: "For clinicians",
           })}
         </div>
         <Link className="pill pill-outline" to={`/connect/${program.slug}?referrer=clinician`}>

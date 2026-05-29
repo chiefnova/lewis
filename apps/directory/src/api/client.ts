@@ -6,8 +6,11 @@
 import {
   type ConnectRequestPayload,
   ConnectRequestResponse,
-  type EligibilityAnswersRequest,
+  type EligibilityAnswerRequest,
+  EligibilityAnswerResponse,
+  type EligibilityCompleteRequest,
   EligibilityCompleteResponse,
+  EligibilityResumeResponse,
   EligibilityStartResponse,
   type LinkAnonymousScreenRequest,
   LinkAnonymousScreenResponse,
@@ -204,31 +207,84 @@ export const publicApi = {
       { ...(options?.signal ? { signal: options.signal } : {}) },
     );
   },
-  startEligibility(programSlug: string) {
-    return getJson(
-      `/v1/public/eligibility/${encodeURIComponent(programSlug)}/start`,
-      EligibilityStartResponse,
-      { method: "POST" },
-    );
+  /**
+   * Slice 5 § 17.2 — mint a server-side eligibility session for a
+   * program. Returns `{ sessionToken, programSlug, expiresAt }`. The
+   * frontend persists `sessionToken` in localStorage (key
+   * `lewis:eligibility:<slug>`) for resume-on-return.
+   */
+  startEligibility(programSlug: string, options?: { signal?: AbortSignal }) {
+    return getJson(`/v1/public/eligibility/start`, EligibilityStartResponse, {
+      method: "POST",
+      body: JSON.stringify({ programSlug }),
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
   },
-  submitEligibilityAnswers(sessionToken: string, body: EligibilityAnswersRequest) {
+  /**
+   * Slice 5 § 17.2 — append one answer to an in-progress session.
+   * Mirrors the DB helper shape (per-answer write). The previous slice-1
+   * stub took an array; slice 5 collapses it because the DB-level
+   * persistence point per question gives a cleaner resume story.
+   */
+  submitEligibilityAnswer(
+    sessionToken: string,
+    body: EligibilityAnswerRequest,
+    options?: { signal?: AbortSignal },
+  ) {
     return getJson(
       `/v1/public/eligibility/sessions/${encodeURIComponent(sessionToken)}/answers`,
-      EligibilityCompleteResponse,
-      { method: "POST", body: JSON.stringify(body) },
+      EligibilityAnswerResponse,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+        ...(options?.signal ? { signal: options.signal } : {}),
+      },
     );
   },
-  completeEligibility(sessionToken: string) {
+  /**
+   * Slice 5 § 17.2 / 17.4 — close the session with pass/fail outcome.
+   * On failure the request carries the specific failed_criterion text
+   * that the UI renders in the three-graceful-paths block.
+   */
+  completeEligibility(
+    sessionToken: string,
+    body: EligibilityCompleteRequest,
+    options?: { signal?: AbortSignal },
+  ) {
     return getJson(
       `/v1/public/eligibility/sessions/${encodeURIComponent(sessionToken)}/complete`,
       EligibilityCompleteResponse,
-      { method: "POST" },
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+        ...(options?.signal ? { signal: options.signal } : {}),
+      },
     );
   },
-  submitConnectRequest(payload: ConnectRequestPayload) {
+  /**
+   * Slice 5 § 17.2 — resume an existing session by token. 404 maps to a
+   * "session expired or not found" UI; the server gives a single state
+   * (no oracle distinguishing which case).
+   */
+  resumeEligibility(sessionToken: string, options?: { signal?: AbortSignal }) {
+    return getJson(
+      `/v1/public/eligibility/sessions/${encodeURIComponent(sessionToken)}`,
+      EligibilityResumeResponse,
+      { ...(options?.signal ? { signal: options.signal } : {}) },
+    );
+  },
+  /**
+   * Slice 5 § 18.2 — anonymous patient → ETC connect request. Always
+   * returns `{ needsAccount: false, signupUrl: null, connectRequestId }`
+   * per § 18.2 critical line ("account creation is post-conversion, not
+   * pre-conversion"). The /connect/confirmed page offers Clerk signup as
+   * an optional follow-up.
+   */
+  submitConnectRequest(payload: ConnectRequestPayload, options?: { signal?: AbortSignal }) {
     return getJson(`/v1/public/connect-requests`, ConnectRequestResponse, {
       method: "POST",
       body: JSON.stringify(payload),
+      ...(options?.signal ? { signal: options.signal } : {}),
     });
   },
   /**
