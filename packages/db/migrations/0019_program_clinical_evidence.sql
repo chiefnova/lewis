@@ -69,7 +69,7 @@ alter table programs
 -- 2. SECURITY DEFINER helper for directory_anonymous etc_count.
 --
 -- The /v1/public/programs endpoint needs to count how many directory_published
--- ETCs offer each program (via active sponsor↔ETC PPAs). The
+-- ETCs offer each program (via active manufacturer↔ETC PPAs). The
 -- tenant_relationships table is intentionally NOT in the public-read RLS
 -- policy set added by 0018 — exposing PPA edges to anonymous traffic is
 -- broader than what the catalog needs. Mirroring the SECURITY DEFINER
@@ -89,7 +89,7 @@ as $$
   from tenant_relationships tr
   join etcs e on e.tenant_id = tr.to_tenant_id
   join programs p on p.id = p_program_id
-  where tr.from_tenant_id = p.sponsor_tenant_id
+  where tr.from_tenant_id = p.manufacturer_tenant_id
     and p.directory_published = true
     and p.directory_slug is not null
     and tr.kind = 'ppa'

@@ -344,7 +344,7 @@ as $$
   select exists (
     select 1
     from programs p
-    join tenant_relationships tr on tr.from_tenant_id = p.sponsor_tenant_id
+    join tenant_relationships tr on tr.from_tenant_id = p.manufacturer_tenant_id
     join etcs e on e.tenant_id = tr.to_tenant_id
     where p.id = p_program_id
       and p.directory_published = true
@@ -386,7 +386,7 @@ as $$
          p.treatment_form,
          p.phase
   from programs p
-  join tenant_relationships tr on tr.from_tenant_id = p.sponsor_tenant_id
+  join tenant_relationships tr on tr.from_tenant_id = p.manufacturer_tenant_id
   join etcs e on e.tenant_id = tr.to_tenant_id
   where e.id = p_etc_id
     and e.directory_published = true

@@ -10,12 +10,12 @@
 --
 --   2) patients_self_read only allowed (tenant_id = current_tenant_id()) plus support
 --      grants. Per the project model, ETCs treat patients (care_team relationship)
---      and sponsors see consented data (patient_data_sharing_consents). Neither path
+--      and manufacturers see consented data (patient_data_sharing_consents). Neither path
 --      was in the policy, so the first patient view from an ETC dashboard returned
 --      zero rows. Fix: union with care_team relationship + active-consent predicate.
 --
---   3) programs_sponsor_read only allowed the sponsor tenant. ETCs need to view
---      sponsor programs to enroll patients. Fix: union with PPA relationship.
+--   3) programs_manufacturer_read only allowed the manufacturer tenant. ETCs need to view
+--      manufacturer programs to enroll patients. Fix: union with PPA relationship.
 --
 -- All three policies are dropped and recreated in this migration. The new
 -- SECURITY DEFINER helpers are pinned to a fixed search_path to avoid
@@ -50,9 +50,9 @@ $$;
 comment on function app.shares_tenant_with(uuid) is
   'True when current session user shares an active tenant_memberships row with target_user_id. SECURITY DEFINER bypasses RLS on tenant_memberships to avoid recursive policy evaluation. Used by users_self_or_tenant_read.';
 
-create or replace function app.has_active_consent_for_sponsor(
+create or replace function app.has_active_consent_for_manufacturer(
   target_patient_tenant_id uuid,
-  target_sponsor_tenant_id uuid
+  target_manufacturer_tenant_id uuid
 )
 returns boolean
 language sql
@@ -64,7 +64,7 @@ as $$
     select 1
     from patient_data_sharing_consents pdsc
     where pdsc.patient_tenant_id = target_patient_tenant_id
-      and pdsc.sponsor_tenant_id = target_sponsor_tenant_id
+      and pdsc.manufacturer_tenant_id = target_manufacturer_tenant_id
       and pdsc.status = 'active'
       and pdsc.starts_at is not null
       and pdsc.starts_at <= now()
@@ -72,8 +72,8 @@ as $$
   )
 $$;
 
-comment on function app.has_active_consent_for_sponsor(uuid, uuid) is
-  'True when patient tenant has an active, unrevoked data-sharing consent with sponsor tenant. SECURITY DEFINER so policies can call it without recursing into RLS on patient_data_sharing_consents.';
+comment on function app.has_active_consent_for_manufacturer(uuid, uuid) is
+  'True when patient tenant has an active, unrevoked data-sharing consent with manufacturer tenant. SECURITY DEFINER so policies can call it without recursing into RLS on patient_data_sharing_consents.';
 
 -- ---------------------------------------------------------------------------
 -- Fix 1: users_self_or_tenant_read recursion
@@ -89,7 +89,7 @@ create policy users_self_or_tenant_read on users
   );
 
 -- ---------------------------------------------------------------------------
--- Fix 2: patients_self_read → add care_team + consented sponsor paths
+-- Fix 2: patients_self_read → add care_team + consented manufacturer paths
 -- ---------------------------------------------------------------------------
 
 drop policy if exists patients_self_read on patients;
@@ -99,20 +99,20 @@ create policy patients_self_read on patients
   using (
     tenant_id = app.current_tenant_id()
     or app.has_tenant_relationship(app.current_tenant_id(), tenant_id, 'care_team')
-    or app.has_active_consent_for_sponsor(tenant_id, app.current_tenant_id())
+    or app.has_active_consent_for_manufacturer(tenant_id, app.current_tenant_id())
     or app.has_active_support_grant(tenant_id, 'patient:read')
   );
 
 -- ---------------------------------------------------------------------------
--- Fix 3: programs_sponsor_read → add PPA-related ETC visibility
+-- Fix 3: programs_manufacturer_read → add PPA-related ETC visibility
 -- ---------------------------------------------------------------------------
 
-drop policy if exists programs_sponsor_read on programs;
+drop policy if exists programs_manufacturer_read on programs;
 
-create policy programs_sponsor_read on programs
+create policy programs_manufacturer_read on programs
   for select
   using (
-    sponsor_tenant_id = app.current_tenant_id()
-    or app.has_tenant_relationship(app.current_tenant_id(), sponsor_tenant_id, 'ppa')
-    or app.has_active_support_grant(sponsor_tenant_id, 'tenant:read')
+    manufacturer_tenant_id = app.current_tenant_id()
+    or app.has_tenant_relationship(app.current_tenant_id(), manufacturer_tenant_id, 'ppa')
+    or app.has_active_support_grant(manufacturer_tenant_id, 'tenant:read')
   );

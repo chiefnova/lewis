@@ -15,26 +15,26 @@ function assertSeedSafeOrExit(connectionString: string): void {
 
 const ids = {
   tenants: {
-    sponsor: "00000000-0000-4000-8000-000000000001",
+    manufacturer: "00000000-0000-4000-8000-000000000001",
     etc: "00000000-0000-4000-8000-000000000002",
     patient: "00000000-0000-4000-8000-000000000003",
     board: "00000000-0000-4000-8000-000000000004",
     internal: "00000000-0000-4000-8000-000000000005",
   },
   users: {
-    sponsor: "00000000-0000-4000-8000-000000000101",
+    manufacturer: "00000000-0000-4000-8000-000000000101",
     etc: "00000000-0000-4000-8000-000000000102",
     patient: "00000000-0000-4000-8000-000000000103",
     board: "00000000-0000-4000-8000-000000000104",
     internal: "00000000-0000-4000-8000-000000000105",
   },
   relationships: {
-    sponsorToEtc: "00000000-0000-4000-8000-000000000201",
+    manufacturerToEtc: "00000000-0000-4000-8000-000000000201",
     etcToPatient: "00000000-0000-4000-8000-000000000202",
     boardToEtc: "00000000-0000-4000-8000-000000000203",
   },
   business: {
-    sponsor: "00000000-0000-4000-8000-000000000301",
+    manufacturer: "00000000-0000-4000-8000-000000000301",
     etc: "00000000-0000-4000-8000-000000000302",
     patient: "00000000-0000-4000-8000-000000000303",
     program: "00000000-0000-4000-8000-000000000304",
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
       `
       insert into tenants (id, kind, status, display_name)
       values
-        ($1, 'sponsor', 'active', 'Local Sponsor Biotech'),
+        ($1, 'manufacturer', 'active', 'Local Manufacturer Biotech'),
         ($2, 'etc', 'active', 'Local Experimental Treatment Center'),
         ($3, 'patient', 'active', 'Local Synthetic Patient'),
         ($4, 'board', 'active', 'Local Review Board'),
@@ -76,7 +76,7 @@ async function main(): Promise<void> {
         updated_at = now()
       `,
       [
-        ids.tenants.sponsor,
+        ids.tenants.manufacturer,
         ids.tenants.etc,
         ids.tenants.patient,
         ids.tenants.board,
@@ -88,7 +88,7 @@ async function main(): Promise<void> {
       `
       insert into users (id, clerk_user_id, email, name)
       values
-        ($1, 'local_sponsor_user', 'sponsor@example.test', 'Local Sponsor User'),
+        ($1, 'local_manufacturer_user', 'manufacturer@example.test', 'Local Manufacturer User'),
         ($2, 'local_etc_user', 'etc@example.test', 'Local ETC User'),
         ($3, 'local_patient_user', 'patient@example.test', 'Local Synthetic Patient'),
         ($4, 'local_board_user', 'board@example.test', 'Local Board User'),
@@ -98,14 +98,20 @@ async function main(): Promise<void> {
         name = excluded.name,
         updated_at = now()
       `,
-      [ids.users.sponsor, ids.users.etc, ids.users.patient, ids.users.board, ids.users.internal],
+      [
+        ids.users.manufacturer,
+        ids.users.etc,
+        ids.users.patient,
+        ids.users.board,
+        ids.users.internal,
+      ],
     );
 
     await client.query(
       `
       insert into tenant_memberships (user_id, tenant_id, role, status)
       values
-        ($1, $6, 'sponsor_admin', 'active'),
+        ($1, $6, 'manufacturer_admin', 'active'),
         ($2, $7, 'etc_admin', 'active'),
         ($3, $8, 'patient', 'active'),
         ($4, $9, 'board_reviewer', 'active'),
@@ -113,12 +119,12 @@ async function main(): Promise<void> {
       on conflict (user_id, tenant_id, role) do update set status = excluded.status
       `,
       [
-        ids.users.sponsor,
+        ids.users.manufacturer,
         ids.users.etc,
         ids.users.patient,
         ids.users.board,
         ids.users.internal,
-        ids.tenants.sponsor,
+        ids.tenants.manufacturer,
         ids.tenants.etc,
         ids.tenants.patient,
         ids.tenants.board,
@@ -138,10 +144,10 @@ async function main(): Promise<void> {
         status = excluded.status
       `,
       [
-        ids.relationships.sponsorToEtc,
+        ids.relationships.manufacturerToEtc,
         ids.relationships.etcToPatient,
         ids.relationships.boardToEtc,
-        ids.tenants.sponsor,
+        ids.tenants.manufacturer,
         ids.tenants.etc,
         ids.tenants.patient,
         ids.tenants.board,
@@ -150,11 +156,11 @@ async function main(): Promise<void> {
 
     await client.query(
       `
-      insert into sponsor_organizations (id, tenant_id, legal_name)
-      values ($1, $2, 'Local Sponsor Biotech')
+      insert into manufacturer_organizations (id, tenant_id, legal_name)
+      values ($1, $2, 'Local Manufacturer Biotech')
       on conflict (tenant_id) do update set legal_name = excluded.legal_name
       `,
-      [ids.business.sponsor, ids.tenants.sponsor],
+      [ids.business.manufacturer, ids.tenants.manufacturer],
     );
 
     await client.query(
@@ -185,7 +191,7 @@ async function main(): Promise<void> {
       `
       insert into programs (
         id,
-        sponsor_tenant_id,
+        manufacturer_tenant_id,
         jurisdiction_id,
         name,
         drug,
@@ -203,7 +209,7 @@ async function main(): Promise<void> {
         treatment_form = excluded.treatment_form,
         status = excluded.status
       `,
-      [ids.business.program, ids.tenants.sponsor, jurisdictionId],
+      [ids.business.program, ids.tenants.manufacturer, jurisdictionId],
     );
 
     await client.query("commit");

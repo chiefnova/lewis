@@ -165,7 +165,7 @@ select isnt(
 -- flag, so stale tenant vars never widen anonymous visibility into
 -- tenant-private rows.
 --
--- Use the seeded WinSanTor tenant (a sponsor with active rows) as the
+-- Use the seeded WinSanTor tenant (a manufacturer with active rows) as the
 -- "stale" identity. Counts must match the prior anonymous-read block exactly
 -- (same 9/1/1/11/4 numbers) — the role string is the only authoritative
 -- gate.
