@@ -12,7 +12,7 @@ import type {
  * patient by app.current_tenant_id() — RLS ensures a patient session can
  * only see their own row.
  *
- * See sponsors/service.ts for the sprint-marker key (docs/implementation.md
+ * See manufacturers/service.ts for the sprint-marker key (docs/implementation.md
  * § 0.2).
  */
 

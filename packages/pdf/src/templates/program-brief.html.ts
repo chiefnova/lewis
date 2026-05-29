@@ -295,7 +295,7 @@ ${
 }
 
 <div class="brief-footer">
-  <span class="independence">Lewis is independent of any sponsor or ETC.</span>
+  <span class="independence">Lewis is independent of any manufacturer or ETC.</span>
   <span>${escapeHtml(siteHost)}/programs/${escapeHtml(detail.slug)}</span>
 </div>
 </body>

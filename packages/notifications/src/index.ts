@@ -12,3 +12,4 @@
 export * from "./queue-payloads.js";
 export * from "./send-email.js";
 export * from "./templates/marketing-confirmation.js";
+export * from "./templates/connect-request.js";

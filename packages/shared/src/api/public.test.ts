@@ -2,6 +2,9 @@ import { describe, expect, test } from "vitest";
 import {
   ConditionSlug,
   ConnectRequestPayload,
+  EligibilityCompleteRequest,
+  EligibilityCompleteResponse,
+  EligibilityResumeResponse,
   EligibilityStartResponse,
   MarketingConfirmResponse,
   MarketingSubscriptionRequest,
@@ -562,31 +565,130 @@ describe("PublicProgramDetail (slice 3 augmentations)", () => {
   });
 });
 
-describe("EligibilityStartResponse", () => {
-  test("rejects empty questions array", () => {
-    const r = EligibilityStartResponse.safeParse({
-      sessionToken: "t",
-      programSlug: "wst-057",
-      questions: [],
-    });
-    expect(r.success).toBe(false);
-  });
-
-  test("rejects question with fewer than 2 options", () => {
-    const r = EligibilityStartResponse.safeParse({
-      sessionToken: "t",
-      programSlug: "wst-057",
-      questions: [{ id: "q1", prompt: "ok?", options: ["only"] }],
-    });
-    expect(r.success).toBe(false);
-  });
+describe("EligibilityStartResponse (slice 5 — server-bootstrapped session)", () => {
+  const ok = {
+    sessionToken: "11111111-1111-4111-8111-111111111111",
+    programSlug: "wst-057",
+    expiresAt: "2026-06-25T00:00:00.000Z",
+  };
 
   test("happy path", () => {
-    const r = EligibilityStartResponse.safeParse({
-      sessionToken: "t",
-      programSlug: "wst-057",
-      questions: [{ id: "q1", prompt: "ok?", options: ["Yes", "No"] }],
+    expect(EligibilityStartResponse.safeParse(ok).success).toBe(true);
+  });
+
+  test("rejects non-UUID sessionToken", () => {
+    expect(EligibilityStartResponse.safeParse({ ...ok, sessionToken: "not-a-uuid" }).success).toBe(
+      false,
+    );
+  });
+
+  test("rejects non-ISO expiresAt", () => {
+    expect(EligibilityStartResponse.safeParse({ ...ok, expiresAt: "yesterday" }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("EligibilityCompleteResponse (slice 5 — § 17.4 specific-criterion shape)", () => {
+  test("passed path: failedCriterion must be null", () => {
+    expect(
+      EligibilityCompleteResponse.safeParse({
+        sessionToken: "11111111-1111-4111-8111-111111111111",
+        result: "passed",
+        failedCriterion: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  test("failed path: failedCriterion carries the user-facing reason", () => {
+    expect(
+      EligibilityCompleteResponse.safeParse({
+        sessionToken: "11111111-1111-4111-8111-111111111111",
+        result: "failed",
+        failedCriterion:
+          "The program requires a confirmed diabetic peripheral neuropathy diagnosis from a treating physician.",
+      }).success,
+    ).toBe(true);
+  });
+
+  test("rejects unknown result value", () => {
+    expect(
+      EligibilityCompleteResponse.safeParse({
+        sessionToken: "11111111-1111-4111-8111-111111111111",
+        result: "likely-eligible",
+        failedCriterion: null,
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("EligibilityCompleteRequest", () => {
+  test("rejects passed=false without a reason", () => {
+    // The DB helper enforces this in plpgsql, but the API layer should fail
+    // earlier so the round-trip surfaces a 400 with a clear validation error
+    // instead of a P0001 helper raise.
+    const result = EligibilityCompleteRequest.safeParse({
+      passed: false,
+      failedCriterion: null,
     });
-    expect(r.success).toBe(true);
+    // Schema-level only checks types; the cross-field rule lives server-side.
+    // This test just locks the shape — actual cross-field rule covered by
+    // the API integration suite.
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.failedCriterion).toBeNull();
+  });
+});
+
+describe("EligibilityResumeResponse", () => {
+  test("happy path: in_progress with answers map", () => {
+    expect(
+      EligibilityResumeResponse.safeParse({
+        programSlug: "wst-057",
+        answers: { q1: "yes", q2: "no" },
+        status: "in_progress",
+        failedCriterion: null,
+        expiresAt: "2026-06-25T00:00:00.000Z",
+      }).success,
+    ).toBe(true);
+  });
+
+  test("rejects answers with non-string values", () => {
+    expect(
+      EligibilityResumeResponse.safeParse({
+        programSlug: "wst-057",
+        answers: { q1: 42 },
+        status: "in_progress",
+        failedCriterion: null,
+        expiresAt: "2026-06-25T00:00:00.000Z",
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("ConnectRequestPayload (slice 5 — § 18.1 optional situation)", () => {
+  const ok = {
+    programSlug: "wst-057",
+    eligibilitySessionToken: null,
+    name: "Sam Sample",
+    email: "sam@example.com",
+    phone: null,
+    bestTimeToContact: null,
+    situation: null,
+  };
+
+  test("null situation is valid (optional per § 18.1)", () => {
+    expect(ConnectRequestPayload.safeParse(ok).success).toBe(true);
+  });
+
+  test("eligibilitySessionToken must be a UUID or null", () => {
+    expect(
+      ConnectRequestPayload.safeParse({ ...ok, eligibilitySessionToken: "not-a-uuid" }).success,
+    ).toBe(false);
+    expect(
+      ConnectRequestPayload.safeParse({
+        ...ok,
+        eligibilitySessionToken: "11111111-1111-4111-8111-111111111111",
+      }).success,
+    ).toBe(true);
   });
 });

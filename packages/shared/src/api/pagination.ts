@@ -15,7 +15,7 @@ export type CursorPageQuery = z.infer<typeof CursorPageQuery>;
 
 /**
  * Build a CursorPage<T> schema for a given item schema. Use:
- *   const SponsorListResponse = cursorPage(SponsorSchema)
+ *   const ManufacturerListResponse = cursorPage(ManufacturerSchema)
  */
 export function cursorPage<T extends z.ZodTypeAny>(itemSchema: T) {
   return z.object({

@@ -105,7 +105,7 @@ describe("renderProgramBriefHtml — Variant A composition", () => {
   });
 
   test("includes the independence trust signal in the footer", () => {
-    expect(html).toContain("Lewis is independent of any sponsor or ETC.");
+    expect(html).toContain("Lewis is independent of any manufacturer or ETC.");
   });
 
   test("footer carries the deep-link to the program page (no protocol)", () => {

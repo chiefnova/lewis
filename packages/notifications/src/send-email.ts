@@ -25,6 +25,14 @@ export type SendEmailInput = {
   text: string;
   from?: string;
   replyTo?: string;
+  /**
+   * Optional Resend idempotency key. When set, Resend dedupes sends with the
+   * same key within a 24h window — so a BullMQ retry that races a prior
+   * successful send (delivered, but the row's mark_sent hadn't committed
+   * yet) does NOT deliver a second copy. Callers should key it off the
+   * stable row id, e.g. `connect_request_send:<connectRequestId>`.
+   */
+  idempotencyKey?: string;
 };
 
 export type SendEmailResult =
@@ -60,14 +68,17 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   }
 
   try {
-    const result = await client.emails.send({
-      from: resolveFrom(input),
-      to: [input.to],
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      ...(input.replyTo ? { replyTo: input.replyTo } : {}),
-    });
+    const result = await client.emails.send(
+      {
+        from: resolveFrom(input),
+        to: [input.to],
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+      },
+      input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined,
+    );
 
     // Return stable, sanitized error codes instead of raw provider text.
     // Resend's error.message can echo the recipient address (PII; PHI when

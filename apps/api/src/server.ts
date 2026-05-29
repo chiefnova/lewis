@@ -16,11 +16,13 @@ import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
 import { patientRoutes } from "./domains/patients/routes.js";
 import { publicConditionsRoutes } from "./domains/public-conditions/routes.js";
 import { publicEtcsRoutes } from "./domains/public-etcs/routes.js";
+import { publicConnectRoutes } from "./domains/public-connect/routes.js";
+import { publicEligibilityRoutes } from "./domains/public-eligibility/routes.js";
 import { publicMarketingRoutes } from "./domains/public-marketing/routes.js";
 import { publicProgramsRoutes } from "./domains/public-programs/routes.js";
 import { publicSearchRoutes } from "./domains/public-search/routes.js";
 import { searchRoutes } from "./domains/search/routes.js";
-import { sponsorRoutes } from "./domains/sponsors/routes.js";
+import { manufacturerRoutes } from "./domains/manufacturers/routes.js";
 import { webhookRoutes } from "./domains/webhooks/routes.js";
 import { logger as appLogger } from "./logger.js";
 import { ApiError } from "./middleware/errors.js";
@@ -269,6 +271,30 @@ v1Public.use(
 v1Public.use("/public/marketing-subscriptions/*", withPublicDbContext);
 v1Public.route("/public/marketing-subscriptions", publicMarketingRoutes);
 
+// /v1/public/connect-requests — anonymous patient → ETC handoff (slice 5
+// § 18.1 / 18.2). Tighter 5/min/IP bucket than marketing because each
+// accepted submission emails a real ETC inbox — the abuse blast radius
+// is higher than a stray marketing-confirmation email. SECURITY DEFINER
+// write helper added in migration 0021; no SELECT path for the
+// directory_anonymous role on connect_requests.
+v1Public.use(
+  "/public/connect-requests/*",
+  rateLimit({ bucket: "public_connect", max: 5, windowSeconds: 60 }),
+);
+v1Public.use("/public/connect-requests/*", withPublicDbContext);
+v1Public.route("/public/connect-requests", publicConnectRoutes);
+
+// /v1/public/eligibility — anonymous server-bootstrapped self-screen
+// (slice 5 § 17.2). 30/min/IP matches the per-question cadence (4
+// questions per screen + start + complete + occasional resume); a
+// typical patient walks through in 1-2 minutes.
+v1Public.use(
+  "/public/eligibility/*",
+  rateLimit({ bucket: "public_eligibility", max: 30, windowSeconds: 60 }),
+);
+v1Public.use("/public/eligibility/*", withPublicDbContext);
+v1Public.route("/public/eligibility", publicEligibilityRoutes);
+
 // ---------------------------------------------------------------------------
 // /v1 — authed sub-router (every route below this gate requires Clerk auth +
 // active tenant membership + a per-request DB transaction with app.* RLS
@@ -297,7 +323,7 @@ v1Authed.use(
 );
 
 v1Authed.route("/search", searchRoutes);
-v1Authed.route("/sponsors", sponsorRoutes);
+v1Authed.route("/manufacturers", manufacturerRoutes);
 v1Authed.route("/etcs", etcRoutes);
 v1Authed.route("/patients", patientRoutes);
 v1Authed.route("/boards", boardRoutes);

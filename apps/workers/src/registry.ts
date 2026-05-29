@@ -11,7 +11,7 @@ export const workerDefinitions: readonly WorkerDefinition[] = [
   {
     queueName: "notifications",
     description:
-      "Notification dispatch queue. Carries marketing-confirmation sends (slice 4) plus future patient invite / account-created / password-reset flows.",
+      "Notification dispatch queue. Carries marketing-confirmation sends (slice 4), patient → ETC connect-request sends (slice 5), plus future patient invite / account-created / password-reset flows.",
     concurrency: 5,
   },
   {

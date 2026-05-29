@@ -7,6 +7,7 @@ import {
 import { QueueEvents, Worker, type Job } from "bullmq";
 
 import { resolveWorkerDatabaseEnv } from "./database-env.js";
+import { registerConnectRequestHandler } from "./handlers/connect-request.js";
 import { registerMarketingConfirmationHandler } from "./handlers/marketing-confirmation.js";
 import { logger } from "./logger.js";
 import { lookupJobHandler, workerDefinitions, type WorkerDefinition } from "./registry.js";
@@ -171,6 +172,7 @@ async function startup(): Promise<void> {
   // matters: registerJobKind throws on duplicate registration, which would
   // surface a bug if two handlers tried to claim the same kind.
   registerMarketingConfirmationHandler();
+  registerConnectRequestHandler();
 
   const startupRedis = createRedisConnection("worker:startup");
   const redisPing = await startupRedis.ping();
