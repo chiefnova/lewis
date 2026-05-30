@@ -76,7 +76,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
         "The FDA-approved or routinely used treatments for diabetic peripheral neuropathy in the United States today include:",
       treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
-        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate FDA-approved options first. Experimental treatments listed on Lewis are intended for patients for whom these standard treatments have not provided adequate relief.",
+        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating clinician evaluate FDA-approved options first. Experimental treatments listed on Lewis are intended for patients for whom these standard treatments have not provided adequate relief.",
       sourceLabel: PN_AAN_GUIDELINE.sourceLabel,
       sourceUrl: PN_AAN_GUIDELINE.sourceUrl,
     },
@@ -103,7 +103,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
         "There is no FDA-approved treatment specifically indicated for CIPN. The treatments routinely used to manage CIPN symptoms in the United States today include:",
       treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
-        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate available options first. The lack of an FDA-approved treatment specifically indicated for CIPN is part of why this condition is in scope for experimental treatments.",
+        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating clinician evaluate available options first. The lack of an FDA-approved treatment specifically indicated for CIPN is part of why this condition is in scope for experimental treatments.",
       sourceLabel: "ASCO — Prevention and Management of CIPN clinical practice guideline",
       sourceUrl: "https://ascopubs.org/doi/10.1200/JCO.20.01399",
     },
@@ -130,7 +130,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
         "The treatments routinely used for HIV-induced peripheral neuropathy in the United States today include:",
       treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
-        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate FDA-approved options first. Adjustments to your antiretroviral regimen, where appropriate, are an additional consideration with your HIV-care team.",
+        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating clinician evaluate FDA-approved options first. Adjustments to your antiretroviral regimen, where appropriate, are an additional consideration with your HIV-care team.",
       sourceLabel: PN_AAN_GUIDELINE.sourceLabel,
       sourceUrl: PN_AAN_GUIDELINE.sourceUrl,
     },
@@ -157,7 +157,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
         "The treatments routinely used for idiopathic peripheral neuropathy in the United States today include:",
       treatments: PN_FDA_APPROVED_TREATMENTS,
       closing:
-        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate available options first. For idiopathic neuropathy in particular, periodic re-evaluation for an emergent underlying cause is a parallel step.",
+        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating clinician evaluate available options first. For idiopathic neuropathy in particular, periodic re-evaluation for an emergent underlying cause is a parallel step.",
       sourceLabel: PN_AAN_GUIDELINE.sourceLabel,
       sourceUrl: PN_AAN_GUIDELINE.sourceUrl,
     },
@@ -188,7 +188,7 @@ export const CONDITION_CONTENT: Record<string, ConditionContent> = {
         "venlafaxine (Effexor) — used off-label for PTSD with strong supporting evidence",
       ],
       closing:
-        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating physician evaluate FDA-approved options first. Trauma-focused psychotherapy is the highest-evidence first-line treatment; medications are typically used in combination with therapy.",
+        "Montana law (RULE 12(2)(f) and § 50-12-104) requires that you and your treating clinician evaluate FDA-approved options first. Trauma-focused psychotherapy is the highest-evidence first-line treatment; medications are typically used in combination with therapy.",
       sourceLabel: "VA/DoD Clinical Practice Guideline for the Management of PTSD",
       sourceUrl: "https://www.healthquality.va.gov/guidelines/MH/ptsd/",
     },

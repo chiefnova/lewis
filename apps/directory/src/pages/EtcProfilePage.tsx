@@ -219,7 +219,7 @@ export function EtcProfilePage() {
             <p className="etcp-inquire__note">
               <FormattedMessage
                 id="directory.etc.inquire.note"
-                defaultMessage="Eligibility is decided by the treating physician and the {name} team — not by Lewis or the program sponsor."
+                defaultMessage="Eligibility is decided by the treating clinician and the {name} team — not by Lewis or the program manufacturer."
                 values={{ name: displayName }}
               />
             </p>
@@ -279,7 +279,7 @@ export function EtcProfilePage() {
                   <div className="etcp-md__box-l">
                     <FormattedMessage
                       id="directory.etc.md.inquiries"
-                      defaultMessage="For physicians — clinical inquiries"
+                      defaultMessage="For clinicians — clinical inquiries"
                     />
                   </div>
                   <a

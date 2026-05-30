@@ -86,25 +86,14 @@ export function FeedbackPage() {
   );
 }
 
-export function ForEtcsPage() {
-  return (
-    <StaticShell
-      title="For ETCs"
-      path="/for-etcs"
-      body="Lewis is the operating platform for Montana's Experimental Treatment Center regime. Licensed ETCs use Lewis to manage their P&P manual, ETRB, patient intake, adverse-event reporting, and annual filings."
-    />
-  );
-}
+// ForEtcsPage moved to apps/directory/src/pages/ForEtcsPage.tsx in slice 5
+// — it's now a real page with the ETRB callout, RULE-by-RULE compliance
+// coverage table, recurring deadlines table, and "How to get started"
+// rail per directoryprd.md § 22. No longer a StaticShell stub.
 
-export function ForSponsorsPage() {
-  return (
-    <StaticShell
-      title="For Sponsors"
-      path="/for-sponsors"
-      body="Drug manufacturers can list their investigational programs in the Lewis directory once a licensed Montana ETC is offering them. Listing is free; Lewis charges per enrolled patient via the operating platform."
-    />
-  );
-}
+// ForManufacturersPage moved to apps/directory/src/pages/ForManufacturersPage.tsx
+// in slice 5 — it's now a real page with the two-paths analytical
+// comparison table per directoryprd.md § 21. No longer a StaticShell stub.
 
 export function HowItWorksPage() {
   return (
@@ -116,42 +105,27 @@ export function HowItWorksPage() {
   );
 }
 
-export function AboutPage() {
-  return (
-    <StaticShell
-      title="About"
-      path="/about"
-      body="Lewis is an independent directory and operating platform for Montana's Experimental Treatment Center regime under SB 535 and MAR 2026-427.1. We are not affiliated with any sponsor or ETC. Listings are sourced from Montana DPHHS public records and licensed program operators."
-    />
-  );
-}
+// AboutPage moved to apps/directory/src/pages/AboutPage.tsx in slice 5 —
+// it's now a real page with the Corps of Discovery + Lewisia rediviva
+// founding story, the team-collective voice, and contacts surfaced
+// twice (in-letter strip + sticky-rail card). /design-shotgun Round 7
+// winner: variant C · Letter from the team.
 
-export function PlatformPage() {
-  return (
-    <StaticShell
-      title="Operating platform"
-      path="/platform"
-      body="app.lewis.health is the compliant operating platform that sponsors, ETCs, treating physicians, and patients share. It handles patient intake, informed consent, ETRB approvals, adverse-event reporting, and the regulated artifacts each role files. The directory you're on is the anonymous, public face; the platform is the regulated workflow behind it."
-    />
-  );
-}
+// PlatformPage moved to apps/directory/src/pages/ForPlatformPage.tsx in
+// slice 5 — it's now a real page with the connecting-tissue narrative,
+// 12-row handoffs table, compliance mapping, and security posture per
+// /design-shotgun Round 6.
 
-export function ForCliniciansPage() {
-  return (
-    <StaticShell
-      title="For physicians"
-      path="/for-clinicians"
-      body="Treating physicians can review program clinical evidence, ETRB approvals, IND numbers, and trial registrations on each program page. Download the single-page clinician brief for chart review, and refer patients directly to the licensed Montana ETC offering the treatment. No account required to read; the connect flow surfaces the licensed center handling enrollment."
-    />
-  );
-}
+// ForCliniciansPage moved to apps/directory/src/pages/ForCliniciansPage.tsx
+// in slice 5 — it's now a real page with counsel-grade legal copy per
+// directoryprd.md § 20. No longer a StaticShell stub.
 
 export function FaqPage() {
   return (
     <StaticShell
       title="Frequently asked questions"
       path="/faq"
-      body="Common questions from patients, treating physicians, and ETC staff. The homepage FAQ section is the canonical source; this dedicated page is for direct linking and longer-form answers."
+      body="Common questions from patients, treating clinicians, and ETC staff. The homepage FAQ section is the canonical source; this dedicated page is for direct linking and longer-form answers."
     />
   );
 }

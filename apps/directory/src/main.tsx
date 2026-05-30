@@ -72,20 +72,20 @@ const FeedbackPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.FeedbackPage })),
 );
 const ForEtcsPage = lazy(() =>
-  import("./pages/StaticPages").then((m) => ({ default: m.ForEtcsPage })),
+  import("./pages/ForEtcsPage").then((m) => ({ default: m.ForEtcsPage })),
 );
-const ForSponsorsPage = lazy(() =>
-  import("./pages/StaticPages").then((m) => ({ default: m.ForSponsorsPage })),
+const ForManufacturersPage = lazy(() =>
+  import("./pages/ForManufacturersPage").then((m) => ({ default: m.ForManufacturersPage })),
 );
 const HowItWorksPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.HowItWorksPage })),
 );
-const AboutPage = lazy(() => import("./pages/StaticPages").then((m) => ({ default: m.AboutPage })));
-const PlatformPage = lazy(() =>
-  import("./pages/StaticPages").then((m) => ({ default: m.PlatformPage })),
+const AboutPage = lazy(() => import("./pages/AboutPage").then((m) => ({ default: m.AboutPage })));
+const ForPlatformPage = lazy(() =>
+  import("./pages/ForPlatformPage").then((m) => ({ default: m.ForPlatformPage })),
 );
 const ForCliniciansPage = lazy(() =>
-  import("./pages/StaticPages").then((m) => ({ default: m.ForCliniciansPage })),
+  import("./pages/ForCliniciansPage").then((m) => ({ default: m.ForCliniciansPage })),
 );
 const NotFoundPage = lazy(() =>
   import("./pages/StaticPages").then((m) => ({ default: m.NotFoundPage })),
@@ -256,10 +256,10 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "for-sponsors",
+        path: "for-manufacturers",
         element: (
           <LazyRoute>
-            <ForSponsorsPage />
+            <ForManufacturersPage />
           </LazyRoute>
         ),
       },
@@ -283,7 +283,7 @@ const router = createBrowserRouter([
         path: "platform",
         element: (
           <LazyRoute>
-            <PlatformPage />
+            <ForPlatformPage />
           </LazyRoute>
         ),
       },

@@ -1,8 +1,8 @@
 import type { TenantKind } from "@lewis/shared";
 
 export type Role =
-  | "sponsor_admin"
-  | "sponsor_clinical"
+  | "manufacturer_admin"
+  | "manufacturer_clinical"
   | "etc_admin"
   | "etc_medical_director"
   | "etc_staff"
@@ -13,7 +13,7 @@ export type Role =
   | "lewis_admin";
 
 export const tenantKindRoles: Record<TenantKind, readonly Role[]> = {
-  sponsor: ["sponsor_admin", "sponsor_clinical"],
+  manufacturer: ["manufacturer_admin", "manufacturer_clinical"],
   etc: ["etc_admin", "etc_medical_director", "etc_staff"],
   patient: ["patient", "patient_representative"],
   board: ["etrb_reviewer"],

@@ -8,7 +8,7 @@ import type {
 } from "@lewis/shared";
 
 /**
- * Review board service layer. See sponsors/service.ts for the
+ * Review board service layer. See manufacturers/service.ts for the
  * sprint-marker key (docs/implementation.md § 0.2).
  */
 

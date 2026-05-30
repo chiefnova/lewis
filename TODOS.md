@@ -29,13 +29,46 @@ Sections are organized by component. Within each section, items are sorted P0 fi
 
 ---
 
+## Open from /review (slice 5 — directory connect/eligibility, 2026-05-28)
+
+The slice-5 `/review` close-out fixed the two P1s (rate-limit `cf-connecting-ip` keying; corrected the false "drizzle aborts on edited migrations" comment), added the duplicate-email Resend idempotency key, dropped a redundant index, and filled the RLS + unit test gaps (worker-no-direct-SELECT, expired-session no-ops, expired-token-not-attached, ConnectPage error/token-attach, EligibilityPage pass branch, API `no_offering_etc`/no-id, passed-eligibility email). Three items remain intentionally open, all gated on the deferred P1 admin console:
+
+### connect_requests dropped-lead reconciler
+
+**What:** `POST /v1/public/connect-requests` returns 200 (and the patient sees "we've connected you") even if the BullMQ enqueue throws — the row is persisted `pending` but no email is queued. There is no reaper. Add a worker cron (or admin re-enqueue action) that sweeps `connect_requests WHERE status='pending' AND created_at < now() - interval '<n> min'` (the `connect_requests_pending_oldest_first` partial index already supports it) and re-enqueues `connect_request_send`. The Resend idempotency key added this slice makes re-enqueue safe (no duplicate to the ETC).
+
+**Why:** A dropped lead in a healthcare conversion flow is a real harm; today recovery is manual psql. Lives with the admin console (`apps/app/src/portals/admin`), which is P1/out-of-scope this slice.
+
+**Effort:** M
+**Priority:** P1 (before public launch)
+
+### Surface `cancelled` / `failed` / `last_send_error` on connect_requests
+
+**What:** Migration 0021 defines `status IN ('pending','sent','failed','cancelled')` + a `last_send_error` column, but no code path ever writes `failed`, `cancelled`, or `last_send_error` (the worker leaves permanent failures as `pending`, and there's no admin cancel). Either wire them (worker stamps `failed` + `last_send_error` after exhausting retries; admin sets `cancelled`) or trim them when the admin console lands.
+
+**Why:** Any "failed connect requests" monitoring query is silently always-empty until these are written. Forward-compat columns; resolve with the admin console.
+
+**Effort:** S
+**Priority:** P2
+
+### 308 redirect `/for-sponsors` → `/for-manufacturers`
+
+**What:** The sponsor→manufacturer rename moved the route to `/for-manufacturers` with no redirect. Add a 308 in the directory's host config (Vercel `redirects`) at the launch SEO pass.
+
+**Why:** Link-rot if `/for-sponsors` was ever indexed. Low today — the directory is pre-launch behind the `packages/gate` password gate and the route was never publicly served.
+
+**Effort:** XS
+**Priority:** P3 (launch SEO pass)
+
+---
+
 ## Open from /review (sixth pass — residual deferrals, 2026-04-25)
 
 The sixth-pass `/review` close-out (see status update at top) landed every CI/runtime hardening item the fifth-pass review left open: `check-fnox-secret-boundaries` hardening, `check-rls-coverage` DROP POLICY tracking, `assertRuntimeRole` startup checks for API + workers, AST-based OpenAPI drift gate with auto-discovery, `_local-safety.ts` extraction, centralized `local-defaults.ts` + drift gate, `StaffPortal` move to `@lewis/shared`, `throws_ok`/`is_empty` harness fixes, RLS test 0006 (grants assertion) + 0007 (helper hoisting regression), `resolveWorkerDatabaseEnv` extraction + tests, `test:a11y` axe-core scaffold, CI workflow cleanup, jsdom + `@testing-library/react` component tests for `RequireStaffPortal` + `RequirePatientSession`. Two items remain intentionally open:
 
 ### Document `publicMetadata.lewisPortals` Clerk metadata contract
 
-**What:** Add a section to `docs/runbooks/developer-onboarding.md` (or a new doc) describing the Clerk publicMetadata shape: `lewisPortals: ('sponsor'|'etc'|'admin')[]` and `lewisDefaultPortal`. Reference the constants in `packages/shared/src/clerk-metadata.ts` and the parallel server-side check that the API will perform via `app.resolve_authenticated_membership`. Note that publicMetadata is server-trusted (Clerk admin only) and is defense-in-depth for UX routing only — backend RLS is the actual gate.
+**What:** Add a section to `docs/runbooks/developer-onboarding.md` (or a new doc) describing the Clerk publicMetadata shape: `lewisPortals: ('manufacturer'|'etc'|'admin')[]` and `lewisDefaultPortal`. Reference the constants in `packages/shared/src/clerk-metadata.ts` and the parallel server-side check that the API will perform via `app.resolve_authenticated_membership`. Note that publicMetadata is server-trusted (Clerk admin only) and is defense-in-depth for UX routing only — backend RLS is the actual gate.
 
 **Why:** The contract is now centralized in code (with JSDoc) but a runbook anchor still helps engineers wiring API tenant resolution off it.
 
@@ -68,7 +101,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 **What:** Build a middleware chain mounted at the `/v1` router that verifies the Clerk session JWT, loads the active Lewis user from `users`, requires an `active_tenant_id` (header or claim), checks `tenant_memberships` for an active membership, and calls `setAppContext({ userId, activeTenantId, requestId })` so RLS sees the right session variables.
 
-**Why:** Right now `apps/api/src/server.ts:78-82` mounts every domain router (sponsors, etcs, patient, boards, admin) with no auth at all. Per `CLAUDE.md` "API requests must resolve an active Lewis tenant ... missing or invalid tenant context is a 401/403, never a silent service-role fallback." Without this middleware, the first real PHI handler that lands inherits zero tenant isolation.
+**Why:** Right now `apps/api/src/server.ts:78-82` mounts every domain router (manufacturers, etcs, patient, boards, admin) with no auth at all. Per `CLAUDE.md` "API requests must resolve an active Lewis tenant ... missing or invalid tenant context is a 401/403, never a silent service-role fallback." Without this middleware, the first real PHI handler that lands inherits zero tenant isolation.
 
 **Context:** `setAppContext` already exists in `packages/db/src/context.ts`. Helpers `app.is_tenant_member`, `app.has_tenant_relationship`, `app.has_active_support_grant` exist in migration 0001 but are unused. Decide: header-based active tenant (`x-lewis-tenant-id`) vs JWT claim. Add a CI grep that fails the build if a `/v1` route is added that doesn't go through the auth-gated router.
 
@@ -90,7 +123,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Validate every external input with zod (route-level)
 
-**What:** Wrap every Hono route with `@hono/zod-validator` for `param`, `query`, and `json` (where applicable). Define schemas in `packages/shared/src/api/<domain>/`. Branded UUID schemas for `SponsorId`, `EtcId`, `PatientId`, `BoardId`, `TenantId`.
+**What:** Wrap every Hono route with `@hono/zod-validator` for `param`, `query`, and `json` (where applicable). Define schemas in `packages/shared/src/api/<domain>/`. Branded UUID schemas for `ManufacturerId`, `EtcId`, `PatientId`, `BoardId`, `TenantId`.
 
 **Why:** Path params, query strings, and bodies in `apps/api/src/domains/*/routes.ts` and `apps/api/src/server.ts:71` (the `/v1/search` `q` param) are all read with `c.req.param/query/json` without validation. CLAUDE.md "Validate every external input with zod (API requests, webhooks, env vars, form data). Shared schemas live in packages/shared."
 
@@ -220,7 +253,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 **What:** Rename `v1.route('/patient', patientRoutes)` to `v1.route('/patients', patientRoutes)` in `apps/api/src/server.ts:80`. `patientRoutes.get('/me', ...)` stays.
 
-**Why:** Inconsistent with `/v1/sponsors`, `/etcs`, `/boards`, `/admin`. One-line change now, breaking change after launch.
+**Why:** Inconsistent with `/v1/manufacturers`, `/etcs`, `/boards`, `/admin`. One-line change now, breaking change after launch.
 
 **Effort:** S
 **Priority:** P2
@@ -238,7 +271,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Replace dataScope magic string with zod enum
 
-**What:** Define `SponsorAeDataScope = z.enum(['aggregate', 'deidentified_line_level_safety', 'identified_with_authorization'])` in `packages/shared` and reference from `apps/api/src/domains/sponsors/routes.ts:13`.
+**What:** Define `ManufacturerAeDataScope = z.enum(['aggregate', 'deidentified_line_level_safety', 'identified_with_authorization'])` in `packages/shared` and reference from `apps/api/src/domains/manufacturers/routes.ts:13`.
 
 **Why:** The current hard-coded `'aggregate_or_deidentified_line_level_safety'` literal will become an enum that the client must understand. Better to define once.
 
@@ -262,13 +295,13 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 **Priority:** P0
 **Depends on:** None
 
-### Widen patients RLS to include ETC and consent-bearing sponsor reads
+### Widen patients RLS to include ETC and consent-bearing manufacturer reads
 
-**What:** Replace the `patients_self_read` policy in `packages/db/migrations/0004_architecture_stubs.sql` with a union that includes `app.has_tenant_relationship(app.current_tenant_id(), tenant_id, 'care_team')` for ETCs and a consent-based predicate (`exists ... patient_data_sharing_consents where status = 'active' and starts_at <= now() and revoked_at is null`) for sponsors.
+**What:** Replace the `patients_self_read` policy in `packages/db/migrations/0004_architecture_stubs.sql` with a union that includes `app.has_tenant_relationship(app.current_tenant_id(), tenant_id, 'care_team')` for ETCs and a consent-based predicate (`exists ... patient_data_sharing_consents where status = 'active' and starts_at <= now() and revoked_at is null`) for manufacturers.
 
-**Why:** Per the project model, ETCs treat patients (`care_team` relationship) and sponsors see consented data. The current policy `tenant_id = app.current_tenant_id() OR has_active_support_grant(...)` blocks both paths — the first patient view from an ETC dashboard returns zero rows.
+**Why:** Per the project model, ETCs treat patients (`care_team` relationship) and manufacturers see consented data. The current policy `tenant_id = app.current_tenant_id() OR has_active_support_grant(...)` blocks both paths — the first patient view from an ETC dashboard returns zero rows.
 
-**Context:** `app.has_tenant_relationship` already exists. Will need semantic RLS coverage for all three personas (patient self, ETC care team, sponsor consented).
+**Context:** `app.has_tenant_relationship` already exists. Will need semantic RLS coverage for all three personas (patient self, ETC care team, manufacturer consented).
 
 **Effort:** M
 **Priority:** P0
@@ -276,9 +309,9 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Widen programs RLS to include ETC visibility
 
-**What:** Replace `programs_sponsor_read` (`packages/db/migrations/0004_architecture_stubs.sql:188`) with a union that includes `app.has_tenant_relationship(app.current_tenant_id(), sponsor_tenant_id, 'ppa')`.
+**What:** Replace `programs_manufacturer_read` (`packages/db/migrations/0004_architecture_stubs.sql:188`) with a union that includes `app.has_tenant_relationship(app.current_tenant_id(), manufacturer_tenant_id, 'ppa')`.
 
-**Why:** ETCs need to view sponsor programs to enroll patients. The current policy is sponsor-only.
+**Why:** ETCs need to view manufacturer programs to enroll patients. The current policy is manufacturer-only.
 
 **Effort:** S
 **Priority:** P0
@@ -318,7 +351,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### tax_id_encrypted: pick a real encryption strategy or remove
 
-**What:** Either remove `sponsor_organizations.tax_id_encrypted` until a key-management design exists, or wrap it in a `pgcrypto`-based helper (`pgp_sym_encrypt` with a key sourced from KMS, write-only by app role, read-only via a SECURITY DEFINER function). Document the key source and rotation procedure. Add a semantic SQL test that the raw column is unreadable without the helper.
+**What:** Either remove `manufacturer_organizations.tax_id_encrypted` until a key-management design exists, or wrap it in a `pgcrypto`-based helper (`pgp_sym_encrypt` with a key sourced from KMS, write-only by app role, read-only via a SECURITY DEFINER function). Document the key source and rotation procedure. Add a semantic SQL test that the raw column is unreadable without the helper.
 
 **Why:** `packages/db/migrations/0004_architecture_stubs.sql:7` declares the column as `bytea` with no encryption helper, no key management, no KMS strategy. Will end up storing plaintext bytes called "encrypted" the first time someone writes to it.
 
@@ -367,7 +400,7 @@ The sixth-pass `/review` close-out (see status update at top) landed every CI/ru
 
 ### Add API schemas: errors, pagination, branded IDs, per-domain request/response
 
-**What:** Add `packages/shared/src/api/` with: `errors.ts` (ErrorCode enum + ErrorResponse schema), `pagination.ts` (CursorPage helper), `ids.ts` (branded UUID schemas: SponsorId, EtcId, PatientId, BoardId, TenantId), and per-domain request/response schemas. Re-export from `packages/shared/src/index.ts`.
+**What:** Add `packages/shared/src/api/` with: `errors.ts` (ErrorCode enum + ErrorResponse schema), `pagination.ts` (CursorPage helper), `ids.ts` (branded UUID schemas: ManufacturerId, EtcId, PatientId, BoardId, TenantId), and per-domain request/response schemas. Re-export from `packages/shared/src/index.ts`.
 
 **Why:** `packages/shared/src/index.ts` currently exports env, phi-redaction, queues, redis-config, time, and types — but no API request/response schemas, no shared error envelope, no shared pagination/cursor schema. The package was set up specifically to host shared zod schemas (per CLAUDE.md) and currently doesn't.
 
@@ -516,7 +549,7 @@ DB-backed subprocessor portal builds on this inventory.
 **Depends on:** Subprocessor list
 **Source:** [implementation.md § 2.2.3](docs/implementation.md)
 
-### Sprint 2 — Sponsor + ETC onboarding
+### Sprint 2 — Manufacturer + ETC onboarding
 
 #### Legal content templates schema + first regulated renderers (§ 2.1.9 Sprint-2 portion)
 
@@ -534,7 +567,7 @@ versions.
 #### Treatment plans + outcome measures — program config schema (§ 2.2.6 Sprint-2 portion)
 
 **What:** Add `program_treatment_plan_templates`, `program_visit_schedule_templates`,
-`program_outcome_measures` migrations. Sponsor wizard captures outcome
+`program_outcome_measures` migrations. Manufacturer wizard captures outcome
 measure type, cadence, source, unit, expected direction, required/optional
 status, reporting label per program.
 
@@ -577,7 +610,7 @@ assignment, expiration monitoring. Route safety events into QAPI.
 **What:** Add `drug_products`, `drug_lots`, `drug_inventory_locations`,
 `drug_inventory_movements`, `drug_storage_condition_logs` migrations.
 Capture lot/batch, expiration, received quantity, current quantity,
-storage location, disposition, sponsor/program linkage.
+storage location, disposition, manufacturer/program linkage.
 
 **Effort:** M
 **Priority:** P0 for Sprint 3
@@ -694,13 +727,13 @@ artifacts. Export manifest shows retention status per artifact.
 **Depends on:** Sprint 4 retention-lock schema + discharge flow
 **Source:** [implementation.md § 2.1.8](docs/implementation.md)
 
-#### Sponsor line-level data — de-identification + aggregates (§ 2.2.4)
+#### Manufacturer line-level data — de-identification + aggregates (§ 2.2.4)
 
 **What:** Change PPA sharing levels to `aggregate_only` and
 `deidentified_line_level_safety` (remove identified PHI from MVP UI). Add
-de-identification/tokenization service for sponsor-facing line-level AE/
-safety records. Emit `disclosure_events` for sponsor exports. K-anonymity
-suppression for small cohorts. Sponsor RLS tests proving sponsor cannot
+de-identification/tokenization service for manufacturer-facing line-level AE/
+safety records. Emit `disclosure_events` for manufacturer exports. K-anonymity
+suppression for small cohorts. Manufacturer RLS tests proving manufacturer cannot
 read identifiers, message bodies, documents, H&P, consents, agreements,
 or raw treatment notes.
 
@@ -715,7 +748,7 @@ or raw treatment notes.
 migrations. Capture dispensing at treatment (enrollment, visit, provider,
 quantity, lot, expiration check, patient-facing name). Block dispensing
 expired lots. Include drug accountability in treatment documentation +
-sponsor reports as de-identified operational data. Route expired/disposed
+manufacturer reports as de-identified operational data. Route expired/disposed
 events to safety/QAPI.
 
 **Effort:** M
@@ -729,7 +762,7 @@ events to safety/QAPI.
 visit schedule into `patient_treatment_plans` + `patient_treatment_plan_milestones`.
 Sprint 5 treatment documentation writes `outcome_measure_observations`.
 PRO survey responses map to `program_outcome_measures` (not unstructured
-blobs only). Sponsor aggregate reports + ETRB annual reports read from
+blobs only). Manufacturer aggregate reports + ETRB annual reports read from
 outcome observations.
 
 **Effort:** L
@@ -769,7 +802,7 @@ synthetic-data tenants without doc edits.
 
 **What:** The patient-arrival surface, per [directoryprd.md § 11, § 16, § 32](docs/directoryprd.md). Full homepage rewrite to PRD § 11.1 order with new primary `<FeaturedConditions>` carousel above the demoted secondary `<FeaturedTreatments>`; the hero subhead now names the live condition. New TopNav restructure (flat: Conditions · Browse Treatments · ETCs · For Physicians; dropdowns: Partners ▾, Company ▾) using the WAI-ARIA disclosure pattern. New 5-column Footer with non-negotiable bottom-bar trust signal. `/etcs` index list + lazy-loaded Mapbox GL map with the Big Sky pin in Bozeman. `/etcs/:slug` full rewrite — API-driven via `useEtcDetail` + `app.directory_etc_program_offerings(uuid)` SECURITY DEFINER helper, license badge, medical-director clinical-inquiries email block, persistent sticky-rail Inquire CTA + large closing accent panel. `/browse` faceted rewrite (Variant D — compact editorial rail + square photo-tile program cards) with five facets (Condition, ETC, Form, Phase, Manufacturer) wired to a new `/v1/public/programs/facets` endpoint that returns live Amazon-style counts (each facet respects the other active filters, parameterized $N::text[] bindings only). New `POST /v1/public/marketing-subscriptions` + GET confirm/unsubscribe endpoints with SECURITY DEFINER helpers (no SELECT path for anonymous), BullMQ `marketing_confirmation_send` job + Resend double-opt-in, and three frontend call sites (`<EmailSignupForm>` shared component, three variants: compact / banner / card). Migration 0020 adds 10 etcs columns (medical director name + credentials + clinical email/phone, address lines, phone, hours, lat/lng, accepting_new_patients) + new `marketing_subscriptions` table (FORCE RLS, unique on email_lower) + 6 SECURITY DEFINER helpers + Big Sky backfill (Dr. Helena Marsh MD FACP, 404 South Tracy Avenue Suite 220 Bozeman, 45.6770/-111.0429). MedicalClinic JSON-LD on `/etcs/:slug` per § 16.3. `/etcs/:slug/ae-summary` route hard-deleted per § 16.4 (folded into `/etrb-report`). New `/marketing/confirm` + `/marketing/unsubscribe` pages, 5 states each, noIndex. New tenants-RLS regression coverage: `app.directory_etc_display_name(uuid)` helper closes the bug where the etcs list + facets returned `[]` because they joined `tenants` (which `directory_anonymous` cannot read). Test coverage: 8 ETCs API integration tests, 10 marketing API tests, 22 faceted programs tests, 16 etcs RLS assertions + 7 marketing-subs RLS assertions, 9 MedicalClinic JSON-LD tests, FeaturedConditions drift test, ETCs-content drift test, full a11y coverage on HomePage. Drift-test enforces every featured slug exists in the published catalog.
 
-**Why:** Per § 8.1, the patient mental model is condition-first; drug names are destinations, not entry points. Slice 3 shipped the conversion surface (`/programs/:slug`) but left the chrome and arrival surfaces drug-first (FeaturedTreatments above, ForPhysicians CTA disabled, AnnouncementStrip "Get notified" disabled, BeginningSection form disabled, `/etcs` a `[COUNSEL REVIEW]` placeholder). Slice 4 inverts every patient-arrival surface to condition-first and replaces every disabled stub with a real wired endpoint or a deliberate removal. A SERP arrival from "{condition} experimental treatment Montana" now lands on a homepage that leads with their condition, scrolls to FeaturedConditions naming it first, clicks through to `/conditions/:slug`. A clinician arrives via "Browse Treatments" and filters by Phase × Form × Condition with live counts. A patient on the homepage signs up for new-program updates with a real double-opt-in flow (Resend + confirmation token). Every directory page now carries the bottom-bar trust signal: "Independent directory · Not affiliated with any sponsor or ETC."
+**Why:** Per § 8.1, the patient mental model is condition-first; drug names are destinations, not entry points. Slice 3 shipped the conversion surface (`/programs/:slug`) but left the chrome and arrival surfaces drug-first (FeaturedTreatments above, ForPhysicians CTA disabled, AnnouncementStrip "Get notified" disabled, BeginningSection form disabled, `/etcs` a `[COUNSEL REVIEW]` placeholder). Slice 4 inverts every patient-arrival surface to condition-first and replaces every disabled stub with a real wired endpoint or a deliberate removal. A SERP arrival from "{condition} experimental treatment Montana" now lands on a homepage that leads with their condition, scrolls to FeaturedConditions naming it first, clicks through to `/conditions/:slug`. A clinician arrives via "Browse Treatments" and filters by Phase × Form × Condition with live counts. A patient on the homepage signs up for new-program updates with a real double-opt-in flow (Resend + confirmation token). Every directory page now carries the bottom-bar trust signal: "Independent directory · Not affiliated with any manufacturer or ETC."
 
 **Followups (deferred per scope):**
 
@@ -893,11 +926,11 @@ synthetic-data tenants without doc edits.
 
 ### Migration 0006 — RLS recursion fix + patients widening + programs widening (Fixes #4, #7, #8)
 
-**What:** `packages/db/migrations/0006_rls_relationship_helpers.sql` adds two SECURITY DEFINER helpers (`app.shares_tenant_with`, `app.has_active_consent_for_sponsor`) and DROP/CREATEs three policies:
+**What:** `packages/db/migrations/0006_rls_relationship_helpers.sql` adds two SECURITY DEFINER helpers (`app.shares_tenant_with`, `app.has_active_consent_for_manufacturer`) and DROP/CREATEs three policies:
 
 1. `users_self_or_tenant_read` now calls `app.shares_tenant_with(id)` instead of joining `tenant_memberships` directly — eliminates recursive policy evaluation.
-2. `patients_self_read` adds care_team relationship + active-consent paths so ETCs and consented sponsors can read patient records.
-3. `programs_sponsor_read` adds `app.has_tenant_relationship(..., 'ppa')` so ETCs can view sponsor programs to enroll patients.
+2. `patients_self_read` adds care_team relationship + active-consent paths so ETCs and consented manufacturers can read patient records.
+3. `programs_manufacturer_read` adds `app.has_tenant_relationship(..., 'ppa')` so ETCs can view manufacturer programs to enroll patients.
 
 All three helpers pinned to `set search_path = public, app` to avoid search-path injection.
 
@@ -930,7 +963,7 @@ The `vibility check` is now consistent: every RLS-enabled table has a SELECT pol
 
 ### Shared API schemas package (`packages/shared/src/api/`)
 
-**What:** Created shared package re-exports for: `errors.ts` (canonical `ErrorCode` enum + `ErrorResponse` schema + `HTTP_STATUS_BY_CODE` map + `buildErrorResponse` helper), `pagination.ts` (`CursorPageQuery`, `cursorPage<T>` builder), `ids.ts` (branded UUID types: `SponsorId`, `EtcId`, `PatientId`, `BoardId`, `TenantId`, `UserId`, `ProgramId`, plus `RequestId` and `SupportTicketId` regex schemas), and per-domain request/response schemas (sponsors, etcs, patients, boards, internal-admin, search). Wired through `packages/shared/src/index.ts`.
+**What:** Created shared package re-exports for: `errors.ts` (canonical `ErrorCode` enum + `ErrorResponse` schema + `HTTP_STATUS_BY_CODE` map + `buildErrorResponse` helper), `pagination.ts` (`CursorPageQuery`, `cursorPage<T>` builder), `ids.ts` (branded UUID types: `ManufacturerId`, `EtcId`, `PatientId`, `BoardId`, `TenantId`, `UserId`, `ProgramId`, plus `RequestId` and `SupportTicketId` regex schemas), and per-domain request/response schemas (manufacturers, etcs, patients, boards, internal-admin, search). Wired through `packages/shared/src/index.ts`.
 
 **Completed:** 2026-04-25
 
@@ -954,7 +987,7 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 - `tenant.ts` — `resolveTenant` reads `x-lewis-tenant-id` header, validates as UUID, looks up the matching `users.id` + active `tenant_memberships` row in a single query, sets `c.var.appContext = { userId, activeTenantId, requestId }`. Returns `403 forbidden` (deliberately not distinguishing "no Lewis user" from "no active membership" — that distinction is information disclosure).
 - `db-context.ts` — `withDbContext` acquires a per-request `PoolClient`, BEGINs a transaction, calls `setAppContext(client, appContext)` to set `app.user_id` / `app.active_tenant_id` / `app.request_id` for RLS, exposes the client on `c.var.dbClient`. COMMITs on 2xx, ROLLBACKs on anything else (or on thrown exception). Defense-in-depth resolution tracker guarantees no leaked transactions.
 
-`server.ts` restructured: `v1Public` sub-router (no auth: `/v1/health`, `/v1/webhooks/*`) is registered before the `v1Authed` sub-router whose `use("*", ...)` chain runs all three middlewares for `/v1/sponsors`, `/v1/etcs`, `/v1/patients`, `/v1/boards`, `/v1/admin`, `/v1/search`. Pluralized `/v1/patient` → `/v1/patients`. Internal-admin sub-router additionally requires `x-support-ticket-id` header per CLAUDE.md break-glass posture.
+`server.ts` restructured: `v1Public` sub-router (no auth: `/v1/health`, `/v1/webhooks/*`) is registered before the `v1Authed` sub-router whose `use("*", ...)` chain runs all three middlewares for `/v1/manufacturers`, `/v1/etcs`, `/v1/patients`, `/v1/boards`, `/v1/admin`, `/v1/search`. Pluralized `/v1/patient` → `/v1/patients`. Internal-admin sub-router additionally requires `x-support-ticket-id` header per CLAUDE.md break-glass posture.
 
 `onError` rewritten to serialize `ApiError` and `HTTPException` through the canonical envelope; unknown errors return opaque `internal_error` to client + structured stack/route/method log server-side.
 
@@ -962,7 +995,7 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 
 ### zod validators on every domain route (Fix #3)
 
-**What:** Every Hono route in `apps/api/src/domains/*/routes.ts` and `apps/api/src/domains/search/routes.ts` now wraps with `@hono/zod-validator` against shared schemas (`SponsorPathParams`, `EtcPathParams`, `BoardPathParams`, `SearchQueryParams`, etc.). Path params, query strings, and request bodies are now validated at the trust boundary; handlers consume only `c.req.valid("param" | "query" | "json")`. Response shapes are typed against shared `*Response` schemas so client SDK consumers can infer types.
+**What:** Every Hono route in `apps/api/src/domains/*/routes.ts` and `apps/api/src/domains/search/routes.ts` now wraps with `@hono/zod-validator` against shared schemas (`ManufacturerPathParams`, `EtcPathParams`, `BoardPathParams`, `SearchQueryParams`, etc.). Path params, query strings, and request bodies are now validated at the trust boundary; handlers consume only `c.req.valid("param" | "query" | "json")`. Response shapes are typed against shared `*Response` schemas so client SDK consumers can infer types.
 
 **Completed:** 2026-04-25
 
@@ -995,7 +1028,7 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 - `app.write_audit(p_action, p_target_object_type, p_target_object_id?, p_tenant_id?, p_before?, p_after?, p_actor_user_id?, p_ip?, p_ua?, p_request_id?)` SECURITY DEFINER helper that pulls actor + request_id from session app.\* settings unless overridden
 - Tightens `notifications_tenant_read` and `feature_flags_tenant_read` to require `app.current_user_id() IS NOT NULL` for NULL-tenant (global) rows
 - Adds `search_index_jobs_pending_unique` partial unique index on `(source_table, source_id) WHERE processed_at IS NULL` for race protection
-- Drops `sponsor_organizations.tax_id_encrypted` (no encryption helper exists; safer to remove than ship plaintext-as-encrypted)
+- Drops `manufacturer_organizations.tax_id_encrypted` (no encryption helper exists; safer to remove than ship plaintext-as-encrypted)
 
 **Completed:** 2026-04-25
 
@@ -1019,7 +1052,7 @@ Webhook routes live in `apps/api/src/domains/webhooks/routes.ts` — each handle
 
 ### Service / repository layer pattern
 
-**What:** Every domain has `apps/api/src/domains/<x>/service.ts` exposing typed functions taking `(client: PoolClient, ctx: AppContext, params)`. Routes are now thin: validate → call service → respond. Each service function carries a `TODO(sprint-N)` marker naming the table(s) the eventual query will touch. Domains: sponsors, etcs, patients, boards, internal-admin.
+**What:** Every domain has `apps/api/src/domains/<x>/service.ts` exposing typed functions taking `(client: PoolClient, ctx: AppContext, params)`. Routes are now thin: validate → call service → respond. Each service function carries a `TODO(sprint-N)` marker naming the table(s) the eventual query will touch. Domains: manufacturers, etcs, patients, boards, internal-admin.
 
 **Completed:** 2026-04-25
 
@@ -1060,7 +1093,7 @@ All three mounted globally in `apps/api/src/server.ts` before the access logger.
 
 ### Pagination contract on every list endpoint
 
-**What:** `packages/shared/src/api/pagination.ts` exports `CursorPageQuery` (validates `?cursor` + `?limit`) and `cursorPage(itemSchema)` builder. Every list endpoint response schema is now `{ items, nextCursor, hasMore, ...optional metadata }`. Every list route uses `zValidator("query", CursorPageQuery)`. Service layer functions take `CursorPageQuery` parameters. Endpoints updated: sponsors (programs, etcs, adverse-events), etcs (messages, drug-inventory/lots), patients (messages, documents), boards (protocol-reviews), admin (tenants, compliance, audit-log), search.
+**What:** `packages/shared/src/api/pagination.ts` exports `CursorPageQuery` (validates `?cursor` + `?limit`) and `cursorPage(itemSchema)` builder. Every list endpoint response schema is now `{ items, nextCursor, hasMore, ...optional metadata }`. Every list route uses `zValidator("query", CursorPageQuery)`. Service layer functions take `CursorPageQuery` parameters. Endpoints updated: manufacturers (programs, etcs, adverse-events), etcs (messages, drug-inventory/lots), patients (messages, documents), boards (protocol-reviews), admin (tenants, compliance, audit-log), search.
 
 **Completed:** 2026-04-25
 
@@ -1119,10 +1152,10 @@ landed on 2026-04-25.)
 
 **What:** `packages/db/test/rls/0002_helpers_policies_retention.sql` (38 plan items) covers:
 
-- All new helper functions: `app.shares_tenant_with`, `app.has_active_consent_for_sponsor`, `app.role_grants_action`, `app.can_write_for_tenant`, `app.write_audit`, `app.compute_retention`.
+- All new helper functions: `app.shares_tenant_with`, `app.has_active_consent_for_manufacturer`, `app.role_grants_action`, `app.can_write_for_tenant`, `app.write_audit`, `app.compute_retention`.
 - Audit-log immutability: UPDATE, DELETE, AND TRUNCATE blocked (the TRUNCATE coverage closes the gap fixed in 0003).
-- `patients_self_read` rewritten policy: patient self reads, ETC care_team reads, sponsor-with-active-consent reads, unrelated tenant denied.
-- `programs_sponsor_read` rewritten policy: sponsor self reads, ETC with PPA reads, unrelated tenant denied.
+- `patients_self_read` rewritten policy: patient self reads, ETC care_team reads, manufacturer-with-active-consent reads, unrelated tenant denied.
+- `programs_manufacturer_read` rewritten policy: manufacturer self reads, ETC with PPA reads, unrelated tenant denied.
 - `users_self_or_tenant_read` recursion fix verified: self read works, unrelated user denied (no recursion bug).
 - `patient_representatives` RLS + `signing_permission` requires-verification check + relationship_type enum check.
 - `minor_assents` RLS + waived-requires-reason+medical-director check.
@@ -1155,7 +1188,7 @@ landed on 2026-04-25.)
 
 ### Migration 0013/0014 — policy bugs found by semantic RLS
 
-**What:** `0013_ppa_program_read_direction.sql` corrects sponsor/ETC PPA direction for program reads. `0014_global_write_policy_command_scope.sql` replaces `FOR ALL` notification and feature-flag write policies with command-specific INSERT/UPDATE/DELETE policies.
+**What:** `0013_ppa_program_read_direction.sql` corrects manufacturer/ETC PPA direction for program reads. `0014_global_write_policy_command_scope.sql` replaces `FOR ALL` notification and feature-flag write policies with command-specific INSERT/UPDATE/DELETE policies.
 
 **Completed:** 2026-04-25
 

@@ -28,8 +28,8 @@ const COLUMNS: ReadonlyArray<FooterColumn> = [
     links: [
       {
         to: "/for-clinicians",
-        id: "directory.footer.clinicians.physicians",
-        default: "For physicians",
+        id: "directory.footer.clinicians.overview",
+        default: "For clinicians",
       },
       {
         to: "/for-clinicians",
@@ -41,7 +41,11 @@ const COLUMNS: ReadonlyArray<FooterColumn> = [
   {
     heading: { id: "directory.footer.col.partners", default: "Partners" },
     links: [
-      { to: "/for-sponsors", id: "directory.footer.partners.sponsors", default: "For sponsors" },
+      {
+        to: "/for-manufacturers",
+        id: "directory.footer.partners.manufacturers",
+        default: "For manufacturers",
+      },
       { to: "/for-etcs", id: "directory.footer.partners.etcs", default: "For ETCs" },
       { to: "/platform", id: "directory.footer.partners.platform", default: "Operating platform" },
     ],
@@ -71,7 +75,7 @@ export function Footer() {
       <div className="foot__inner">
         <div className="foot__brand">
           <span className="serif foot__brand-primary">Lewis.</span>
-          <span className="serif foot__brand-secondary italic">Health</span>
+          <span className="serif foot__brand-secondary italic">health</span>
         </div>
 
         <div className="foot__cols">
@@ -96,7 +100,7 @@ export function Footer() {
         <div className="foot__bar">
           <FormattedMessage
             id="directory.footer.trust"
-            defaultMessage="© {year} Lewis Health · Independent directory · Not affiliated with any sponsor or ETC. Information sourced from Montana DPHHS public records and licensed program operators."
+            defaultMessage="© {year} Lewis Health · Independent directory and operating platform · Not affiliated with any manufacturer or ETC. Information sourced from Montana DPHHS public records and licensed program operators."
             values={{ year: new Date().getFullYear() }}
           />
         </div>

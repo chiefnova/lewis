@@ -168,8 +168,8 @@ describe("ConditionDetailPage", () => {
     ).toBeTruthy();
     expect(screen.getByText("You may want to:")).toBeTruthy();
     expect(screen.getByText("Search ClinicalTrials.gov for active trials")).toBeTruthy();
-    expect(screen.getByText("Talk to your treating physician about other options.")).toBeTruthy();
-    expect(screen.getByText(/Your treating physician knows your full history/)).toBeTruthy();
+    expect(screen.getByText("Talk to your treating clinician about other options.")).toBeTruthy();
+    expect(screen.getByText(/Your treating clinician knows your full history/)).toBeTruthy();
     // Disabled signup form for the notify path uses the not-offered placeholder copy
     const signupInput = screen.getByPlaceholderText(/Get notified if a Montana ETC adds a program/);
     expect(signupInput.hasAttribute("disabled")).toBe(true);

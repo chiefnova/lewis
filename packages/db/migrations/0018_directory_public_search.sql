@@ -143,7 +143,7 @@ create policy search_index_documents_directory_public_read on search_index_docum
 --
 -- conditions and program_conditions are global, jurisdiction-scoped catalog
 -- data. Writes are lewis_admin-only at MVP-0 (matches the regulatory_*
--- write posture from 0008). A future sponsor-publishing flow may extend
+-- write posture from 0008). A future manufacturer-publishing flow may extend
 -- write access for the join table; for now, the Lewis editorial team
 -- writes both via the operating platform (or via migrations like the seed
 -- below).
@@ -255,7 +255,7 @@ declare
   v_program record;
   v_indication_terms text;
 begin
-  select id, name, drug, sponsor_tenant_id, directory_summary,
+  select id, name, drug, manufacturer_tenant_id, directory_summary,
          patient_facing_description, directory_published
     into v_program
     from programs where id = p_program_id;
@@ -282,7 +282,7 @@ begin
   ) values (
     'programs',
     v_program.id,
-    v_program.sponsor_tenant_id,
+    v_program.manufacturer_tenant_id,
     'public',
     v_program.name,
     coalesce(v_program.directory_summary, v_program.patient_facing_description, ''),
@@ -330,10 +330,10 @@ begin
 
   -- conditions are catalog-level (not tenant-owned). owner_tenant_id is
   -- NOT NULL on search_index_documents, so we attribute condition rows to
-  -- the first sponsor tenant that links to them, falling back to a
+  -- the first manufacturer tenant that links to them, falling back to a
   -- well-known directory tenant. The owner_tenant filter doesn't matter
   -- for public reads — visibility_classification = 'public' is the gate.
-  select p.sponsor_tenant_id
+  select p.manufacturer_tenant_id
     into v_owner_tenant
     from program_conditions pc
     join programs p on p.id = pc.program_id
@@ -401,7 +401,7 @@ begin
     from tenants t
     where t.id = v_etc.tenant_id;
 
-  -- Pull in linked sponsor program + condition terms so an on-topic condition
+  -- Pull in linked manufacturer program + condition terms so an on-topic condition
   -- query ("neuropathy") can surface the ETC that offers the matching program.
   select string_agg(
            concat_ws(' ',
@@ -416,7 +416,7 @@ begin
     into v_linked_catalog_terms
     from tenant_relationships tr
     join programs p
-      on p.sponsor_tenant_id = tr.from_tenant_id
+      on p.manufacturer_tenant_id = tr.from_tenant_id
      and p.directory_published = true
     left join lateral (
       select string_agg(c.name, ' ') as terms
@@ -459,12 +459,12 @@ end $$;
 -- 5b. Cascade helpers.
 -- ---------------------------------------------------------------------------
 
--- When a sponsor's program changes (publish/unpublish/update), every ETC
--- that has an active PPA with that sponsor needs its search-index row
+-- When a manufacturer's program changes (publish/unpublish/update), every ETC
+-- that has an active PPA with that manufacturer needs its search-index row
 -- refreshed because the linked-catalog-terms aggregation in
--- directory_search_upsert_etc_by_id pulls from the sponsor's programs.
+-- directory_search_upsert_etc_by_id pulls from the manufacturer's programs.
 -- Direct call to the upsert helper — no `UPDATE etcs SET col=col` no-op.
-create or replace function app.directory_search_touch_related_etcs(p_sponsor_tenant_id uuid)
+create or replace function app.directory_search_touch_related_etcs(p_manufacturer_tenant_id uuid)
 returns void
 language plpgsql security definer set search_path = app, public as $$
 declare
@@ -474,7 +474,7 @@ begin
     select e.id
     from etcs e
     join tenant_relationships tr
-      on tr.from_tenant_id = p_sponsor_tenant_id
+      on tr.from_tenant_id = p_manufacturer_tenant_id
      and tr.to_tenant_id = e.tenant_id
      and tr.kind = 'ppa'
      and tr.status = 'active'
@@ -517,13 +517,13 @@ begin
   if (tg_op = 'DELETE') then
     delete from search_index_documents
       where source_table = 'programs' and source_id = old.id;
-    perform app.directory_search_touch_related_etcs(old.sponsor_tenant_id);
+    perform app.directory_search_touch_related_etcs(old.manufacturer_tenant_id);
     perform app.directory_search_touch_program_conditions(old.id);
     return old;
   end if;
 
   perform app.directory_search_upsert_program_by_id(NEW.id);
-  perform app.directory_search_touch_related_etcs(NEW.sponsor_tenant_id);
+  perform app.directory_search_touch_related_etcs(NEW.manufacturer_tenant_id);
 
   -- Cascade to linked conditions when the program's directory_published flag,
   -- name, or drug changes — these are the fields aggregated into condition
@@ -577,7 +577,7 @@ language plpgsql security definer set search_path = app, public as $$
 declare
   v_program_id uuid;
   v_condition_id uuid;
-  v_sponsor_tenant_id uuid;
+  v_manufacturer_tenant_id uuid;
 begin
   if tg_op = 'DELETE' then
     v_program_id := old.program_id;
@@ -593,10 +593,10 @@ begin
   -- An ETC's catalog-terms aggregation reads through the program's PPA.
   -- A join change can flip whether a program is "in scope" for an ETC
   -- search row, so refresh related ETCs too.
-  select sponsor_tenant_id into v_sponsor_tenant_id
+  select manufacturer_tenant_id into v_manufacturer_tenant_id
     from programs where id = v_program_id;
-  if v_sponsor_tenant_id is not null then
-    perform app.directory_search_touch_related_etcs(v_sponsor_tenant_id);
+  if v_manufacturer_tenant_id is not null then
+    perform app.directory_search_touch_related_etcs(v_manufacturer_tenant_id);
   end if;
 
   if tg_op = 'DELETE' then return old; end if;
@@ -633,7 +633,7 @@ grant select on program_conditions to app_api, app_worker;
 -- under 'a0...' / 'b0...' / 'c0...' / 'd0...' prefixes so the seed is
 -- idempotent across db:reset and re-runs (on conflict do nothing).
 --
--- A future sponsor-publishing flow in app.lewis.health will mutate these
+-- A future manufacturer-publishing flow in app.lewis.health will mutate these
 -- rows in place (toggling directory_published, updating summaries) and
 -- the triggers above will keep search_index_documents in sync.
 -- ---------------------------------------------------------------------------
@@ -667,20 +667,20 @@ begin
     returning id into v_jurisdiction_id;
   end if;
 
-  -- 7b. Tenants — WinSanTor (sponsor), Big Sky (ETC), Lewis internal.
+  -- 7b. Tenants — WinSanTor (manufacturer), Big Sky (ETC), Lewis internal.
   insert into tenants (id, kind, status, display_name)
   values
-    (v_winsantor_tenant, 'sponsor', 'active', 'WinSanTor, Inc.'),
+    (v_winsantor_tenant, 'manufacturer', 'active', 'WinSanTor, Inc.'),
     (v_bigsky_tenant,    'etc',     'active', 'Big Sky Experimental Treatment Center'),
     (v_lewis_tenant,     'lewis_internal', 'active', 'Lewis Health')
   on conflict (id) do nothing;
 
-  -- 7c. Sponsor org row for WinSanTor.
-  insert into sponsor_organizations (tenant_id, legal_name, billing_profile_json, regulatory_contacts_json)
+  -- 7c. Manufacturer org row for WinSanTor.
+  insert into manufacturer_organizations (tenant_id, legal_name, billing_profile_json, regulatory_contacts_json)
   values (v_winsantor_tenant, 'WinSanTor, Inc.', '{}'::jsonb, '[]'::jsonb)
   on conflict (tenant_id) do nothing;
 
-  -- PPA relationship — WinSanTor sponsor -> Big Sky ETC. This is the
+  -- PPA relationship — WinSanTor manufacturer -> Big Sky ETC. This is the
   -- production direction from 0013 and the join used by ETC search indexing.
   insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, scope_json, status)
   select v_winsantor_tenant, v_bigsky_tenant, 'ppa', '{}'::jsonb, 'active'
@@ -725,7 +725,7 @@ begin
 
   -- 7e. WST-057 program.
   insert into programs (
-    id, sponsor_tenant_id, jurisdiction_id, name, drug, indication, phase,
+    id, manufacturer_tenant_id, jurisdiction_id, name, drug, indication, phase,
     treatment_form, pricing_model, hfar_path, patient_facing_description, status,
     directory_slug, directory_summary, directory_published
   )

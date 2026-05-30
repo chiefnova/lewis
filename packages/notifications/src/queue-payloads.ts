@@ -17,7 +17,7 @@ import { z } from "zod";
  *      call — drift between API + worker payloads is caught at typecheck.
  */
 
-export const LewisJobKind = z.enum(["marketing_confirmation_send"]);
+export const LewisJobKind = z.enum(["marketing_confirmation_send", "connect_request_send"]);
 export type LewisJobKind = z.infer<typeof LewisJobKind>;
 
 /**
@@ -36,3 +36,28 @@ export const MarketingConfirmationJobPayload = z.object({
   unsubscribeToken: z.string().uuid(),
 });
 export type MarketingConfirmationJobPayload = z.infer<typeof MarketingConfirmationJobPayload>;
+
+/**
+ * `connect_request_send` — Slice 5 § 18.2 / § 18.4. The API enqueues this
+ * job after persisting a connect_requests row via the SECURITY DEFINER
+ * directory_connect_request_create helper. The worker handler:
+ *
+ *   1. Reads the row via app.directory_connect_request_for_send (worker-only
+ *      grant) to get patient contact fields + the offering ETC's intake_email
+ *      / fallback medical_director_clinical_email + any linked eligibility
+ *      session answers.
+ *   2. Renders the connect-request template (HTML + plain text) and sends
+ *      via Resend to the ETC's intake (or fallback) address with the
+ *      "[Lewis] New patient inquiry for {program} — {date}" subject.
+ *   3. On success, calls app.directory_connect_request_mark_sent(id,
+ *      message_id) to stamp the row sent. The function is idempotent so a
+ *      retry that double-delivers can't double-stamp.
+ *
+ * The payload carries only the id — the read happens worker-side so
+ * tightening the row's read surface (worker-only EXECUTE) is the single
+ * gate.
+ */
+export const ConnectRequestSendJobPayload = z.object({
+  connectRequestId: z.string().uuid(),
+});
+export type ConnectRequestSendJobPayload = z.infer<typeof ConnectRequestSendJobPayload>;

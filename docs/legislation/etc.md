@@ -980,8 +980,8 @@ Pursuant to 2-4-111, MCA, the department has determined that the new rules propo
 notice will not create a significant and direct impact upon small businesses. The application for
 and operation of these facilities are voluntary and are specific to experimental treatment
 centers.
-Bill Sponsor Notification
-The bill sponsor contact requirements apply and have been fulfilled. The primary bill sponsor of
+Bill Manufacturer Notification
+The bill manufacturer contact requirements apply and have been fulfilled. The primary bill manufacturer of
 SB 535 was notified by electronic mail on January 21, 2026.
 Interested Persons
 The department maintains a list of interested persons who wish to receive notices of

@@ -77,7 +77,7 @@ alter table if exists notifications force row level security;
 alter table if exists feature_flags force row level security;
 alter table if exists regulatory_jurisdictions force row level security;
 alter table if exists regulatory_rule_versions force row level security;
-alter table if exists sponsor_organizations force row level security;
+alter table if exists manufacturer_organizations force row level security;
 alter table if exists etcs force row level security;
 alter table if exists patients force row level security;
 alter table if exists programs force row level security;

@@ -10,7 +10,7 @@ import type {
 } from "@lewis/shared";
 
 /**
- * ETC service layer. See sponsors/service.ts for the contract and the
+ * ETC service layer. See manufacturers/service.ts for the contract and the
  * sprint-marker key (docs/implementation.md § 0.2).
  */
 

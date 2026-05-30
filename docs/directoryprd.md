@@ -34,7 +34,7 @@
 18. [Connect Handoff & Confirmation — Detailed Specification](#18-connect-handoff--confirmation--detailed-specification)
 19. [Patient Education Pages](#19-patient-education-pages)
 20. [B2B Track — Clinicians (`/for-clinicians`)](#20-b2b-track--clinicians-for-clinicians)
-21. [B2B Track — Sponsors (`/for-sponsors`)](#21-b2b-track--sponsors-for-sponsors)
+21. [B2B Track — Manufacturers (`/for-manufacturers`)](#21-b2b-track--manufacturers-for-manufacturers)
 22. [B2B Track — ETC Operators (`/for-etcs`)](#22-b2b-track--etc-operators-for-etcs)
 23. [Shared Platform Page (`/platform`)](#23-shared-platform-page-platform)
 24. [Company Pages (`/about`, `/feedback`)](#24-company-pages-about-feedback)
@@ -60,10 +60,10 @@ Lewis Health is the public, anonymous, SEO-critical patient directory for Montan
 The directory's purpose is threefold:
 
 1. Connect patients to investigational treatments available at licensed Montana ETCs.
-2. Serve as a B2B funnel for sponsors and ETC operators considering the Lewis platform.
+2. Serve as a B2B funnel for manufacturers and ETC operators considering the Lewis platform.
 3. Provide treating physicians with clinical legitimacy signals and program briefs to support patient referrals.
 
-The directory is currently partially implemented. A homepage, browse/catalog, treatment detail, ETC profile, eligibility self-screen, connect handoff, working search page, and conditions index/detail surfaces are functional or implemented locally pending PR. B2B funnels (`/for-sponsors`, `/for-etcs`), patient education, legal pages, and the canonical FAQ remain placeholder.
+The directory is currently partially implemented. A homepage, browse/catalog, treatment detail, ETC profile, eligibility self-screen, connect handoff, working search page, and conditions index/detail surfaces are functional or implemented locally pending PR. B2B funnels (`/for-manufacturers`, `/for-etcs`), patient education, legal pages, and the canonical FAQ remain placeholder.
 
 This PRD documents what exists, what needs to be built, what needs to be tweaked, and what needs to be removed, in a single end-to-end specification that engineering, design, and copy can execute against.
 
@@ -75,25 +75,25 @@ This PRD documents what exists, what needs to be built, what needs to be tweaked
 
 Patient acquisition is the bottleneck for the entire three-sided Lewis platform thesis. Drug manufacturers cannot directly market unapproved drugs to consumers under FDA pre-approval marketing rules. ETCs are clinical operators, not marketing organizations. State regulators do not maintain a consumer-facing directory of programs offered. The directory is the only legal patient-acquisition surface available for Montana RTT.
 
-It is also the most visible artifact of the Lewis brand. The first time a journalist, a regulator, a sponsor's BD lead, or a treating physician encounters Lewis, they encounter the directory. Its credibility, design quality, and editorial judgment establish the brand's posture in every other room.
+It is also the most visible artifact of the Lewis brand. The first time a journalist, a regulator, a manufacturer's BD lead, or a treating physician encounters Lewis, they encounter the directory. Its credibility, design quality, and editorial judgment establish the brand's posture in every other room.
 
 ### 2.2 What the directory must accomplish
 
 - **For patients:** answer "is there a real treatment for my condition that I can actually access in Montana, where, at what cost, and how fast" — without requiring an account to find out.
 - **For treating clinicians:** provide clinical depth (mechanism, phase, evidence citations) and a downloadable program brief suitable for chart review and case conference.
-- **For biotech sponsors:** explain the SB 535 regulatory framework, both manufacturer-ETC paths (partner-ETC vs. operate-own-ETC), the operating platform's modules, and a clear path to a BD conversation.
+- **For biotech manufacturers:** explain the SB 535 regulatory framework, both manufacturer-ETC paths (partner-ETC vs. operate-own-ETC), the operating platform's modules, and a clear path to a BD conversation.
 - **For ETC operators:** explain how Lewis covers every RULE compliance surface, how the ETRB workflow specifically works, what HFAR Path B looks like in practice, and a path to platform onboarding.
 
 ### 2.3 What the directory is not
 
 - Not a clinic, not a manufacturer, not a referral-fee broker.
 - Not a clinical-trial registry (clinicaltrials.gov is the canonical registry; Lewis is the access layer for commercial RTT under SB 535).
-- Not a marketing site for any specific sponsor or ETC.
+- Not a marketing site for any specific manufacturer or ETC.
 - Not a place where PHI flows. All PHI handling lives on `patient.lewis.health`.
 
-### 2.4 Sponsor & Condition Rollout Strategy
+### 2.4 Manufacturer & Condition Rollout Strategy
 
-The directory is built to scale across many sponsors and many conditions, but launch sequencing is deliberately narrow. A "slow sniper" rollout — perfect the operating model with the first sponsor before adding the second; perfect with two sponsors before opening to a broader bench.
+The directory is built to scale across many manufacturers and many conditions, but launch sequencing is deliberately narrow. A "slow sniper" rollout — perfect the operating model with the first manufacturer before adding the second; perfect with two manufacturers before opening to a broader bench.
 
 **Phase 1 — WST-057 / WinSanTor (live at MVP 0).**
 The launch program is WST-057®, an investigational topical small-molecule from WinSanTor in Phase 2 for peripheral neuropathy. WST-057 is listed across four indications:
@@ -105,14 +105,14 @@ The launch program is WST-057®, an investigational topical small-molecule from 
 
 Each indication gets its own `/conditions/:slug` page; all four condition pages link to the same `/programs/wst-057` conversion page. The four conditions cover the dominant SEO long-tail for "peripheral neuropathy experimental treatment Montana" queries while accurately representing the program's labeled indications. **Big Sky ETC** in Bozeman is the launch ETC partner. Phase 1 success criteria: end-to-end patient enrollment, ETRB approval, AE reporting under the 5-day clock, HFAR Path B annual workflow completed, DPHHS annual report filed by January 31.
 
-**Phase 2 — Psilocybin for PTSD (next sponsor onboard).**
-After Phase 1 has run end-to-end, the second sponsor onboards: Psilocybin for PTSD. Patient framing on the directory is condition-first — `/conditions/ptsd` is the primary surface, with the Psilocybin program page as the conversion. Sponsor and ETC partners TBD. The PTSD-Psilocybin pairing was selected as the Phase 2 candidate because (a) it is sponsor-type-different from WST-057 (different therapeutic area, different operational profile, different ETRB review pattern), so onboarding it stress-tests the platform's generality, and (b) the patient population is large and underserved in standard-of-care.
+**Phase 2 — Psilocybin for PTSD (next manufacturer onboard).**
+After Phase 1 has run end-to-end, the second manufacturer onboards: Psilocybin for PTSD. Patient framing on the directory is condition-first — `/conditions/ptsd` is the primary surface, with the Psilocybin program page as the conversion. Manufacturer and ETC partners TBD. The PTSD-Psilocybin pairing was selected as the Phase 2 candidate because (a) it is manufacturer-type-different from WST-057 (different therapeutic area, different operational profile, different ETRB review pattern), so onboarding it stress-tests the platform's generality, and (b) the patient population is large and underserved in standard-of-care.
 
-**Phase 3 — Open onboarding to other small biotech sponsors.**
-Once Phases 1 and 2 have demonstrated the operating model across two distinct sponsor types, the platform opens to other small biotech sponsors on a per-program basis. Each new program follows the same path: ETRB approval at a licensed Montana ETC, listing on `/conditions/:slug` and `/programs/:slug`, integration into the operating platform.
+**Phase 3 — Open onboarding to other small biotech manufacturers.**
+Once Phases 1 and 2 have demonstrated the operating model across two distinct manufacturer types, the platform opens to other small biotech manufacturers on a per-program basis. Each new program follows the same path: ETRB approval at a licensed Montana ETC, listing on `/conditions/:slug` and `/programs/:slug`, integration into the operating platform.
 
 **What this means for the directory PRD.**
-At MVP 0 launch, the live data is one program (WST-057) listed across four condition pages, with a single launch ETC (Big Sky). At Phase 2, that becomes two programs across at least five condition pages, with at least two ETCs. The IA, search, and analytics surfaces in this PRD are designed to scale to many sponsors without restructuring; only data seeding and content authoring expand. Long-tail conditions outside the active sponsor pipeline (ALS, MS, rare cancers, autoimmune, etc.) ship as "Not currently offered" stubs per § 14.2 State C — present in the conditions index for SEO and graceful fallback, but not actively marketed.
+At MVP 0 launch, the live data is one program (WST-057) listed across four condition pages, with a single launch ETC (Big Sky). At Phase 2, that becomes two programs across at least five condition pages, with at least two ETCs. The IA, search, and analytics surfaces in this PRD are designed to scale to many manufacturers without restructuring; only data seeding and content authoring expand. Long-tail conditions outside the active manufacturer pipeline (ALS, MS, rare cancers, autoimmune, etc.) ship as "Not currently offered" stubs per § 14.2 State C — present in the conditions index for SEO and graceful fallback, but not actively marketed.
 
 ---
 
@@ -128,7 +128,7 @@ These constraints govern every product decision in the directory. Violations are
 6. **Lewis never charges patients.** Patients pay ETCs directly. Insurance does not cover RTT under SB 535.
 7. **WCAG 2.1 AA.** Patient-facing surfaces target this — keyboard navigation, screen reader announcements, no auto-advance on radio inputs, focus management on route changes.
 8. **Public-read RLS posture.** Directory backend access is restricted to `/v1/public/*` endpoints plus two semi-authenticated endpoints (`/v1/patient/me/context`, `/v1/patient/account/link-anonymous-screen`). No service-role queries from the directory bundle.
-9. **Independence framing.** The directory is independent of any sponsor or ETC. Footer trust signal must say so on every page.
+9. **Independence framing.** The directory is independent of any manufacturer or ETC. Footer trust signal must say so on every page.
 
 ---
 
@@ -160,7 +160,7 @@ These constraints govern every product decision in the directory. Violations are
 
 **Behavior:** will not submit a connect form; refers patients and may want to call the ETC directly.
 
-### 4.3 Persona 3 — Biotech Sponsor / Drug Manufacturer
+### 4.3 Persona 3 — Biotech Manufacturer / Drug Manufacturer
 
 **Archetype:** Corporate development VP, head of medical affairs, or regulatory lead at a Phase 1+ biotech. Hits the site after a Montana ETC inquired about adding their compound, after seeing Lewis at a conference, or after a competitor got listed.
 
@@ -186,7 +186,7 @@ The five top jobs-to-be-done per persona, mapped to the directory pages that ser
 |---|---|---|---|---|---|
 | **Patient** | Confirm a treatment exists for my condition in Montana → `/conditions/:slug` → `/programs/:slug` | Decide if I'm likely eligible → `/eligibility/:programSlug` | Understand cost and what insurance does/doesn't cover → `/programs/:slug` cost panel + `/faq` | Verify this is a real licensed clinic → `/etcs/:slug` (license #, medical director, public docs) | Start a connection → `/connect/:programSlug` |
 | **Clinician** | Confirm clinical legitimacy → `/programs/:slug` Evidence panel | Get a downloadable brief → `/programs/:slug/brief.pdf` | Reach the ETC's medical director → `/etcs/:slug` | Understand FDA pre-approval marketing posture → `/for-clinicians` | Refer my patient → `/programs/:slug` clinician CTA → `/connect/:programSlug?referrer=clinician` |
-| **Sponsor** | Understand the SB 535 framework → `/for-sponsors` regulatory section | Understand listing process → `/for-sponsors` listing-process section | Understand the operating platform → `/platform` | Understand business model and pricing → `/for-sponsors` business-model section | Reach a BD contact → sponsors@lewis.health mailto |
+| **Manufacturer** | Understand the SB 535 framework → `/for-manufacturers` regulatory section | Understand listing process → `/for-manufacturers` listing-process section | Understand the operating platform → `/platform` | Understand business model and pricing → `/for-manufacturers` business-model section | Reach a BD contact → manufacturers@lewis.health mailto |
 | **ETC Operator** | Understand the ETC license process → `/for-etcs` license-process section | See Lewis covers every RULE → `/for-etcs` compliance-surface table | Understand pricing → `/for-etcs` pricing section | See design partner / who else is on the platform → `/for-etcs` design-partner block | Start a conversation → operators@lewis.health mailto |
 
 ---
@@ -241,13 +241,13 @@ This section is the canonical record of the directory as of the date of this PRD
 - Programmatic focus reset on every route change.
 - `localStorage` token for anonymous eligibility screens (key: `lewis:eligibility:<slug>`).
 - `robots.txt` disallows `/eligibility/*` and `/connect/*`.
-- `sitemap.xml` indexes: `/`, `/browse`, `/conditions`, nine `/conditions/:slug` entries, `/etcs`, `/how-it-works`, `/faq`, `/for-etcs`, `/for-sponsors`, `/privacy`, `/terms`, `/cookies`, `/programs/wst-057`, `/etcs/big-sky`.
+- `sitemap.xml` indexes: `/`, `/browse`, `/conditions`, nine `/conditions/:slug` entries, `/etcs`, `/how-it-works`, `/faq`, `/for-etcs`, `/for-manufacturers`, `/privacy`, `/terms`, `/cookies`, `/programs/wst-057`, `/etcs/big-sky`.
 
 ### 7.2 Global chrome
 
 - **AnnouncementStrip** (top): Montana flag + "Lewis Health is just getting started. New programs and ETCs are added as Montana licenses them." + "Get notified" CTA. CTA is currently disabled — email signup endpoint not wired.
 - **TopNav** (sticky, 80px): Wordmark left ("Lewis · . · health" with italic "health"). Right: "Browse Treatments" outline pill + magnifier icon → `/search` filled accent square.
-- **Footer**: Montana flag + wordmark · links: Privacy, Terms, Share Feedback, For ETCs, For Sponsors.
+- **Footer**: Montana flag + wordmark · links: Privacy, Terms, Share Feedback, For ETCs, For Manufacturers.
 
 ### 7.3 Pages — implementation status
 
@@ -272,7 +272,7 @@ This section is the canonical record of the directory as of the date of this PRD
 | `/how-it-works` | Placeholder | Patient education page. |
 | `/faq` | Placeholder | Currently labeled "homepage FAQ is canonical" — incorrect, will be inverted. |
 | `/for-etcs` | Placeholder | B2B funnel — full content draft in this PRD. |
-| `/for-sponsors` | Placeholder | B2B funnel — full content draft in this PRD. |
+| `/for-manufacturers` | Placeholder | B2B funnel — full content draft in this PRD. |
 | `/feedback` | Placeholder | Feedback form. |
 | `/privacy` | Placeholder | Counsel-required. |
 | `/terms` | Placeholder | Counsel-required. |
@@ -285,7 +285,7 @@ This section is the canonical record of the directory as of the date of this PRD
 - 1 live ETC: **Big Sky ETC** (Bozeman, License ETC-2025-001, Dr. Helena Marsh MD) — connected to WinSanTor via an active PPA `tenant_relationships` row that drives the ETC's catalog-term aggregation in `search_index_documents`.
 - 9 conditions in the new `conditions` table per § 27.3:
   - Live: `diabetic-peripheral-neuropathy`, `chemotherapy-induced-peripheral-neuropathy`, `hiv-induced-peripheral-neuropathy`, `idiopathic-peripheral-neuropathy` — all linked to WST-057.
-  - Coming-soon: `ptsd` (Phase 2 sponsor onboarding next per § 2.4).
+  - Coming-soon: `ptsd` (Phase 2 manufacturer onboarding next per § 2.4).
   - Not-offered: `als`, `multiple-sclerosis`, `rare-cancers`, `autoimmune-diseases` — long-tail SEO + graceful fallback per § 14.2 State C.
 - All seed data is FORCE RLS'd; the new `app.role = 'directory_anonymous'` context is the only path that can read the published catalog.
 - The previous frontend condition scaffold has been replaced by the public conditions API. Programs and ETC profiles remain on the local catalog until their later API slices.
@@ -306,7 +306,7 @@ This section is the canonical record of the directory as of the date of this PRD
 
 - **Patient mental model is condition-first.** Patients arrive thinking about their condition, not about a specific drug. Drug names are destinations, not entry points. Every primary patient surface — homepage, TopNav, search, browse — must privilege the condition path. Drug-first paths exist for clinicians and sophisticated users but are secondary in the patient funnel.
 - **Patient funnel is the spine.** Every primary navigation decision is made through the lens of a patient arriving from a Google search for a condition.
-- **B2B tracks are parallel branches.** Clinician, sponsor, and ETC tracks branch off the spine and do not share visual real estate with the patient flow.
+- **B2B tracks are parallel branches.** Clinician, manufacturer, and ETC tracks branch off the spine and do not share visual real estate with the patient flow.
 - **Browse paths are duplicated by mental model.** Patients who think in conditions ("does anything exist for ALS?") and patients who think in drugs ("is WST-057 available?") both have a primary-nav entry point.
 - **Fail states are designed.** Empty results, ineligibility, condition-not-found — each has its own respectful, useful page.
 - **Aggressive pruning.** A directory that has 8 pages a patient actually reads beats one with 40 pages they ignore. Every page must justify its existence by serving a JTBD that no other page serves.
@@ -338,14 +338,14 @@ B2B TRACK 1 — CLINICIAN
   /for-clinicians          → Peer-level framing + brief library
   /programs/:slug/brief.pdf → Downloadable program brief
 
-B2B TRACK 2 — SPONSOR
-  /for-sponsors            → Regulatory + listing + business model
+B2B TRACK 2 — MANUFACTURER
+  /for-manufacturers            → Regulatory + listing + business model
 
 B2B TRACK 3 — ETC OPERATOR
   /for-etcs                → Compliance + ETRB + pricing
 
 SHARED CONVERGENCE
-  /platform                → Operating platform overview (sponsor + ETC)
+  /platform                → Operating platform overview (manufacturer + ETC)
 
 COMPANY (footer)
   /about                   → Founding story, leadership, contact
@@ -485,7 +485,7 @@ lewis.health/
 │       H1: Frequently asked questions.
 │       Purpose: Canonical extended FAQ. Homepage shows abridged top 5;
 │       /faq is the canonical destination including caregiver, clinician,
-│       sponsor, ETC questions.
+│       manufacturer, ETC questions.
 │       Nav: footer.
 │
 ├── B2B TRACK 1 — CLINICIAN
@@ -497,9 +497,9 @@ lewis.health/
 │       contact.
 │       Nav: secondary nav drawer.
 │
-├── B2B TRACK 2 — SPONSOR
+├── B2B TRACK 2 — MANUFACTURER
 │   │
-│   └── /for-sponsors                        [REWRITE — placeholder today]
+│   └── /for-manufacturers                        [REWRITE — placeholder today]
 │       H1: List a program with *Lewis*.
 │       Purpose: Regulatory framework; two paths (partner-ETC vs. own-ETC);
 │       operating platform overview; listing process; business model;
@@ -519,9 +519,9 @@ lewis.health/
 │   │
 │   └── /platform                            [NEW]
 │       H1: The operating platform behind every Montana *ETC*.
-│       Purpose: Module-by-module overview of app.lewis.health for sponsor
+│       Purpose: Module-by-module overview of app.lewis.health for manufacturer
 │       and ETC audiences; compliance mapping; security posture.
-│       Nav: linked from /for-sponsors and /for-etcs; not in primary nav.
+│       Nav: linked from /for-manufacturers and /for-etcs; not in primary nav.
 │
 ├── COMPANY — footer
 │   │
@@ -535,7 +535,7 @@ lewis.health/
 │   └── /feedback                            [REWRITE — placeholder today]
 │       H1: Share feedback.
 │       Purpose: Multi-persona feedback intake (patient, caregiver,
-│       clinician, ETC operator, sponsor); routes to support@lewis.health.
+│       clinician, ETC operator, manufacturer); routes to support@lewis.health.
 │       Nav: footer.
 │
 └── LEGAL — footer
@@ -563,7 +563,7 @@ lewis.health/
 | Route | sitemap.xml | robots.txt allow |
 |---|---|---|
 | `/`, `/browse`, `/conditions`, `/conditions/:slug`, `/programs/:slug`, `/programs/:slug/brief.pdf`, `/etcs`, `/etcs/:slug`, `/etcs/:slug/manual`, `/etcs/:slug/etrb-report` | ✓ | ✓ |
-| `/how-it-works`, `/faq`, `/about`, `/for-clinicians`, `/for-sponsors`, `/for-etcs`, `/platform` | ✓ | ✓ |
+| `/how-it-works`, `/faq`, `/about`, `/for-clinicians`, `/for-manufacturers`, `/for-etcs`, `/platform` | ✓ | ✓ |
 | `/privacy`, `/terms`, `/cookies`, `/feedback` | ✓ | ✓ |
 | `/search` | ✗ (query-string canonical) | ✓ |
 | `/eligibility/*`, `/connect/*` | ✗ | ✗ (already disallow) |
@@ -593,7 +593,7 @@ lewis.health/
 **Secondary nav drawer contents:**
 
 - For Physicians → `/for-clinicians`
-- For Sponsors → `/for-sponsors`
+- For Manufacturers → `/for-manufacturers`
 - For ETCs → `/for-etcs`
 - How it works → `/how-it-works`
 - About → `/about`
@@ -601,7 +601,7 @@ lewis.health/
 **Trade-offs defended:**
 
 - "Conditions" appears FIRST in primary nav (left of "Browse Treatments") because patients overwhelmingly arrive thinking in disease terms. "Browse Treatments" is a secondary, drug-first surface for clinicians and sophisticated browsers who already know the drug name. Both surface the same underlying programs through different mental models, but their visual weight reflects their relative importance to the patient persona.
-- B2B links live in the drawer, not primary nav — exposing "For Sponsors" to a patient is confusing and slightly off-putting. Drawer preserves access for B2B audiences without diluting the patient surface.
+- B2B links live in the drawer, not primary nav — exposing "For Manufacturers" to a patient is confusing and slightly off-putting. Drawer preserves access for B2B audiences without diluting the patient surface.
 - Magnifier triggers overlay, not navigation — enables in-page search from any route without losing the patient's current context.
 
 **Sticky behavior:** TopNav stays sticky at 80px height. On mobile, "Conditions" link moves into the drawer; primary mobile nav becomes `[Wordmark]` + `[magnifier]` + `[☰]`.
@@ -615,7 +615,7 @@ lewis.health/
 │  [Lewis · . · health]                                                            │
 │                                                                                  │
 │  PATIENTS              CLINICIANS         PARTNERS              COMPANY          │
-│  Browse treatments     For physicians     For sponsors          About            │
+│  Browse treatments     For physicians     For manufacturers          About            │
 │  Conditions            Clinical briefs    For ETCs              How it works     │
 │  ETCs                                     Operating platform    Frequently asked │
 │  Eligibility / Connect                                                           │
@@ -627,7 +627,7 @@ lewis.health/
 │  Share feedback                                                                  │
 │                                                                                  │
 ├──────────────────────────────────────────────────────────────────────────────────┤
-│  © 2026 Lewis Health · Independent directory · Not affiliated with any sponsor   │
+│  © 2026 Lewis Health · Independent directory · Not affiliated with any manufacturer   │
 │  or ETC. Information sourced from Montana DPHHS public records and licensed      │
 │  program operators.                                                              │
 └──────────────────────────────────────────────────────────────────────────────────┘
@@ -640,7 +640,7 @@ Trust-signal text in the bottom bar is non-negotiable. It establishes Lewis's in
 - Every `/programs/:slug` page links to: `/conditions/:condition-slug`, `/etcs/:etc-slug`, `/eligibility/:slug`, `/programs/:slug/brief.pdf`.
 - Every `/conditions/:slug` page links to: any associated `/programs/:slug`, plus a footer link to `/browse` and `/how-it-works`.
 - Every `/etcs/:slug` page links to: `/etcs/:slug/manual`, `/etcs/:slug/etrb-report`, each `/programs/:slug` offered.
-- Every B2B page (`/for-clinicians`, `/for-sponsors`, `/for-etcs`) links to `/platform` and to a mailto contact.
+- Every B2B page (`/for-clinicians`, `/for-manufacturers`, `/for-etcs`) links to `/platform` and to a mailto contact.
 - The patient flow (`/eligibility/*`, `/connect/*`) is a closed loop — no outbound links to non-funnel pages from these routes, except a "back to {treatment}" link at the top.
 
 ---
@@ -695,7 +695,7 @@ This subhead explicitly names the live condition above the fold. As more conditi
 
 **H2 (existing — revised):** "Conditions with experimental treatments in *Montana*."
 
-**Layout:** Horizontal carousel, condition-first. Per § 2.4 Phase 1, the launch state lists **four live** Diabetic / Chemotherapy-induced / HIV-induced / Idiopathic peripheral neuropathy cards (each sub-lined "Available now via WST-057® at Big Sky ETC, Bozeman") + **one muted "Coming soon for PTSD"** card foreshadowing Phase 2 (Psilocybin sponsor onboarding next). Each condition card links to `/conditions/:slug`, not directly to a program — `/programs/wst-057` is reached via any of the four PN condition pages. Carousel scrolls horizontally on mobile and on desktop overflow.
+**Layout:** Horizontal carousel, condition-first. Per § 2.4 Phase 1, the launch state lists **four live** Diabetic / Chemotherapy-induced / HIV-induced / Idiopathic peripheral neuropathy cards (each sub-lined "Available now via WST-057® at Big Sky ETC, Bozeman") + **one muted "Coming soon for PTSD"** card foreshadowing Phase 2 (Psilocybin manufacturer onboarding next). Each condition card links to `/conditions/:slug`, not directly to a program — `/programs/wst-057` is reached via any of the four PN condition pages. Carousel scrolls horizontally on mobile and on desktop overflow.
 
 **Revision:** This block was previously named "FeaturedTreatments" and led with drug names. Reframed to lead with conditions — the patient's mental model. As more conditions onboard, replace muted "Coming soon for…" cards with live condition cards. The "Coming soon for…" framing is honest forward-looking signaling; its presence communicates momentum without overstating availability. A separate FeaturedTreatments secondary carousel sits directly below this block (see § 11.4b) — both surfaces exist; conditions are visually first.
 
@@ -1020,7 +1020,7 @@ This positioning has implications:
 - Educational sidebar: "Why experimental treatments?"
 - Disclaimer: "Not medical advice. Consult your treating physician."
 
-**State B — Coming soon (e.g., ALS once a sponsor is in conversation):**
+**State B — Coming soon (e.g., ALS once a manufacturer is in conversation):**
 
 - Plain-language condition explainer (same as State A)
 - Standard-of-care section (same as State A)
@@ -1046,7 +1046,7 @@ Each `/conditions/:slug` page emits Schema.org `MedicalCondition` JSON-LD with:
 
 ### 14.4 Launch-priority condition list
 
-Per § 2.4 Phase 1, the launch state covers WST-057's four labeled indications. Phase 2 adds PTSD as the next sponsor onboards. Long-tail "not currently offered" stubs ship at MVP 0 for SEO and graceful fallback.
+Per § 2.4 Phase 1, the launch state covers WST-057's four labeled indications. Phase 2 adds PTSD as the next manufacturer onboards. Long-tail "not currently offered" stubs ship at MVP 0 for SEO and graceful fallback.
 
 **First 5 conditions to launch with full content (Phase 1):**
 
@@ -1054,7 +1054,7 @@ Per § 2.4 Phase 1, the launch state covers WST-057's four labeled indications. 
 2. Chemotherapy-induced peripheral neuropathy (live, WST-057)
 3. HIV-induced peripheral neuropathy (live, WST-057)
 4. Idiopathic peripheral neuropathy (live, WST-057)
-5. PTSD — coming soon stub (Phase 2 — Psilocybin sponsor onboarding next per § 2.4)
+5. PTSD — coming soon stub (Phase 2 — Psilocybin manufacturer onboarding next per § 2.4)
 
 **Long-tail "not currently offered" stubs to ship at MVP 0** (State C per § 14.2 — present for SEO and graceful fallback, not actively marketed):
 
@@ -1063,7 +1063,7 @@ Per § 2.4 Phase 1, the launch state covers WST-057's four labeled indications. 
 - Rare cancers (umbrella)
 - Autoimmune diseases (umbrella)
 
-Add 10-15 more long-tail stubs in Phase 2 of build as Phase 3 sponsor pipeline takes shape.
+Add 10-15 more long-tail stubs in Phase 2 of build as Phase 3 manufacturer pipeline takes shape.
 
 ---
 
@@ -1419,7 +1419,7 @@ Existing 5 + 3 expanded:
 7. Can I download clinical materials for chart review?
 8. How do I reach an ETC's medical director?
 
-**Group 4 — For sponsors (5 questions):**
+**Group 4 — For manufacturers (5 questions):**
 
 1. How does my company list a program?
 2. What's the regulatory framework?
@@ -1468,11 +1468,11 @@ Include this statutory language verbatim. It is the single most important reassu
 
 ---
 
-## 21. B2B Track — Sponsors (`/for-sponsors`)
+## 21. B2B Track — Manufacturers (`/for-manufacturers`)
 
 ### 21.1 Required first-draft content
 
-The full first-draft content for `/for-sponsors` is provided here for the copy team to refine and ship. This is a `[COUNSEL REVIEW]` artifact — every regulatory claim must be verified before publication.
+The full first-draft content for `/for-manufacturers` is provided here for the copy team to refine and ship. This is a `[COUNSEL REVIEW]` artifact — every regulatory claim must be verified before publication.
 
 ### 21.2 Page specification
 
@@ -1493,7 +1493,7 @@ The full first-draft content for `/for-sponsors` is provided here for the copy t
 
 > **List a program with Lewis.**
 >
-> Lewis is the operating platform for Montana's Experimental Treatment Center regime. We help biotech sponsors deliver investigational treatments to patients through licensed Montana ETCs — the only state-level commercial Right to Try program in the United States.
+> Lewis is the operating platform for Montana's Experimental Treatment Center regime. We help biotech manufacturers deliver investigational treatments to patients through licensed Montana ETCs — the only state-level commercial Right to Try program in the United States.
 >
 > If you manufacture an investigational drug, biological product, or device that has completed Phase 1 of an FDA-approved clinical trial and remains under investigation, your treatment may qualify under SB 535 (50-12-102(1)). Two paths are open to you, and we support both.
 >
@@ -1541,11 +1541,11 @@ The full first-draft content for `/for-sponsors` is provided here for the copy t
 >
 > **How Lewis is paid**
 >
-> Lewis charges sponsors a per-patient enrollment fee plus a flat platform subscription. We do not take a percentage of revenue. We do not charge patients. We do not take referral fees from ETCs. Pricing is discussed in the initial conversation.
+> Lewis charges manufacturers a per-patient enrollment fee plus a flat platform subscription. We do not take a percentage of revenue. We do not charge patients. We do not take referral fees from ETCs. Pricing is discussed in the initial conversation.
 >
 > **Talk to our team**
 >
-> Email sponsors@lewis.health to start the conversation. Initial calls are with our BD lead and a regulatory advisor familiar with SB 535. Mention your drug, indication, and current trial phase; we'll come prepared to talk about both paths.
+> Email manufacturers@lewis.health to start the conversation. Initial calls are with our BD lead and a regulatory advisor familiar with SB 535. Mention your drug, indication, and current trial phase; we'll come prepared to talk about both paths.
 
 ---
 
@@ -1625,7 +1625,7 @@ Full draft below. Same `[COUNSEL REVIEW]` discipline applies.
 >
 > The Experimental Treatment Review Board is the most distinctive — and most operationally complex — requirement in MAR 2026-427.1. It is also the keymaster for any treatment ever being administered outside the ETC walls under RULE 25.
 >
-> Lewis treats the ETRB as a first-class entity. A board can serve one ETC or many (RULE 16(2)(b), RULE 16(4)). Each board member is a Clerk-authenticated reviewer with a conflict-of-interest declaration aligned to 1-6-105 MCA. Protocol reviews flow from sponsor to board with reviewer assignments, votes, rationale, and approval timestamps. The annual public report under RULE 16(6)(c) generates from this dataset automatically.
+> Lewis treats the ETRB as a first-class entity. A board can serve one ETC or many (RULE 16(2)(b), RULE 16(4)). Each board member is a Clerk-authenticated reviewer with a conflict-of-interest declaration aligned to 1-6-105 MCA. Protocol reviews flow from manufacturer to board with reviewer assignments, votes, rationale, and approval timestamps. The annual public report under RULE 16(6)(c) generates from this dataset automatically.
 >
 > If you have not yet recruited a board, we can connect you with reviewers. If you have a board, your board uses Lewis as its system of record.
 >
@@ -1641,7 +1641,7 @@ Full draft below. Same `[COUNSEL REVIEW]` discipline applies.
 >
 > **Built with the first Montana ETC**
 >
-> Lewis was built in design partnership with Big Sky ETC in Bozeman — Montana's first licensed Experimental Treatment Center — and with WinSanTor, the sponsor of the first commercial WST-057 program. Every flow in the platform was tested with their team. We continue to add features at the pace of new RULE interpretations and DPHHS guidance.
+> Lewis was built in design partnership with Big Sky ETC in Bozeman — Montana's first licensed Experimental Treatment Center — and with WinSanTor, the manufacturer of the first commercial WST-057 program. Every flow in the platform was tested with their team. We continue to add features at the pace of new RULE interpretations and DPHHS guidance.
 >
 > **Start a conversation**
 >
@@ -1655,7 +1655,7 @@ Full draft below. Same `[COUNSEL REVIEW]` discipline applies.
 
 **H1:** The operating platform behind every Montana ETC.
 
-**Purpose:** Cross-persona explainer of `app.lewis.health` for sponsors and ETC operators. Linked from `/for-sponsors` and `/for-etcs`. Not in primary nav.
+**Purpose:** Cross-persona explainer of `app.lewis.health` for manufacturers and ETC operators. Linked from `/for-manufacturers` and `/for-etcs`. Not in primary nav.
 
 **Section structure:**
 
@@ -1687,16 +1687,20 @@ Reuse the table from `/for-etcs` § 22.3, with an additional column for "Audit e
 
 - Founding story — Meriwether Lewis, *Lewisia rediviva*, Montana's first commercial RTT regime
 - Mission — independent infrastructure for SB 535 access
-- Leadership — Gabriel Viggers (Founding Product), Stanley Kim (design partner sponsor lead)
+- Leadership — Gabriel Viggers (Founding Product), Stanley Kim (design partner manufacturer lead)
 - Design partner reference — Big Sky ETC + WinSanTor
-- Independence statement — not affiliated with any sponsor or ETC
+- Independence statement — not affiliated with any manufacturer or ETC
 - Press contact — press@lewis.health
 - Investor contact — investors@lewis.health
 - Office (eventual) — TBD
 
 ### 24.2 Founding-story paragraph
 
-> Lewis is named for Meriwether Lewis, who from 1804 to 1806 led the careful documentation of Montana's plants, animals, peoples, and geography — producing one of the most thorough records of an unknown territory in American history. Lewis catalogued the bitterroot, Montana's state flower, whose scientific name *Lewisia rediviva* honors him and means *brought back to life*. We named the platform Lewis because we built it to be the same kind of careful record for a new frontier: Montana's experimental treatment program, the first of its kind in the country, and the patients whose treatments it brings within reach.
+> Lewis is named for Meriwether Lewis, who together with William Clark led the Corps of Discovery — Thomas Jefferson's 1804–1806 expedition to document the plants, animals, peoples, and geography of an unknown American frontier. They traveled from St. Louis to the Pacific and back, returning with thousands of pages of journals, hundreds of specimens, and one of the most thorough records of unmapped territory in American history.
+>
+> Lewis catalogued the bitterroot, Montana's state flower, whose scientific name *Lewisia rediviva* honors him and means *brought back to life* — a reference to the plant's taproot, which revives after being pressed and dried.
+>
+> We named the platform Lewis because we built it to be the same kind of careful record for a new frontier: Montana's experimental treatment program, the first of its kind in the country, and the patients whose treatments it brings within reach.
 
 ### 24.3 `/feedback`
 
@@ -1704,7 +1708,7 @@ Reuse the table from `/for-etcs` § 22.3, with an additional column for "Audit e
 
 **Form fields:**
 
-- Persona selector: Patient / Caregiver / Treating physician / ETC operator / Sponsor / Other
+- Persona selector: Patient / Caregiver / Treating physician / ETC operator / Manufacturer / Other
 - Email (optional)
 - Feedback (textarea, required)
 - Subject (auto-populated based on persona)
@@ -1743,7 +1747,7 @@ Specifically must address:
 - No medical advice
 - Patient relationship is with the ETC, not Lewis
 - Lewis never charges patients
-- Sponsor and ETC use is governed by separate MSA / platform agreements
+- Manufacturer and ETC use is governed by separate MSA / platform agreements
 - Multi-state and FDA pre-approval marketing posture
 
 ---
@@ -1817,7 +1821,7 @@ Per § 2.4 Phase 1, four PN indications launch live (all linking to WST-057). PT
 | `chemotherapy-induced-peripheral-neuropathy` | Chemotherapy-induced peripheral neuropathy | Live (links to WST-057) | Lewis editorial |
 | `hiv-induced-peripheral-neuropathy` | HIV-induced peripheral neuropathy | Live (links to WST-057) | Lewis editorial |
 | `idiopathic-peripheral-neuropathy` | Idiopathic peripheral neuropathy | Live (links to WST-057) | Lewis editorial |
-| `ptsd` | Post-traumatic stress disorder (PTSD) | Coming soon stub (Phase 2 — Psilocybin sponsor) | Lewis editorial |
+| `ptsd` | Post-traumatic stress disorder (PTSD) | Coming soon stub (Phase 2 — Psilocybin manufacturer) | Lewis editorial |
 | `als` | Amyotrophic Lateral Sclerosis | Not currently offered stub | Lewis editorial |
 | `multiple-sclerosis` | Multiple Sclerosis | Not currently offered stub | Lewis editorial |
 | `rare-cancers` | Rare cancers (umbrella) | Not currently offered stub | Lewis editorial |
@@ -1833,7 +1837,7 @@ These specific content items must be cleared before public launch:
 4. Big Sky ETC medical director credentials — Dr. Helena Marsh MD profile content, clinical inquiry contact path
 5. WST-057 program brief PDF — designed and approved
 6. Founding-story copy for `/about` — Gabriel-authored, Stanley-approved
-7. `/for-sponsors` first-draft sign-off — counsel review of the regulatory framing in § 21.3
+7. `/for-manufacturers` first-draft sign-off — counsel review of the regulatory framing in § 21.3
 8. `/for-etcs` first-draft sign-off — counsel review of the compliance-table claims in § 22.3
 9. `/privacy`, `/terms`, `/cookies` — counsel-drafted, Lewis-approved
 10. Eligibility self-screen fail copy — refined per § 17.4
@@ -2000,8 +2004,8 @@ The directory targets WCAG 2.1 AA. Specific implementation requirements:
 
 **B2B-level:**
 
-- `for_sponsors.viewed`
-- `for_sponsors.contact_clicked`
+- `for_manufacturers.viewed`
+- `for_manufacturers.contact_clicked`
 - `for_etcs.viewed`
 - `for_etcs.contact_clicked`
 - `for_clinicians.viewed`
@@ -2026,7 +2030,7 @@ The directory targets WCAG 2.1 AA. Specific implementation requirements:
 
 - **Weekly funnel review:** Lewis founding team
 - **Monthly cohort analysis:** program-level conversion rates
-- **Quarterly:** B2B funnel performance for sponsor and ETC tracks
+- **Quarterly:** B2B funnel performance for manufacturer and ETC tracks
 
 ---
 
@@ -2043,7 +2047,7 @@ The following must clear counsel review before public launch:
 | `/cookies` (if separate) | Health-IT counsel | Pending engagement |
 | `/programs/:slug` cost language | Biotech counsel + WinSanTor | Pending |
 | `/programs/:slug` evidence language | Regulatory counsel | Pending |
-| `/for-sponsors` regulatory framing | Biotech + regulatory counsel | Pending |
+| `/for-manufacturers` regulatory framing | Biotech + regulatory counsel | Pending |
 | `/for-etcs` compliance-table claims | Health-IT + regulatory counsel | Pending |
 | `/for-clinicians` FDA pre-approval marketing posture | Regulatory counsel | Pending |
 | Independence framing in footer | Health-IT counsel | Pending |
@@ -2058,7 +2062,7 @@ Lewis's primary regulatory exposure is FDA pre-approval marketing rules (21 CFR 
 - No price promotion — cost is disclosed factually, not promotional
 - No efficacy claims beyond what the published evidence supports — counsel reviews each evidence citation
 - No comparative claims against other treatments
-- Sponsor identification limited — manufacturer name appears, but Lewis does not promote on sponsor's behalf
+- Manufacturer identification limited — manufacturer name appears, but Lewis does not promote on manufacturer's behalf
 
 This posture must be reviewed by regulatory counsel familiar with 21 CFR 312.7 specifically before public launch.
 
@@ -2169,7 +2173,7 @@ These items must ship before any public traffic.
 - ⏳ Connect form privacy framing block — per § 18.1 — **Sprint 5**
 - ⏳ Connect form situation field made optional — per § 18.1 — **Sprint 5**
 - ⏳ Account creation gate verification — anonymous submission accepted, account post-conversion only — **Sprint 5**
-- ⏳ `/for-sponsors` full first-draft content — per § 21.3 — **Sprint 5**
+- ⏳ `/for-manufacturers` full first-draft content — per § 21.3 — **Sprint 5**
 - ⏳ `/for-etcs` full first-draft content — per § 22.3 — **Sprint 5**
 - ⏳ Build pipeline `[COUNSEL REVIEW]` lint — fails build on found markers — **Sprint 6**
 
@@ -2182,7 +2186,7 @@ These items must ship before any public traffic.
 - First 5 condition pages content
 - Homepage hero subhead naming live condition (e.g., "Currently offering treatments for diabetic peripheral neuropathy") — content-managed string per § 11.3 revision
 - AbridgedFAQ 5 questions (homepage)
-- `/for-sponsors` counsel review of regulatory claims
+- `/for-manufacturers` counsel review of regulatory claims
 - `/for-etcs` counsel review of compliance-table claims
 - `/about` founding story + leadership content
 - `/privacy`, `/terms`, `/cookies` counsel-drafted
@@ -2367,12 +2371,12 @@ Recommended 6-sprint plan to public launch:
 - [ ] FDA pre-approval marketing posture cites SB 535 § 12 verbatim
 - [ ] Brief library (initially WST-057's only) functional
 
-**`/for-sponsors`:**
+**`/for-manufacturers`:**
 
 - [ ] Full first-draft content per § 21.3
 - [ ] Two-paths section explicit
 - [ ] Counsel sign-off obtained
-- [ ] sponsors@lewis.health mailto functional
+- [ ] manufacturers@lewis.health mailto functional
 
 **`/for-etcs`:**
 
@@ -2476,7 +2480,7 @@ A formal go/no-go review against this acceptance criteria checklist must occur b
 - Engineering lead
 - Design lead (TBD)
 - Health-IT counsel
-- WinSanTor as design partner sponsor
+- WinSanTor as design partner manufacturer
 - Big Sky ETC as design partner ETC
 
 If any gate fails, launch is delayed until resolved.
@@ -2530,7 +2534,7 @@ The following items require resolution before or during the build phase.
 
 ### 34.5 Operational
 
-- Email aliases: support@, sponsors@, operators@, clinicians@, press@, investors@ — provisioned?
+- Email aliases: support@, manufacturers@, operators@, clinicians@, press@, investors@ — provisioned?
 - DNS: lewis.health purchased? lewis.co, lewishealth.com, uselewis.com defensive registrations?
 - USPTO trademark: Class 042 (software), Class 044 (medical) for "Lewis" and "Lewis Health" — searched and filed?
 - Hosting accounts: Vercel, Cloudflare, Supabase, Clerk, Resend, Sentry, PostHog — all provisioned with BAA contracts?
@@ -2599,7 +2603,7 @@ The following items require resolution before or during the build phase.
 
 ## Revision History
 
-- **v1.1** (2026-04-29) — Condition-first patient mental model reframe applied. See § 8.1 leading principle. Includes high-priority follow-up fixes: § 8.2 IA map route order swapped (Conditions before Browse); § 9 site-map `/` purpose updated; § 11.1 + § 11.4b dual-carousel spec (FeaturedConditions primary, FeaturedTreatments secondary); § 12.1 funnel YES branch routes through `/conditions/:slug` waypoint; § 30.2 analytics events extended (`condition.viewed`, `condition.program_clicked`, `homepage.featured_condition_clicked`). Plus medium-priority follow-ups: § 9 site-map purpose lines for `/conditions`, `/conditions/:slug`, and `/browse` rewritten to name the primary-patient-browse + highest-value-SEO dual role for conditions and the explicit demotion of `/browse` to secondary drug-first / power-user surface. Plus § 12.2 Decision 1 drop-off cause rewritten for the post-condition-first failure mode. Plus new § 2.4 Sponsor & Condition Rollout Strategy capturing the slow-sniper rollout (Phase 1 WST-057 across 4 PN indications with Big Sky ETC; Phase 2 Psilocybin for PTSD; Phase 3 broader biotech onboarding); § 11.4 carousel updated to 4 live PN cards + Coming-soon-for-PTSD; § 14.4 launch list and § 27.3 conditions seed updated to match. Plus new § 13.5 Off-topic queries — search relevance must respect query semantics (an ALS query never promotes WST-057 as a primary match).
+- **v1.1** (2026-04-29) — Condition-first patient mental model reframe applied. See § 8.1 leading principle. Includes high-priority follow-up fixes: § 8.2 IA map route order swapped (Conditions before Browse); § 9 site-map `/` purpose updated; § 11.1 + § 11.4b dual-carousel spec (FeaturedConditions primary, FeaturedTreatments secondary); § 12.1 funnel YES branch routes through `/conditions/:slug` waypoint; § 30.2 analytics events extended (`condition.viewed`, `condition.program_clicked`, `homepage.featured_condition_clicked`). Plus medium-priority follow-ups: § 9 site-map purpose lines for `/conditions`, `/conditions/:slug`, and `/browse` rewritten to name the primary-patient-browse + highest-value-SEO dual role for conditions and the explicit demotion of `/browse` to secondary drug-first / power-user surface. Plus § 12.2 Decision 1 drop-off cause rewritten for the post-condition-first failure mode. Plus new § 2.4 Manufacturer & Condition Rollout Strategy capturing the slow-sniper rollout (Phase 1 WST-057 across 4 PN indications with Big Sky ETC; Phase 2 Psilocybin for PTSD; Phase 3 broader biotech onboarding); § 11.4 carousel updated to 4 live PN cards + Coming-soon-for-PTSD; § 14.4 launch list and § 27.3 conditions seed updated to match. Plus new § 13.5 Off-topic queries — search relevance must respect query semantics (an ALS query never promotes WST-057 as a primary match).
 - **v1.0** (2026-04-29) — Initial build-ready specification.
 
 ---

@@ -1,10 +1,10 @@
 import {
   CursorPageQuery,
   ErrorResponse,
-  SponsorAdverseEventsResponse,
-  SponsorEtcsResponse,
-  SponsorPathParams,
-  SponsorProgramsResponse,
+  ManufacturerAdverseEventsResponse,
+  ManufacturerEtcsResponse,
+  ManufacturerPathParams,
+  ManufacturerProgramsResponse,
   EtcComplianceResponse,
   EtcDashboardResponse,
   EtcDrugInventoryLotsResponse,
@@ -24,6 +24,15 @@ import {
   PublicSearchQueryParams,
   PublicSearchResponse,
   ConditionSlug,
+  ConnectRequestPayload,
+  ConnectRequestResponse,
+  EligibilityAnswerRequest,
+  EligibilityAnswerResponse,
+  EligibilityCompleteRequest,
+  EligibilityCompleteResponse,
+  EligibilityResumeResponse,
+  EligibilityStartRequest,
+  EligibilityStartResponse,
   EtcSlug,
   MarketingConfirmResponse,
   MarketingSubscriptionRequest,
@@ -71,10 +80,10 @@ export function buildOpenApiDocument(baseUrl: string) {
   registry.register("ErrorResponse", ErrorResponse);
   registry.register("CursorPageQuery", CursorPageQuery);
 
-  registry.register("SponsorPathParams", SponsorPathParams);
-  registry.register("SponsorProgramsResponse", SponsorProgramsResponse);
-  registry.register("SponsorEtcsResponse", SponsorEtcsResponse);
-  registry.register("SponsorAdverseEventsResponse", SponsorAdverseEventsResponse);
+  registry.register("ManufacturerPathParams", ManufacturerPathParams);
+  registry.register("ManufacturerProgramsResponse", ManufacturerProgramsResponse);
+  registry.register("ManufacturerEtcsResponse", ManufacturerEtcsResponse);
+  registry.register("ManufacturerAdverseEventsResponse", ManufacturerAdverseEventsResponse);
 
   registry.register("EtcPathParams", EtcPathParams);
   registry.register("EtcDashboardResponse", EtcDashboardResponse);
@@ -119,6 +128,16 @@ export function buildOpenApiDocument(baseUrl: string) {
   registry.register("MarketingSubscriptionResponse", MarketingSubscriptionResponse);
   registry.register("MarketingConfirmResponse", MarketingConfirmResponse);
   registry.register("MarketingUnsubscribeResponse", MarketingUnsubscribeResponse);
+  // -- Slice 5: connect-request + eligibility-session schemas
+  registry.register("ConnectRequestPayload", ConnectRequestPayload);
+  registry.register("ConnectRequestResponse", ConnectRequestResponse);
+  registry.register("EligibilityStartRequest", EligibilityStartRequest);
+  registry.register("EligibilityStartResponse", EligibilityStartResponse);
+  registry.register("EligibilityAnswerRequest", EligibilityAnswerRequest);
+  registry.register("EligibilityAnswerResponse", EligibilityAnswerResponse);
+  registry.register("EligibilityCompleteRequest", EligibilityCompleteRequest);
+  registry.register("EligibilityCompleteResponse", EligibilityCompleteResponse);
+  registry.register("EligibilityResumeResponse", EligibilityResumeResponse);
 
   // -- Security schemes -----------------------------------------------------
 
@@ -365,7 +384,7 @@ export function buildOpenApiDocument(baseUrl: string) {
       get: {
         summary: "Anonymous public programs catalog (list, faceted)",
         description:
-          "Returns directory_published programs with summary metadata and a count of ETCs offering each (via active sponsor↔ETC PPAs). Slice 4: accepts repeated query params for filtering — `condition`, `form`, `phase`, `etc`, `manufacturer` — multiple values OR-within a key, AND across keys. `manufacturer` is parsed but currently a no-op (deferred to slice 5+ when the public sponsor display-name path lands). `sort` accepts alphabetical (default) | recent | etc_count. Rate limited at 60 req/min/IP. See docs/directoryprd.md § 15 + § 33.1.",
+          "Returns directory_published programs with summary metadata and a count of ETCs offering each (via active manufacturer↔ETC PPAs). Slice 4: accepts repeated query params for filtering — `condition`, `form`, `phase`, `etc`, `manufacturer` — multiple values OR-within a key, AND across keys. `manufacturer` is parsed but currently a no-op (deferred to slice 5+ when the public manufacturer display-name path lands). `sort` accepts alphabetical (default) | recent | etc_count. Rate limited at 60 req/min/IP. See docs/directoryprd.md § 15 + § 33.1.",
         parameters: [
           {
             name: "condition",
@@ -439,7 +458,7 @@ export function buildOpenApiDocument(baseUrl: string) {
       get: {
         summary: "Anonymous public programs facet counts (Amazon-style)",
         description:
-          "Returns count buckets for each filterable facet (conditions / forms / phases / etcs / manufacturers). Each facet's count is computed against the active filter MINUS that facet's own filter, so the count reflects 'what would the result count be if I added this value to the active filter'. Same query params as /v1/public/programs. Manufacturers facet is always empty until the sponsor display-name path lands (slice 5+).",
+          "Returns count buckets for each filterable facet (conditions / forms / phases / etcs / manufacturers). Each facet's count is computed against the active filter MINUS that facet's own filter, so the count reflects 'what would the result count be if I added this value to the active filter'. Same query params as /v1/public/programs. Manufacturers facet is always empty until the manufacturer display-name path lands (slice 5+).",
         parameters: [
           { name: "condition", in: "query", required: false, schema: { type: "string" } },
           { name: "form", in: "query", required: false, schema: { type: "string" } },
@@ -523,7 +542,7 @@ export function buildOpenApiDocument(baseUrl: string) {
       get: {
         summary: "Anonymous public ETC detail",
         description:
-          "Returns a single directory_published ETC plus its medical-director clinical contact, address lines, hours, and offered programs (joined via active sponsor↔ETC PPA). See docs/directoryprd.md § 16.2.",
+          "Returns a single directory_published ETC plus its medical-director clinical contact, address lines, hours, and offered programs (joined via active manufacturer↔ETC PPA). See docs/directoryprd.md § 16.2.",
         parameters: [
           {
             name: "slug",
@@ -611,50 +630,139 @@ export function buildOpenApiDocument(baseUrl: string) {
         },
       },
     },
-    "/v1/sponsors/{sponsorId}/programs": {
-      get: {
-        summary: "List programs owned by a sponsor",
-        security: [{ ClerkBearer: [] }],
-        parameters: [
-          tenantHeader,
-          {
-            name: "sponsorId",
-            in: "path",
-            required: true,
-            schema: { type: "string", format: "uuid" },
+    "/v1/public/connect-requests": {
+      post: {
+        summary: "Anonymous patient → ETC connect request (slice 5 § 18.1 / 18.2)",
+        description:
+          "Submits a patient inquiry against a published program. The offering ETC is resolved server-side via active manufacturer↔ETC PPA; the response carries the inserted row id but never the ETC details. An optional eligibility-session token (UUID) attaches the screen to the request when present and not expired. Account creation is strictly post-conversion (§ 18.2) — the response always returns needsAccount=false / signupUrl=null. Rate-limited at 5 req/min/IP.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ConnectRequestPayload" },
+            },
           },
-          limitParam,
-          cursorParam,
-        ],
-        responses: { 200: ok("SponsorProgramsResponse"), ...errors },
+        },
+        responses: {
+          200: ok("ConnectRequestResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
       },
     },
-    "/v1/sponsors/{sponsorId}/etcs": {
-      get: {
-        summary: "List ETCs in active PPA with this sponsor",
-        security: [{ ClerkBearer: [] }],
-        parameters: [
-          tenantHeader,
-          {
-            name: "sponsorId",
-            in: "path",
-            required: true,
-            schema: { type: "string", format: "uuid" },
+    "/v1/public/eligibility/start": {
+      post: {
+        summary: "Start an anonymous eligibility self-screen (slice 5 § 17.2)",
+        description:
+          "Mints an opaque session token + expiresAt for a published program. Returns 404 for unknown / unpublished slugs to avoid acting as a discovery oracle. The questions themselves live client-side (apps/directory/src/data/eligibility.ts); the server only owns the token, per-answer persistence, and final pass/fail decision audit trail. Rate-limited at 30 req/min/IP.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EligibilityStartRequest" },
+            },
           },
-          limitParam,
-          cursorParam,
-        ],
-        responses: { 200: ok("SponsorEtcsResponse"), ...errors },
+        },
+        responses: {
+          200: ok("EligibilityStartResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
       },
     },
-    "/v1/sponsors/{sponsorId}/adverse-events": {
+    "/v1/public/eligibility/sessions/{token}/answers": {
+      post: {
+        summary: "Append an answer to an in-progress eligibility session",
+        description:
+          "Merges { questionId: value } into the session's answers JSONB. Returns 404 for expired / unknown / already-completed sessions (no oracle distinguishing which).",
+        parameters: [
+          {
+            name: "token",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EligibilityAnswerRequest" },
+            },
+          },
+        },
+        responses: {
+          200: ok("EligibilityAnswerResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/eligibility/sessions/{token}/complete": {
+      post: {
+        summary: "Close an eligibility session with pass/fail outcome",
+        description:
+          "Records the final pass/fail decision. For failed outcomes, the request carries the specific failed_criterion text per § 17.4 ('...the program requires a confirmed diabetic peripheral neuropathy diagnosis from a treating physician.'). Cross-field rule: failedCriterion must be null when passed=true, and required when passed=false. Returns 404 if the session expired or was already completed (idempotent).",
+        parameters: [
+          {
+            name: "token",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EligibilityCompleteRequest" },
+            },
+          },
+        },
+        responses: {
+          200: ok("EligibilityCompleteResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/public/eligibility/sessions/{token}": {
       get: {
-        summary: "List adverse events visible to this sponsor (consent-scoped)",
+        summary: "Resume an eligibility session by token",
+        description:
+          "Returns the persisted state (program slug, accumulated answers, status, failed_criterion if any) for an unexpired session. Returns 404 for expired / unknown tokens — a single state, no oracle distinguishing which case it was.",
+        parameters: [
+          {
+            name: "token",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          200: ok("EligibilityResumeResponse"),
+          400: { $ref: "#/components/responses/ValidationError" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/RateLimited" },
+          500: { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/v1/manufacturers/{manufacturerId}/programs": {
+      get: {
+        summary: "List programs owned by a manufacturer",
         security: [{ ClerkBearer: [] }],
         parameters: [
           tenantHeader,
           {
-            name: "sponsorId",
+            name: "manufacturerId",
             in: "path",
             required: true,
             schema: { type: "string", format: "uuid" },
@@ -662,7 +770,43 @@ export function buildOpenApiDocument(baseUrl: string) {
           limitParam,
           cursorParam,
         ],
-        responses: { 200: ok("SponsorAdverseEventsResponse"), ...errors },
+        responses: { 200: ok("ManufacturerProgramsResponse"), ...errors },
+      },
+    },
+    "/v1/manufacturers/{manufacturerId}/etcs": {
+      get: {
+        summary: "List ETCs in active PPA with this manufacturer",
+        security: [{ ClerkBearer: [] }],
+        parameters: [
+          tenantHeader,
+          {
+            name: "manufacturerId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+          limitParam,
+          cursorParam,
+        ],
+        responses: { 200: ok("ManufacturerEtcsResponse"), ...errors },
+      },
+    },
+    "/v1/manufacturers/{manufacturerId}/adverse-events": {
+      get: {
+        summary: "List adverse events visible to this manufacturer (consent-scoped)",
+        security: [{ ClerkBearer: [] }],
+        parameters: [
+          tenantHeader,
+          {
+            name: "manufacturerId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+          limitParam,
+          cursorParam,
+        ],
+        responses: { 200: ok("ManufacturerAdverseEventsResponse"), ...errors },
       },
     },
     "/v1/etcs/{etcId}/dashboard": {

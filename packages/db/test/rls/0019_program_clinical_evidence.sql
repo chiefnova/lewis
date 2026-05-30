@@ -33,12 +33,12 @@ select is_empty(
   'directory_program_etc_count is not granted through PUBLIC'
 );
 
--- Setup an unpublished program under the same sponsor as WST-057. Without the
--- helper's directory_published guard, this would leak that the sponsor has an
+-- Setup an unpublished program under the same manufacturer as WST-057. Without the
+-- helper's directory_published guard, this would leak that the manufacturer has an
 -- active published ETC relationship by returning 1.
 insert into programs (
   id,
-  sponsor_tenant_id,
+  manufacturer_tenant_id,
   jurisdiction_id,
   name,
   treatment_form,

@@ -140,7 +140,7 @@ describe("GET /public/programs (list)", () => {
       slug: "wst-057",
       name: "WST-057®",
       indication: "for diabetic peripheral neuropathy",
-      // manufacturer stays null until /v1/public/etcs / sponsor display name
+      // manufacturer stays null until /v1/public/etcs / manufacturer display name
       // exposure ships in a later slice.
       manufacturer: null,
       form: "Topical",

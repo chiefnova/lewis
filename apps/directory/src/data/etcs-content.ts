@@ -33,7 +33,7 @@ export const ETC_CONTENT: Record<string, EtcContent> = {
     aboutParagraphs: [
       "Big Sky Experimental Treatment Center is the first ETC licensed under Montana SB 535, providing investigational treatments to qualifying patients under ETRB-approved protocols. The clinic operates as an outpatient specialty practice serving neurology, pain medicine, and rare-disease consultation.",
       "All treatments at Big Sky are delivered under direct medical supervision by board-certified clinicians. Each program is governed by an Experimental Treatment Review Board (ETRB) protocol approval per RULE 16(6)(a), with annual public safety reporting and adverse-event tracking.",
-      "Big Sky is independent of any sponsor or manufacturer. The clinic's enrollment decisions are based on the treating physician's recommendation, the ETRB-approved eligibility criteria, and a clinical evaluation by the Big Sky team — not by Lewis or by the program sponsor.",
+      "Big Sky is independent of any manufacturer or manufacturer. The clinic's enrollment decisions are based on the treating clinician's recommendation, the ETRB-approved eligibility criteria, and a clinical evaluation by the Big Sky team — not by Lewis or by the program manufacturer.",
     ],
   },
 };

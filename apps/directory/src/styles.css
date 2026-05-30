@@ -412,17 +412,19 @@ section {
     transform: none;
   }
   /* The desktop headline floor (4.6rem ≈ 73.6px) is too tall on mobile —
-   * "experimental" overflows the viewport. Scale it down to a normal
+   * the lead phrase overflows the viewport. Scale it down to a normal
    * mobile hero size so every word lays out elegantly. The 2.3rem floor
-   * lets "Find experimental" stay on one line within the 327px content
-   * width (375px − 48px padding) before wrapping "treatments" below. */
+   * lets "A new medical" stay on one line within the 327px content
+   * width (375px − 48px padding) before wrapping the italic accent
+   * ("frontier.") below. */
   .hero-section h1 {
     font-size: clamp(2.3rem, 11vw, 3.4rem) !important;
     line-height: 1.05 !important;
   }
-  /* Mobile hero layout: "Find experimental" on its own line, "treatments"
-   * on the line below. The lead never breaks mid-phrase; the accent word
-   * becomes a block so it always drops to its own line. */
+  /* Mobile hero layout: lead phrase ("A new medical") on its own line,
+   * italic accent ("frontier.") on the line below. The lead never breaks
+   * mid-phrase; the accent becomes a block so it always drops to its own
+   * line. */
   .hero-headline__lead {
     white-space: nowrap;
   }
@@ -631,7 +633,7 @@ section.hero-section {
 
   /* Multi-column paragraph/text grids collapse to a single column —
    * used by the "Some treatments don't exist anywhere else." problem
-   * section and the "For treating physicians" two-column block. */
+   * section and the "For treating clinicians" two-column block. */
   .grid-stack-mobile {
     grid-template-columns: 1fr !important;
     gap: 32px !important;
@@ -850,6 +852,56 @@ section.hero-section {
 }
 .program-panel-body .ink {
   color: var(--ink);
+}
+
+/* Closing visual for a program-panel section — a museum-mat scholarly
+ * plate sized to read as an inline editorial figure rather than a hero.
+ * Currently shipped on WST-057 only as a Cajal peripheral-nerve plate;
+ * extensible to other PN programs as they onboard. Same mat treatment
+ * grammar as the HomePage Glacier/Bowdoin photos and the Hooker
+ * bitterroot on /about: 14px cream-paper border (#faf5e8), 1px outer
+ * hairline, 4px inner rounded corners on the img.
+ *
+ * Sits inside the .program-panel after the body prose, with 24px top
+ * margin to detach it from the last paragraph. Caption is left-aligned
+ * (vs the centered /for-clinicians frontispiece caption) because the
+ * figure itself isn't centered as a vignette — it's inline editorial. */
+.program-plate {
+  margin: 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  max-width: 660px;
+}
+.program-plate-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.program-plate-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.program-plate figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.45;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .program-plate-mat {
+    padding: 10px;
+  }
 }
 
 .program-back-link {
@@ -2472,7 +2524,6 @@ section.hero-section {
   top: 0;
   z-index: 30;
   background: var(--paper);
-  border-bottom: 0.5px solid var(--rule-strong);
 }
 .topnav__inner {
   max-width: 1280px;
@@ -2948,9 +2999,12 @@ section.hero-section {
   }
 }
 
-/* --- FeaturedTreatments (demoted editorial inline list) ----------------- */
+/* --- FeaturedTreatments (sibling of FeaturedConditions — same visual
+ * treatment, mirrored row grid + numerals + H2 size; the only deviations
+ * are the section's own label/CTA text and the stacked sub column that
+ * carries indications + technical lines per row.) ----------------------- */
 .featured-treatments {
-  padding: 80px 0 96px;
+  padding: 96px 0;
   background: var(--paper);
 }
 .featured-treatments__container {
@@ -2976,54 +3030,58 @@ section.hero-section {
   height: 1px;
   background: var(--ink-faint);
 }
-.featured-treatments__h3 {
+.featured-treatments__h2 {
   font-family: var(--serif);
-  font-weight: 400;
-  font-size: 22px;
-  color: var(--ink-soft);
-  letter-spacing: -0.01em;
-  margin: 0 0 36px;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0 0 56px;
+  max-width: 760px;
 }
-.featured-treatments__h3 i {
-  color: var(--ink-soft);
+.featured-treatments__h2 i {
+  color: var(--accent);
   font-style: italic;
+  font-weight: 300;
 }
-.featured-treatments__list {
-  border-top: 1px solid var(--rule-soft);
-  border-bottom: 1px solid var(--rule-soft);
+.featured-treatments__toc {
+  border-top: 1px solid var(--rule);
 }
+/* Treatments row deviates from the conditions grid (64px 1fr 220px 90px)
+ * because the content shape is inverted: in conditions the NAME is long
+ * and the sub is short metadata; here the name is short (a product code
+ * like WST-057) and the indication line is the load-bearing meat. So we
+ * let name take its natural width and flex the sub column instead. */
 .featured-treatments__row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 28px;
+  grid-template-columns: 64px auto 1fr 90px;
+  gap: 32px;
   align-items: center;
-  padding: 22px 0;
+  padding: 26px 0;
   border-bottom: 1px solid var(--rule-soft);
   text-decoration: none;
   color: inherit;
   transition: background-color 160ms var(--ease-out);
 }
-.featured-treatments__row:last-child {
-  border-bottom: none;
-}
 .featured-treatments__row:hover {
-  background-color: rgba(0, 0, 0, 0.015);
+  background-color: rgba(0, 0, 0, 0.018);
 }
-.featured-treatments__head {
+.featured-treatments__num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 26px;
+  color: var(--ink-faint);
+  font-weight: 300;
+}
+.featured-treatments__name-cell {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-.featured-treatments__name {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: 19px;
-  color: var(--ink);
-  white-space: nowrap;
+  gap: 18px;
+  min-width: 0;
 }
 .featured-treatments__art {
   width: 44px;
-  height: 56px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3034,16 +3092,25 @@ section.hero-section {
   width: 100%;
   height: 100%;
 }
-.featured-treatments__meta {
+.featured-treatments__name {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.featured-treatments__sub {
+  text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 .featured-treatments__indications {
   font-family: var(--serif);
   font-style: italic;
-  font-weight: 400;
-  font-size: 15px;
+  font-size: 15.5px;
   color: var(--ink);
   line-height: 1.4;
   letter-spacing: -0.005em;
@@ -3052,57 +3119,74 @@ section.hero-section {
   font-family: var(--sans);
   font-size: 12.5px;
   color: var(--ink-soft);
+  line-height: 1.45;
   letter-spacing: 0.005em;
 }
 .featured-treatments__chev {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 14px;
-  color: var(--ink-faint);
+  font-size: 16px;
+  color: var(--ink-soft);
+  text-align: right;
 }
 .featured-treatments__row--muted .featured-treatments__name {
   color: var(--ink-faint);
   font-style: italic;
+  font-weight: 300;
 }
-.featured-treatments__row--muted .featured-treatments__indications,
-.featured-treatments__row--muted .featured-treatments__technical {
-  color: var(--ink-faint);
-}
-.featured-treatments__row--muted .featured-treatments__art {
-  opacity: 0.4;
+.featured-treatments__row--muted:hover {
+  background-color: transparent;
+  cursor: default;
 }
 .featured-treatments__row--skeleton .featured-treatments__name {
-  height: 22px;
-  width: 120px;
+  height: 28px;
+  width: 60%;
 }
 .featured-treatments__row--skeleton .featured-treatments__indications {
   height: 16px;
-  width: 70%;
+  width: 80%;
 }
 .featured-treatments__row--skeleton .featured-treatments__technical {
   height: 14px;
-  width: 50%;
+  width: 60%;
+}
+.featured-treatments__row--skeleton .featured-treatments__chev {
+  height: 14px;
+  width: 40px;
 }
 .featured-treatments__cta {
-  margin-top: 32px;
+  margin-top: 48px;
   text-align: center;
 }
 .featured-treatments__cta-link {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 16px;
+  font-size: 17px;
   color: var(--ink);
   border-bottom: 1px solid var(--ink);
-  padding-bottom: 2px;
+  padding-bottom: 3px;
   text-decoration: none;
 }
 @media (max-width: 720px) {
   .featured-treatments__row {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: 36px 1fr;
+    gap: 16px;
+  }
+  .featured-treatments__sub {
+    grid-column: 2;
+    text-align: left;
+  }
+  .featured-treatments__indications {
+    font-size: 13px;
+  }
+  .featured-treatments__technical {
+    font-size: 12px;
   }
   .featured-treatments__chev {
     display: none;
+  }
+  .featured-treatments__name {
+    font-size: 20px;
   }
 }
 
@@ -3306,22 +3390,81 @@ section.hero-section {
   }
 }
 
-/* ProblemSection — editorial two-column ---------------------------------- */
-.problem-grid {
+/* ProblemSection — Aesop-style two-column split.
+ *
+ * The eyebrow label + H2 sit above at their natural full-container
+ * width (managed by the existing .ed-label + .ed-h2 globals). Below
+ * them, the section divides into a 2-col grid: Montana landscape
+ * photo on the left (~45% — visual anchor that hooks the eye before
+ * the text explains), body paragraphs stacked on the right (~55% —
+ * comfortable reading column). Photo + caption + body all anchor to
+ * the same top baseline (align-items: start).
+ *
+ * Photo is a raw rectangle (no border, no shadow, no rounded corners)
+ * — magazine spreads don't frame their images. Italic Fraunces caption
+ * underneath ties the photo into the page's typographic voice.
+ *
+ * Mobile (≤720px): grid collapses to a single column with the photo
+ * above the body, gap tightens. */
+.problem-split {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 64px;
+  grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+  gap: 56px;
+  align-items: center;
 }
-.problem-grid p {
+.problem-split__photo {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+/* Museum print mat treatment (/design-shotgun Round 8 winner B). The
+ * matframe wraps the img with a 14px cream-paper border (#faf5e8 —
+ * slightly warmer than --paper) and a 1px hairline at the outer edge.
+ * The inner img has 4px rounded corners. Reads as a fine-art print
+ * mounted on archival board, matching Lewis's "careful record /
+ * documented specimen" brand metaphor. */
+.problem-split__photo-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+}
+.problem-split__photo-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.problem-split__photo figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+}
+.problem-split__body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+.problem-split__body p {
   font-size: 16.5px;
   line-height: 1.75;
   color: var(--ink-soft);
-  margin: 0 0 18px;
+  margin: 0;
 }
 @media (max-width: 720px) {
-  .problem-grid {
+  .problem-split {
     grid-template-columns: 1fr;
-    gap: 28px;
+    gap: 36px;
+  }
+  .problem-split__photo-mat {
+    padding: 10px;
   }
 }
 
@@ -3352,22 +3495,58 @@ section.hero-section {
   margin: 0 0 28px;
   max-width: 540px;
 }
-.for-phys__rx {
+/* Right-column museum-mat plate that replaced the faded ℞ ornament.
+ * Hosts Cajal's 1899 ink drawing of a giant pyramidal neuron in the
+ * Ammon's horn region of the hippocampus. Same museum-mat treatment as
+ * ProblemSection's Glacier photo (slot #1), AboutPage's founding plate
+ * (slot #4), and the homepage Bowdoin prairie (slot #3) — 14px
+ * cream-paper border (#faf5e8), 1px outer hairline, 4px inner rounded
+ * corners on the img. The figcaption renders italic Fraunces below
+ * the mat to anchor the plate into the page's typographic voice and
+ * carry the Wellcome Collection attribution (CC BY 4.0 requirement). */
+.for-phys__plate {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.for-phys__plate-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.for-phys__plate-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.for-phys__plate figcaption {
   font-family: var(--serif);
   font-style: italic;
-  font-weight: 300;
-  font-size: clamp(96px, 14vw, 130px);
-  color: var(--rule);
-  text-align: center;
-  line-height: 1;
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.45;
+  width: 100%;
 }
 @media (max-width: 720px) {
   .for-phys-grid {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 36px;
   }
-  .for-phys__rx {
-    font-size: 80px;
+  .for-phys__plate-mat {
+    padding: 10px;
+  }
+  .for-phys__plate {
+    max-width: 360px;
+    margin: 0 auto;
   }
 }
 
@@ -4567,5 +4746,2955 @@ section.hero-section {
 @media (prefers-reduced-motion: reduce) {
   .mkt-spinner {
     animation-duration: 2s;
+  }
+}
+
+/* ==========================================================================
+ *  /eligibility/:slug — § 17.4 fail-branch hybrid (slice 5 design Round 1).
+ *  B's letter-prose left + B's i./ii./iii. letter-row stack right, sized for
+ *  the 380px rail. Pass branch keeps its prior centered layout.
+ *
+ *  Layout note: NO min-height: 100vh on the container. The pass branch
+ *  centers vertically in the viewport because its content is short; the
+ *  fail branch is tall content (prose + rail) that wants to start near the
+ *  top of the visible area, right under the TopNav. A viewport-height
+ *  floor would render a tall void below the content and read as
+ *  "shoved down." Padding-top is 48px (was 72px) because the live page
+ *  already has the TopNav above us — the comparison preview only had a
+ *  thin topbar.
+ * ========================================================================== */
+/* OUTER container: full-width, full-height (minus 80px TopNav), with
+ * flex centering on both axes. The INNER grid is what gets centered.
+ * On a viewport where the grid is shorter than the visible area, the
+ * grid sits perfectly in the middle of the space between TopNav and
+ * the bottom of the viewport. On a viewport where the grid is taller,
+ * min-height stops applying and the content scrolls naturally. */
+.elig-fail {
+  background: var(--paper);
+  min-height: calc(100vh - 80px);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  box-sizing: border-box;
+}
+/* INNER grid: max 1100px wide. Both columns top-align inside the grid
+ * via align-items: start so the eyebrow on the left and the rail-label
+ * on the right share the same Y baseline. */
+.elig-fail__grid {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 64px;
+  align-items: start;
+}
+
+.elig-fail__prose {
+  min-width: 0;
+  /* Reset the global `section { padding: 120px 0; }` rhythm. This section is
+   * a grid column inside a viewport-centered result layout, not a page band. */
+  padding: 0;
+}
+
+.elig-fail__eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 24px;
+}
+.elig-fail__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.elig-fail__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 24px;
+  max-width: 22ch;
+}
+.elig-fail__program {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Load-bearing italic-inline reason. The em inside is the verbatim
+ * failedCriterion clause from the evaluator (or, post item 15, from the
+ * API). */
+.elig-fail__reason {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 18px;
+  max-width: 56ch;
+}
+.elig-fail__reason-em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.elig-fail__lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+  max-width: 56ch;
+}
+.elig-fail__lede:last-of-type {
+  margin-bottom: 0;
+}
+.elig-fail__lede strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.elig-fail__footnote {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 56ch;
+}
+
+/* Right rail — B's letter-row stack, sized for 380px. Matches the
+ * preview exactly. */
+.elig-fail__rail-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 4px;
+  padding-left: 6px;
+}
+.elig-fail__path {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 22px 6px;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+  color: inherit;
+  transition: padding-left 140ms ease;
+}
+.elig-fail__path:hover {
+  padding-left: 14px;
+}
+.elig-fail__path:first-of-type {
+  border-top: 1px solid var(--rule);
+}
+.elig-fail__path:focus-visible {
+  outline: 2px solid var(--accent-ring, var(--accent));
+  outline-offset: 4px;
+}
+.elig-fail__path-num {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 30px;
+  color: var(--ink-faint);
+  line-height: 1;
+  padding-top: 4px;
+}
+.elig-fail__path-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.elig-fail__path-desc {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+.elig-fail__path-cta {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.elig-fail__path-cta::after {
+  content: "→";
+  display: inline-block;
+  transition: transform 120ms ease;
+}
+.elig-fail__path:hover .elig-fail__path-cta::after {
+  transform: translateX(2px);
+}
+
+/* Mobile — collapse to a single column, rail drops below prose, sticky off. */
+@media (max-width: 880px) {
+  .elig-fail {
+    padding: 56px 20px 80px;
+  }
+  .elig-fail__grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .elig-fail__rail {
+    position: static;
+  }
+  .elig-fail__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.4rem);
+  }
+  .elig-fail__reason {
+    font-size: 17.5px;
+  }
+  .elig-fail__lede {
+    font-size: 16px;
+  }
+}
+
+/* ==========================================================================
+ *  /connect/:slug — § 18.1 / 18.2 hybrid form (slice 5 design Round 2).
+ *  B's letter-prose intro left + A/C's boxed inputs + "What happens next"
+ *  letter-row rail right. Sticky rail (top: 112px = 80px TopNav + 32px
+ *  breathing room) so the four-step explainer stays visible as the user
+ *  scrolls through the form.
+ *
+ *  IMPORTANT: the prose column wraps in <div>, not <section>, to avoid
+ *  the global `section { padding: 120px 0 }` rule from bleeding 120px of
+ *  top padding into the left column (see lesson learned on slice 5
+ *  /eligibility fail-branch).
+ * ========================================================================== */
+/* Vertically centers the whole grid (form left + sticky rail right) between
+ * TopNav and footer when content fits the viewport; degrades to natural
+ * scroll when the form is taller than the viewport. Mirrors `.elig-fail`. */
+.connect-form {
+  background: var(--paper);
+  min-height: calc(100vh - 80px);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  box-sizing: border-box;
+}
+
+/* Inner grid: max 1100px wide. Both columns top-align so the eyebrow on the
+ * left and the rail-label on the right share the same Y baseline INSIDE the
+ * centered grid box. */
+.connect-form__grid {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 72px;
+  align-items: start;
+}
+
+/* ----- LEFT: prose + form ----- */
+.connect-form__prose {
+  min-width: 0;
+  /* Defensive padding reset in case this lands inside any `section`-scoped
+   * rhythm later (today the wrapper is a <div>; future markup changes
+   * should also use <div>). */
+  padding: 0;
+}
+
+.connect-form__eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 24px;
+}
+.connect-form__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.connect-form__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.4vw, 3.1rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 22px;
+  max-width: 22ch;
+}
+.connect-form__em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+.connect-form__em-accent {
+  font-style: italic;
+  color: var(--accent);
+}
+
+/* § 18.1 privacy framing — reads as a letter paragraph, not a card. */
+.connect-form__privacy {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 14px;
+  max-width: 56ch;
+}
+.connect-form__privacy-coda {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 16.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0 0 44px;
+  max-width: 56ch;
+}
+
+/* ----- A/C boxed input fields ----- */
+.connect-form__fields {
+  display: grid;
+  gap: 20px;
+}
+.connect-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.connect-form__label {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.connect-form__opt {
+  font-weight: 400;
+  color: var(--ink-faint);
+  font-size: 12px;
+  margin-left: 6px;
+}
+.connect-form__input,
+.connect-form__textarea {
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px 14px;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.connect-form__input:focus,
+.connect-form__textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 95, 198, 0.16);
+}
+.connect-form__input:disabled,
+.connect-form__textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.connect-form__textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.connect-form__help {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 4px 0 0;
+}
+.connect-form__error {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: #b04545;
+  background: rgba(176, 69, 69, 0.06);
+  border-left: 3px solid #b04545;
+  padding: 10px 14px;
+  border-radius: 0 4px 4px 0;
+  margin: 4px 0 0;
+}
+
+.connect-form__submit-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+.connect-form__submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: white;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 13px 24px;
+  border-radius: 999px;
+  transition: background-color 120ms ease;
+}
+.connect-form__submit:hover:not(:disabled) {
+  background: var(--accent-ring, #2a2e8a);
+}
+.connect-form__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.connect-form__submit::after {
+  content: "→";
+}
+
+/* ----- RIGHT: "What happens next" sticky letter-row rail ----- */
+/* Sticky offset = 80px sticky TopNav + 32px breathing room. The rail's
+ * own height is shorter than its surrounding prose, so it stays in view
+ * elegantly as the user scrolls down the form on desktop. */
+.connect-form__rail {
+  position: sticky;
+  top: 112px;
+  padding-top: 4px;
+  /* align-self: start required inside a grid cell so sticky measures
+   * against the cell's natural height, not the (much taller) prose
+   * column. Without this the sticky won't activate as expected. */
+  align-self: start;
+}
+.connect-form__rail-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 4px;
+  padding-left: 6px;
+}
+.connect-form__step {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 22px 6px;
+  border-bottom: 1px solid var(--rule);
+}
+.connect-form__step:first-of-type {
+  border-top: 1px solid var(--rule);
+}
+.connect-form__step-num {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 30px;
+  color: var(--ink-faint);
+  line-height: 1;
+  padding-top: 4px;
+}
+.connect-form__step-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.connect-form__step-desc {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* ----- Loading / not-found / error / success states ----- */
+.connect-form--state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  padding: 32px;
+}
+.connect-form__state-body {
+  max-width: 560px;
+  text-align: center;
+}
+.connect-form__state-lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0 0 32px;
+}
+.connect-form__state-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ink);
+  color: var(--paper-bright);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 999px;
+  transition: background-color 120ms ease;
+}
+.connect-form__state-cta:hover {
+  background: #1f1d18;
+}
+.connect-form__skeleton {
+  width: 100%;
+  max-width: 600px;
+  height: 320px;
+  background: linear-gradient(
+    90deg,
+    rgba(58, 52, 42, 0.04) 0%,
+    rgba(58, 52, 42, 0.08) 50%,
+    rgba(58, 52, 42, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: connect-form-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes connect-form-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .connect-form__skeleton {
+    animation: none;
+  }
+}
+
+.connect-form__success-mark {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-soft, #ecedfa);
+  color: var(--accent);
+  font-size: 28px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  font-weight: 500;
+}
+.connect-form__prep-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--ink);
+  margin: 32px 0 14px;
+  text-align: left;
+}
+.connect-form__prep {
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  padding-left: 22px;
+  margin: 0 0 32px;
+}
+.connect-form__prep li {
+  margin-bottom: 4px;
+}
+
+/* Mobile — collapse to single column; sticky drops. */
+@media (max-width: 880px) {
+  .connect-form {
+    padding: 32px 20px 64px;
+  }
+  .connect-form__grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .connect-form__rail {
+    position: static;
+    padding-top: 0;
+  }
+  .connect-form__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.4rem);
+  }
+  .connect-form__privacy {
+    font-size: 17px;
+  }
+  .connect-form__privacy-coda {
+    font-size: 15.5px;
+    margin-bottom: 32px;
+  }
+}
+
+/* ==========================================================================
+ *  /for-clinicians — slice 5 § 20.
+ *  Single-column editorial letter with a fixed viewport CTA. The structural
+ *  lane is wider than the prose measure so cards and checklists have desktop
+ *  room without turning the body copy into long horizontal lines.
+ * ========================================================================== */
+.for-clin {
+  background: var(--paper);
+  /* Outer container max-width holds the 1180px page-chrome convention
+   * from the rest of the directory. The letter lane inside is centered
+   * and capped at 720px; every section — prose, headings, checklist,
+   * sources, programs — shares that single width. */
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+
+/* Single-column editorial letter — unified with /for-manufacturers and
+ * /for-etcs on one 720px lane. Previously this split into a 680px copy
+ * width centered inside an 840px structural lane; because the copy was
+ * centered (margin: 0 auto) while the checklist/sources/programs filled
+ * 840px, headings sat inset ~80px from the lists they headed. Collapsing
+ * both values to 720px makes copy fill the lane, so the auto side-margins
+ * distribute zero and every section shares the same left and right edge. */
+.for-clin__letter-col {
+  --for-clin-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-clin__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  margin: 0 auto 32px;
+  max-width: var(--for-clin-copy-width);
+  color: var(--ink);
+}
+.for-clin__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Closing vignette before the bibliography — a small centered scholarly
+ * plate that sits immediately above the "Sources cited." h2 section.
+ * Cajal's 1899 Purkinje neuron drawing in the museum-mat treatment used
+ * across the site (Glacier homepage slot #1, Bowdoin prairie homepage
+ * slot #3, HomePage ForClinicians Ammon's-horn, /programs/wst-057
+ * nerve endings, AboutPage 1836 Hooker plate).
+ *
+ * Centered within the wider letter column at 320px max-width — intimate,
+ * the size of an illustrated tailpiece rather than a hero image. The
+ * margins detach it from the preceding paragraph (48px top) and let
+ * the next h2's own 56px top margin breathe below. Caption is centered
+ * (vs the left-aligned captions on landscape photos) because the
+ * figure itself is centered — keeps the visual axis consistent.
+ *
+ * Class name retained as `__frontispiece` from the original placement
+ * for stability; semantically it's now a tailpiece. */
+.for-clin__frontispiece {
+  margin: 48px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 320px;
+}
+.for-clin__frontispiece-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.for-clin__frontispiece-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.for-clin__frontispiece figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: center;
+  line-height: 1.45;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .for-clin__frontispiece {
+    max-width: 260px;
+    margin: 36px auto 0;
+  }
+  .for-clin__frontispiece-mat {
+    padding: 10px;
+  }
+}
+
+/* .for-clin__letter intentionally stays uncapped: structural elements fill
+ * the 720px lane. Unclassed body paragraphs get the shared copy measure
+ * (= the lane), so they run flush with the headings and lists;
+ * specialized paragraphs own their own class rules below. */
+.for-clin__letter > p:not([class]) {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__letter > p:not([class]) strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-clin__letter h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px auto 18px;
+  color: var(--ink);
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__salutation {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* Three-step refer-flow list — lower-roman inline numerals, calm rhythm. */
+.for-clin__process {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 12px 0 22px;
+}
+.for-clin__process > li {
+  counter-increment: step;
+  padding: 16px 0 16px 56px;
+  border-top: 1px solid var(--rule);
+  position: relative;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.for-clin__process > li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-clin__process > li::before {
+  content: counter(step, lower-roman) ".";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  font-style: italic;
+  color: var(--ink-faint);
+  font-size: 22px;
+  font-weight: 300;
+}
+/* Step labels use the same serif voice as the surrounding letter. */
+.for-clin__process > li > strong {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 6px;
+  text-transform: none;
+}
+
+.for-clin__signoff {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-soft);
+  margin: 40px auto 0;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+/* Fixed viewport CTA. Kept outside transformed `.fade-up` wrappers in JSX
+ * because transformed ancestors can trap fixed descendants. */
+.directory-floating-cta {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 10px 8px 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  box-shadow:
+    0 8px 28px rgba(58, 52, 42, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  max-width: 520px;
+  width: max-content;
+}
+.directory-floating-cta__lead {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.directory-floating-cta__action {
+  background: var(--accent);
+  color: var(--paper);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 120ms ease;
+}
+.directory-floating-cta__action:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+.directory-floating-cta__action::after {
+  content: " →";
+}
+/* "Sources cited." section at the bottom of the letter — editorial
+ * bibliography styling with explicit download affordances. Each <li>
+ * is a clickable card: ink-rule border, paper-bright background,
+ * three columns (lower-roman mark · title+meta · "Download PDF ↓"
+ * action), and a strong hover state (accent border + accent title
+ * color + filled-pill download action). Replaces the cramped rail
+ * docs card. */
+.for-clin__sources-lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0 auto 18px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__sources {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+}
+.for-clin__sources li {
+  margin: 0;
+}
+.for-clin__source {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.for-clin__source:hover {
+  border-color: var(--accent);
+  background: var(--paper-bright);
+}
+.for-clin__source:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.for-clin__source-mark {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 28px;
+  color: var(--ink-faint);
+  line-height: 1;
+  text-align: center;
+}
+.for-clin__source:hover .for-clin__source-mark {
+  color: var(--accent);
+}
+.for-clin__source-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.for-clin__source-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 18;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--ink);
+  transition: color 120ms ease;
+}
+.for-clin__source:hover .for-clin__source-title {
+  color: var(--accent);
+}
+.for-clin__source-meta {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.for-clin__source-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+  white-space: nowrap;
+}
+.for-clin__source:hover .for-clin__source-action {
+  background: var(--accent);
+  color: var(--paper);
+}
+.for-clin__source-icon {
+  flex: 0 0 14px;
+}
+
+@media (max-width: 720px) {
+  .for-clin__source {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 18px;
+  }
+  .for-clin__source-action {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .for-clin__source-mark {
+    font-size: 22px;
+  }
+}
+
+/* Inline referral-letter checklist nested inside Step 1. */
+.for-clin__step-includes-head {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+  margin: 20px 0 8px;
+}
+.for-clin__step-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.for-clin__step-checklist li {
+  padding: 5px 0 5px 26px;
+  position: relative;
+}
+.for-clin__step-checklist li::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  position: absolute;
+  left: 0;
+  top: 9px;
+  background: var(--paper);
+}
+.for-clin__cite {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+.for-clin__license-state {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Programs section now lives INSIDE .for-clin__letter-col (no longer a
+ * direct grid child spanning both columns) so it inherits the letter's
+ * H2-to-H2 rhythm and its divider is naturally column-width — matches
+ * all other dividers on the page. Same applies to .for-clin__independence
+ * below.
+ *
+ * Spacing math: 56px margin-top (matches the body's H2 rhythm) + 1px
+ * border + 32px padding-top (gap between divider and H2) ≈ 89px total,
+ * tighter than the original 80+56+1 = 137px and reads as a clean
+ * "new section" break rather than a chapter break. */
+.for-clin__programs {
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid var(--rule);
+}
+/* Match .for-clin__letter h2 styling exactly so the "Available programs."
+ * H2 has the same weight, opsz, size, line-height, and letter-spacing as
+ * every other H2 in the body letter. Zero top margin: the parent
+ * .for-clin__programs's padding-top + border-top already provide the
+ * separation from the previous content. */
+.for-clin__programs-h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 auto 18px;
+  color: var(--ink);
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__programs-sub {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15.5px;
+  color: var(--ink-soft);
+  margin: 0 auto 28px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__programs-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-width: 100%;
+}
+.for-clin__program-card {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: border-color 120ms ease;
+}
+.for-clin__program-card:hover {
+  border-color: var(--rule-strong);
+}
+.for-clin__program-name {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 18px;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+.for-clin__program-meta {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.for-clin__program-cta {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--accent);
+  padding-top: 4px;
+  white-space: nowrap;
+}
+.for-clin__program-cta::after {
+  content: " →";
+}
+.for-clin__programs-more {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  margin: 14px auto 0;
+  max-width: var(--for-clin-copy-width);
+}
+/* Secondary "browse the full directory" link that replaced the
+ * deleted rail's outline-pill CTA. Quiet inline text link with an
+ * arrow affordance — earns the click only for readers who already
+ * scanned the program card and want more. Underlined on hover, ink
+ * color shift on focus-visible for keyboard nav. */
+.for-clin__programs-browse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(100%, var(--for-clin-copy-width));
+  margin: 14px auto 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.for-clin__programs-browse::after {
+  content: "→";
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.for-clin__programs-browse:hover {
+  border-bottom-color: var(--accent);
+}
+.for-clin__programs-browse:hover::after {
+  transform: translateX(3px);
+}
+.for-clin__programs-browse:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.for-clin__independence {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin: 56px auto 0;
+  max-width: var(--for-clin-copy-width);
+}
+
+/* Mobile — tighter outer padding, smaller H1, and the floating pill
+ * widens to fill the viewport with 12px side margins so it doesn't
+ * feel marooned in the middle of a narrow screen. */
+@media (max-width: 960px) {
+  .for-clin {
+    padding: 48px 20px 80px;
+  }
+  .for-clin__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.3rem);
+  }
+}
+@media (max-width: 640px) {
+  .directory-floating-cta {
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    padding: 8px 8px 8px 18px;
+    gap: 10px;
+    justify-content: space-between;
+  }
+  .directory-floating-cta__lead {
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .directory-floating-cta__action {
+    padding: 8px 14px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+}
+
+/* ==========================================================================
+ *  /for-manufacturers — slice 5 § 21.
+ *  Single-column editorial letter with a fixed viewport CTA.
+ * ========================================================================== */
+.for-spons {
+  background: var(--paper);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+
+/* Visually-hidden utility — keeps content in the a11y tree but invisible
+ * to sighted users. Used on the comparison table's first column header
+ * (where the cell is visually blank) to satisfy axe's empty-table-header
+ * rule. The rule requires actual text content; aria-label alone doesn't
+ * count. */
+.for-spons__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.for-spons__letter-col {
+  --for-spons-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-spons__eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 auto 28px;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.for-spons__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  margin: 0 auto 32px;
+  max-width: var(--for-spons-copy-width);
+  color: var(--ink);
+}
+.for-spons__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+.for-spons__letter p {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__letter p strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-spons__letter h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px auto 18px;
+  color: var(--ink);
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.for-spons__compare-wrap {
+  width: 100%;
+  margin: 8px 0 22px;
+}
+
+/* ----- 8-row analytical comparison table (the load-bearing element). */
+.for-spons__compare {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.for-spons__compare thead th {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: left;
+  padding: 18px 18px 14px;
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.for-spons__compare thead th:first-child {
+  color: var(--ink-faint);
+  background: transparent;
+  width: 35%;
+}
+.for-spons__compare-col-h {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 18px;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+.for-spons__compare tbody td,
+.for-spons__compare tbody th {
+  padding: 12px 18px;
+  vertical-align: top;
+  border-top: 1px solid var(--rule);
+}
+.for-spons__compare tbody th {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-align: left;
+  background: transparent;
+}
+.for-spons__compare tbody td {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.for-spons__compare tbody td strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-spons__compare tbody tr:last-child th,
+.for-spons__compare tbody tr:last-child td {
+  background: var(--accent-bg);
+  border-top: 1px solid var(--rule-strong);
+}
+.for-spons__compare tbody tr:last-child th {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ----- Platform modules — hairline-bordered tick list. */
+.for-spons__modules {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.for-spons__modules li {
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.for-spons__modules li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-spons__modules li strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-spons__modules li span {
+  color: var(--ink-soft);
+}
+.for-spons__platform-coda {
+  margin-top: 22px;
+}
+
+/* ----- 3-step process list — same lower-roman pattern as /for-clinicians. */
+.for-spons__process {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 12px 0;
+}
+.for-spons__process li {
+  counter-increment: step;
+  padding: 16px 0 16px 56px;
+  border-top: 1px solid var(--rule);
+  position: relative;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.for-spons__process li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-spons__process li::before {
+  content: counter(step, lower-roman) ".";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  font-style: italic;
+  color: var(--ink-faint);
+  font-size: 22px;
+  font-weight: 300;
+}
+.for-spons__process li strong {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+/* ----- Sources cited (mirrors /for-clinicians convention). */
+.for-spons__letter p.for-spons__sources-lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0 auto 18px;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__sources {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+}
+.for-spons__source {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.for-spons__source:hover {
+  border-color: var(--accent);
+}
+.for-spons__source:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.for-spons__source-mark {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 28px;
+  color: var(--ink-faint);
+  line-height: 1;
+  text-align: center;
+}
+.for-spons__source:hover .for-spons__source-mark {
+  color: var(--accent);
+}
+.for-spons__source-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.for-spons__source-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 18;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--ink);
+  transition: color 120ms ease;
+}
+.for-spons__source:hover .for-spons__source-title {
+  color: var(--accent);
+}
+.for-spons__source-meta {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.for-spons__source-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+  white-space: nowrap;
+}
+.for-spons__source:hover .for-spons__source-action {
+  background: var(--accent);
+  color: var(--paper);
+}
+.for-spons__source-icon {
+  flex: 0 0 14px;
+}
+
+/* ----- Signoff + independence footnote. */
+.for-spons__letter p.for-spons__signoff {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-soft);
+  margin: 40px auto 0;
+  line-height: 1.6;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+.for-spons__letter p.for-spons__independence {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin: 56px auto 0;
+  max-width: var(--for-spons-copy-width);
+}
+
+/* Mobile — tighter outer padding. Comparison table becomes horizontally
+ * scrollable to preserve its structure. */
+@media (max-width: 960px) {
+  .for-spons {
+    padding: 48px 20px 80px;
+  }
+  .for-spons__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.3rem);
+  }
+  .for-spons__compare-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .for-spons__compare {
+    min-width: 680px;
+  }
+  .for-spons__compare thead th:first-child {
+    width: auto;
+  }
+}
+@media (max-width: 720px) {
+  .for-spons__source {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 18px;
+  }
+  .for-spons__source-action {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .for-spons__source-mark {
+    font-size: 22px;
+  }
+}
+/* ==========================================================================
+ *  /for-etcs — slice 5 § 22.
+ *  Round 5 winner: ETRB callout up top + RULE-by-RULE compliance table (with
+ *  RULE 16 row highlighted) + Recurring deadlines reference table + "How to
+ *  get started" 5-step funnel in the sticky rail. Same chrome as
+ *  /for-clinicians and /for-manufacturers (1180px wrap, 320px rail, 40px gap,
+ *  756px letter column, 65ch prose cap).
+ * ========================================================================== */
+.for-etcs {
+  background: var(--paper);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+
+/* Single-column editorial letter — same architecture as /for-clinicians
+ * and /for-manufacturers. One 720px lane that every section shares: prose,
+ * headings, both analytical tables, the ETRB callout, the partner block,
+ * and the funnel all sit flush at the same left and right edge. The copy
+ * width equals the lane so paragraph `margin: 0 auto` distributes zero
+ * and nothing staggers. */
+.for-etcs__letter-col {
+  --for-etcs-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-etcs__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 32px;
+  max-width: var(--for-etcs-copy-width);
+  color: var(--ink);
+}
+.for-etcs__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Prose, headings, tables, callouts all fill the 720px lane so every
+ * section shares both edges. Body paragraphs use the copy-width variable
+ * (= the lane) rather than a 65ch cap, so they run flush with the tables
+ * and headings instead of stopping short. */
+.for-etcs__letter {
+  /* fills the lane */
+}
+.for-etcs__letter p {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-etcs-copy-width);
+}
+.for-etcs__letter p strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-etcs__letter h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px 0 18px;
+  color: var(--ink);
+}
+.for-etcs__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+.for-etcs__inline-code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.9em;
+  background: rgba(58, 52, 42, 0.06);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ----- ETRB callout — accent-bordered block promoted to top of letter.
+ * Sells the medical-director persona before they hit the RULE table. */
+.for-etcs__etrb-callout {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 28px 32px;
+  margin: 8px 0 24px;
+}
+.for-etcs__etrb-callout-label {
+  font-family: var(--sans) !important;
+  font-size: 11px !important;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+  margin: 0 0 12px !important;
+  max-width: none !important;
+}
+.for-etcs__etrb-callout p {
+  font-family: var(--serif);
+  font-size: 16px !important;
+  line-height: 1.65 !important;
+  color: var(--ink);
+  margin: 0 0 14px !important;
+  max-width: none !important;
+}
+.for-etcs__etrb-callout p:last-child {
+  margin-bottom: 0 !important;
+}
+.for-etcs__etrb-callout p strong {
+  font-weight: 500;
+}
+
+/* ----- Shared table chrome for both compliance + deadlines tables.
+ * Fills the full 756px letter column with hairline rule borders, accent-
+ * tinted header row, and accent-colored last column (compliance only). */
+.for-etcs__ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.for-etcs__ds-table thead th {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: left;
+  padding: 16px 18px 12px;
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--rule);
+}
+.for-etcs__ds-table tbody td {
+  padding: 11px 18px;
+  vertical-align: top;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* Compliance table — Requirement | RULE | Lewis module. */
+.for-etcs__compliance tbody td:first-child {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.for-etcs__compliance tbody td:nth-child(2) {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.for-etcs__compliance tbody td:last-child {
+  color: var(--accent);
+  font-weight: 500;
+}
+/* RULE 16 row — visual echo of the top callout. */
+.for-etcs__compliance-row--highlight td {
+  background: var(--accent-bg);
+}
+.for-etcs__compliance-row--highlight td:first-child::before {
+  content: "★ ";
+  color: var(--accent);
+  font-style: normal;
+}
+
+/* Deadlines table — Cadence | Requirement | RULE / Section. */
+.for-etcs__deadlines tbody td:first-child {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.for-etcs__deadlines tbody td:nth-child(2) {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.for-etcs__deadlines tbody td:last-child {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.for-etcs__table-coda {
+  font-family: var(--serif) !important;
+  font-style: italic;
+  font-size: 14.5px !important;
+  color: var(--ink-soft) !important;
+  margin: 0 0 24px !important;
+  max-width: var(--for-etcs-copy-width) !important;
+  line-height: 1.6 !important;
+}
+
+/* ----- Design partner block. */
+.for-etcs__partner {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 22px 26px;
+  margin: 8px 0 22px;
+}
+.for-etcs__partner-label {
+  font-family: var(--sans) !important;
+  font-size: 10.5px !important;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+  margin: 0 0 8px !important;
+  max-width: none !important;
+}
+.for-etcs__partner p {
+  font-family: var(--serif);
+  font-size: 15.5px !important;
+  line-height: 1.6 !important;
+  color: var(--ink);
+  margin: 0 !important;
+  max-width: none !important;
+}
+.for-etcs__partner p strong {
+  font-weight: 500;
+}
+
+/* ----- Signoff + independence footnote. */
+.for-etcs__signoff {
+  font-family: var(--serif) !important;
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 16px !important;
+  color: var(--ink-soft) !important;
+  margin: 40px 0 0 !important;
+  line-height: 1.6 !important;
+}
+.for-etcs__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+.for-etcs__independence {
+  font-family: var(--serif) !important;
+  font-variation-settings: "opsz" 14;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-faint) !important;
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin-top: 56px !important;
+  max-width: 60ch !important;
+}
+
+/* ----- RIGHT: sticky reference rail. */
+/* "How to get started" 5-step funnel — now an inline full-width section
+ * (was a card in the deleted sticky rail). Lower-roman numbered process
+ * list matching the .for-clin__process / .for-spons__process register:
+ * 56px left gutter for the roman numeral, hairline rule between steps,
+ * serif title + serif ink-soft description. Fills the 720px lane. */
+.for-etcs__start-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  counter-reset: step;
+}
+.for-etcs__start-list li {
+  counter-increment: step;
+  padding: 16px 0 16px 56px;
+  border-top: 1px solid var(--rule);
+  position: relative;
+}
+.for-etcs__start-list li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-etcs__start-list li::before {
+  content: counter(step, lower-roman) ".";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--ink-faint);
+  font-size: 22px;
+  line-height: 1;
+}
+.for-etcs__start-t {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.for-etcs__start-d {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 15.5px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+/* Closing secondary line — the inline email + "operating platform" links
+ * that replaced the deleted rail's two CTA pills. The primary email
+ * conversion is the persistent FloatingCta; these are quiet inline text
+ * links in the page's closing paragraph. */
+.for-etcs__start-secondary {
+  font-family: var(--serif) !important;
+  font-variation-settings: "opsz" 14;
+  font-size: 15.5px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-soft) !important;
+  margin: 20px 0 0 !important;
+  max-width: var(--for-etcs-copy-width);
+}
+.for-etcs__inline-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.for-etcs__inline-link:hover {
+  border-bottom-color: var(--accent);
+}
+.for-etcs__inline-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Mobile — tighter outer padding, smaller H1, tables scroll horizontally
+ * to preserve structure. The single-column lane is already fluid below
+ * 720px, so no grid/rail collapse is needed. */
+@media (max-width: 960px) {
+  .for-etcs {
+    padding: 48px 20px 80px;
+  }
+  .for-etcs__h1 {
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+  .for-etcs__ds-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * /platform — ForPlatformPage (Slice 5 § 23, /design-shotgun Round 6).
+ *
+ * Chrome shared with /for-clinicians, /for-manufacturers, /for-etcs:
+ *   - 1180px wrap with a centered 720px editorial lane
+ *   - prose, headings, tables, change rows, security cards, and signoff share
+ *     the same left/right edge
+ *   - shared fixed viewport CTA handles conversion
+ *
+ * Load-bearing structural elements:
+ *   - .for-plat__handoffs (12-row table — the connecting-tissue narrative)
+ *   - .for-plat__compliance (19-row RULE→module→evidence table)
+ *   - .for-plat__changes (4 persona before/after rows)
+ *   - .for-plat__security-grid (6-card 2-up grid)
+ * -------------------------------------------------------------------------- */
+.for-plat {
+  background: var(--paper);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+.for-plat__letter-col {
+  --for-plat-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-plat__eyebrow {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 auto 28px;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.for-plat__h1 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: 0;
+  margin: 0 auto 32px;
+  max-width: var(--for-plat-copy-width);
+  color: var(--ink);
+}
+.for-plat__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+.for-plat__letter p {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__letter p strong {
+  font-weight: 500;
+}
+.for-plat__letter p em {
+  font-style: italic;
+}
+.for-plat__letter p em.for-plat__accent,
+.for-plat__letter .for-plat__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.for-plat__lede {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 18px !important;
+  color: var(--accent) !important;
+  margin: 0 auto 32px !important;
+  max-width: var(--for-plat-copy-width) !important;
+}
+
+.for-plat__letter h2 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.18;
+  letter-spacing: 0;
+  margin: 64px auto 18px;
+  color: var(--ink);
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__letter h3 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: 0;
+  margin: 36px auto 12px;
+  color: var(--ink);
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__num {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--accent);
+  margin-right: 8px;
+}
+
+/* --- 12-row handoffs table (load-bearing) --- */
+.for-plat__ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0 8px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: fixed;
+}
+.for-plat__ds-table thead th {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: left;
+  padding: 14px 14px 10px;
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.for-plat__ds-table tbody td {
+  padding: 12px 14px;
+  vertical-align: top;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.for-plat__handoffs-col-from {
+  width: 14%;
+}
+.for-plat__handoffs-col-what {
+  width: 24%;
+}
+.for-plat__handoffs-col-to {
+  width: 14%;
+}
+.for-plat__handoffs-col-stat {
+  width: 22%;
+}
+.for-plat__handoffs-col-lewis {
+  width: 26%;
+}
+.for-plat__handoffs tbody td:nth-child(1) {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-plat__handoffs tbody td:nth-child(2) {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13px;
+  color: var(--ink);
+  font-style: italic;
+}
+.for-plat__handoffs tbody td:nth-child(3) {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-plat__handoffs tbody td:nth-child(4) {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  white-space: normal;
+}
+.for-plat__handoffs tbody td:nth-child(5) {
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 12.5px;
+}
+.for-plat__handoffs-arrow {
+  display: inline-block;
+  color: var(--ink-faint);
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-weight: 500;
+  padding: 0 2px;
+}
+.for-plat__handoffs-coda {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 14.5px !important;
+  color: var(--ink-soft) !important;
+  margin: 14px auto 0 !important;
+  max-width: var(--for-plat-copy-width) !important;
+  line-height: 1.6 !important;
+}
+
+/* --- Persona before/after change rows --- */
+.for-plat__changes {
+  margin: 8px 0 12px;
+}
+.for-plat__change-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 16px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 22px 0;
+  border-top: 1px solid var(--rule);
+}
+.for-plat__change-row:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-plat__change-row__who {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-variation-settings: "opsz" 22;
+  font-weight: 500;
+  font-size: 15.5px !important;
+  color: var(--ink) !important;
+  line-height: 1.3 !important;
+  padding-top: 2px;
+  max-width: none !important;
+  margin: 0 !important;
+}
+.for-plat__change-row__who small {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.for-plat__change-row__before,
+.for-plat__change-row__after {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 14.5px !important;
+  line-height: 1.6 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+.for-plat__change-row__before {
+  color: var(--ink-soft) !important;
+}
+.for-plat__change-row__lbl {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.for-plat__change-row__before .for-plat__change-row__lbl {
+  color: var(--ink-faint);
+}
+.for-plat__change-row__after .for-plat__change-row__lbl {
+  color: var(--accent);
+}
+.for-plat__change-row__arrow {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif) !important;
+  font-weight: 500;
+  color: var(--accent) !important;
+  font-size: 18px !important;
+  padding-top: 24px;
+  text-align: center;
+  margin: 0 !important;
+  max-width: none !important;
+}
+
+/* --- Modules list (light, secondary, in service of the handoffs) --- */
+.for-plat__modules {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.for-plat__modules li {
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.for-plat__modules li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-plat__modules li strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-plat__modules li span {
+  color: var(--ink-soft);
+}
+
+/* --- 19-row compliance mapping table --- */
+.for-plat__compliance tbody td:first-child {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13.5px;
+}
+.for-plat__compliance tbody td:nth-child(2) {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.for-plat__compliance tbody td:nth-child(3) {
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 12px;
+}
+.for-plat__compliance tbody td:nth-child(4) {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+.for-plat__compliance-row--highlight td {
+  background: var(--accent-bg);
+}
+.for-plat__compliance-row--highlight td:first-child::before {
+  content: "★ ";
+  color: var(--accent);
+  font-weight: 600;
+}
+.for-plat__table-coda {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 14px !important;
+  color: var(--ink-soft) !important;
+  margin: 14px auto 24px !important;
+  max-width: var(--for-plat-copy-width) !important;
+  line-height: 1.6 !important;
+}
+.for-plat__table-coda strong {
+  color: var(--ink);
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* --- 6-card security posture grid --- */
+.for-plat__security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 8px 0 22px;
+}
+.for-plat__security-card {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+.for-plat__security-card__t {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+  margin: 0 0 8px !important;
+  max-width: none !important;
+}
+.for-plat__security-card__b {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 14.5px !important;
+  line-height: 1.55 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+.for-plat__security-card__b strong {
+  font-weight: 500;
+}
+.for-plat__inline-code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  background: rgba(58, 52, 42, 0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* --- CTA block at end of letter --- */
+.for-plat__cta-block {
+  margin: 56px auto 0;
+  padding: 28px 32px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__cta-block h2 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 20px;
+  margin: 0 0 10px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+.for-plat__cta-block p {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__cta-block p strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.for-plat__signoff {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 16px !important;
+  color: var(--ink-soft) !important;
+  margin: 40px auto 0 !important;
+  max-width: var(--for-plat-copy-width) !important;
+}
+.for-plat__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.for-plat__independence {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-faint) !important;
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin: 56px auto 0 !important;
+  max-width: var(--for-plat-copy-width) !important;
+}
+
+/* Mobile — tables become horizontally scrollable. Change rows collapse to
+ * single column with the arrow hidden (the Before/With Lewis labels are
+ * enough cue). Security cards collapse to single column. */
+@media (max-width: 960px) {
+  .for-plat {
+    padding: 48px 20px 80px;
+  }
+  .for-plat__h1 {
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+  .for-plat__ds-table {
+    display: block;
+    overflow-x: auto;
+    table-layout: auto;
+  }
+  .for-plat__security-grid {
+    grid-template-columns: 1fr;
+  }
+  .for-plat__change-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .for-plat__change-row__arrow {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * /about — AboutPage (Slice 5 § 24, /design-shotgun Round 7 winner: C).
+ *
+ * Chrome shared with the B2B letter pages:
+ *   - 1180px wrap, 756px letter column, 320px rail, 40px gap
+ *   - 65ch readability cap on prose paragraphs (.about__letter p)
+ *
+ * C-specific signature:
+ *   - No H2 cards or grids — prose runs uninterrupted at full letter
+ *     width. Section transitions are italic Fraunces "markers" with a
+ *     short accent rule, not full H2s.
+ *   - Founding story stays in normal Fraunces body weight as 3
+ *     paragraphs (expedition setup → bitterroot → metaphor turn).
+ *   - Team signoff borrows the italic Fraunces flourish from the original
+ *     founder-letter framing, but renders "The Lewis team" instead of an
+ *     individual name (Leadership deferred past MVP-0).
+ *   - In-letter contacts strip below the signoff mirrors the rail's
+ *     "Reach us" card — same three emails (press@, investors@, hello@)
+ *     surfaced both above and below the fold for manufacturers/journalists.
+ * -------------------------------------------------------------------------- */
+.about {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+.about__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 40px;
+  align-items: start;
+}
+.about__letter-col {
+  min-width: 0;
+  padding: 0;
+}
+
+.about__h1 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 22px;
+  max-width: 18ch;
+  color: var(--ink);
+}
+.about__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Letter prose. The .about__letter container itself is uncapped so
+ * structural elements (signoff, contacts strip) fill the full 756px
+ * column; only paragraphs are capped at 65ch for readability. */
+.about__letter p {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.74;
+  color: var(--ink);
+  margin: 0 0 24px;
+  max-width: 65ch;
+}
+.about__letter p strong {
+  font-weight: 500;
+}
+.about__letter p em {
+  font-style: italic;
+}
+.about__letter p em.about__accent,
+.about__letter .about__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* Marker: single italic Fraunces line, not a full H2. Just enough
+ * visual break that long-form prose stays navigable. ::after rule is the
+ * short accent stroke that distinguishes markers from prose. */
+.about__marker {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 14.5px !important;
+  color: var(--ink-faint) !important;
+  margin: 48px 0 22px !important;
+  letter-spacing: 0.04em;
+  max-width: 65ch !important;
+  line-height: 1.4 !important;
+}
+.about__marker::after {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: var(--accent);
+  margin-top: 10px;
+  opacity: 0.6;
+}
+
+/* Team signoff — italic Fraunces flourish on the team name, mirroring
+ * the original founder-letter signoff style. */
+.about__team-signoff {
+  margin: 56px 0 0;
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  max-width: 65ch;
+}
+.about__team-signoff p {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 15px !important;
+  margin: 0 !important;
+  color: var(--ink-soft) !important;
+}
+.about__team-signoff-name {
+  display: block;
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 80;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 28px;
+  color: var(--ink);
+  margin: 14px 0 4px;
+  letter-spacing: -0.01em;
+}
+.about__team-signoff-title {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* In-letter contacts strip — 3-column horizontal row beneath the
+ * signoff. Mirrors the rail's "Reach us" card. */
+.about__contacts-strip {
+  margin: 32px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--rule);
+  max-width: 65ch;
+}
+.about__contacts-strip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.about__contacts-strip-label {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.about__contacts-strip-email {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.about__contacts-strip-email:hover {
+  text-decoration: underline;
+}
+
+.about__independence {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-faint) !important;
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin-top: 56px !important;
+  max-width: 60ch !important;
+}
+
+/* Sticky rail — 1 primary CTA + "Reach us" card. */
+.about__rail {
+  position: sticky;
+  top: 112px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-self: start;
+}
+.about__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 14px;
+  font-weight: 500;
+  justify-content: center;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+.about__cta--primary {
+  background: var(--accent);
+  color: var(--paper);
+  border: 1px solid var(--accent);
+}
+.about__cta--primary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+.about__cta--primary::after {
+  content: " →";
+}
+
+.about__rail-card {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+.about__rail-label {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 14px;
+}
+
+.about__reach {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.about__reach li {
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+}
+.about__reach li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.about__reach li:last-child {
+  padding-bottom: 0;
+}
+.about__reach-t {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 3px;
+}
+.about__reach-email {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 14.5px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.about__reach-email:hover {
+  text-decoration: underline;
+}
+
+/* Founding-story photo — the 1836 Hooker plate from Curtis's Botanical
+ * Magazine, inserted between paragraphs 2 and 3 of the founding story
+ * (/design-shotgun Round 9 winner: variant C). Museum-mat treatment
+ * (Round 8 winner) matches the Glacier photo on the homepage.
+ *
+ * Centered horizontally within the 756px letter column, capped at
+ * 460px max-width so it stays intimate as a magazine-spread moment
+ * between paragraphs rather than a dominant feature. The italic
+ * Fraunces caption underneath carries the scholarly citation, with
+ * the scientific name toggled to upright per typographic convention
+ * (italic-nested-in-italic = roman). */
+.about__founding-photo {
+  margin: 32px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.about__founding-photo-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  max-width: 460px;
+  width: 100%;
+}
+.about__founding-photo-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.about__founding-photo figcaption {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.5;
+  max-width: 460px;
+  width: 100%;
+}
+.about__founding-photo figcaption em {
+  font-style: normal;
+}
+
+/* Mobile — single column, rail loses sticky, contacts strip collapses
+ * to a single-column stack (otherwise the three emails wrap awkwardly
+ * at 375px). */
+@media (max-width: 960px) {
+  .about {
+    padding: 48px 20px 80px;
+  }
+  .about__grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  .about__rail {
+    position: static;
+  }
+  .about__h1 {
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+  .about__contacts-strip-list {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .about__founding-photo-mat {
+    padding: 10px;
+  }
+}
+
+/* HomePage PrairieTransition — a wide panoramic Montana big sky photo
+ * between FaqSection and BeginningSection (the "VII · Coming soon"
+ * newsletter signup). Visual exhale after the FAQ — the unbroken
+ * horizon and active cumulus encode "more is coming as Montana licenses
+ * more programs" — landing immediately before the email opt-in below.
+ *
+ * Museum-mat treatment matches ProblemSection's Glacier photo (slot #1)
+ * and AboutPage's founding plate (slot #4): 14px cream-paper border
+ * (#faf5e8), 1px outer hairline, 4px inner rounded corners on the img.
+ *
+ * Wider than the founding plate (820px vs 460px) because the panoramic
+ * 3.55:1 aspect needs presence to read at all — at 460px it would
+ * become a thin strip. Vertical spacing is symmetric and matches the
+ * page's existing section rhythm: this transition has zero own padding
+ * top/bottom and relies on its neighbors' .ed-section padding (96px) to
+ * give matching breathing room above and below the photo. */
+.home-prairie {
+  padding: 0 32px;
+  background: var(--paper);
+}
+.home-prairie__figure {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 820px;
+  width: 100%;
+}
+.home-prairie__mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.home-prairie__mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.home-prairie__figure figcaption {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.5;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .home-prairie {
+    padding: 0 20px;
+  }
+  .home-prairie__mat {
+    padding: 10px;
   }
 }

@@ -4,25 +4,31 @@ import { FormattedMessage } from "react-intl";
 
 import type { PublicConditionDetail, PublicProgramSummary } from "@lewis/shared/api/public";
 import { ApiNetworkError, ApiSchemaError, publicApi } from "../api/client";
-import { TopicalTube, Vial } from "./Products";
 import { FEATURED_CONDITION_SLUGS } from "../data/featured-conditions";
+import { TopicalTube, Vial } from "./Products";
 
 /**
- * Slice 4 § 11.4b — homepage FeaturedTreatments block (DEMOTED secondary).
+ * Slice 4 § 11.4b — homepage FeaturedTreatments block.
  *
- * Editorial inline rows per locked Variant B:
- *   [title + small product-art glyph]  [italic indications · technical meta]  [italic chev]
+ * Visual parity with the FeaturedConditions block above: same numbered
+ * editorial table-of-contents pattern (i. ii. iii.), same H2 weight, same
+ * column grid (numeral · name · sub · chev), same font sizes. The
+ * "demoted secondary" framing from the original slice 4 plan is dropped
+ * — the user override is that conditions and treatments read as siblings,
+ * not parent + footnote.
  *
- * The italic-serif "For diabetic, chemotherapy-induced, ..." line is the
- * load-bearing scan target — a SERP-arriving patient finds their condition
- * immediately. The technical line (form · phase · ETC) sits beneath it as
- * quiet reference.
+ * Per-row layout: [i.]  [WST-057]  [italic indications line + small
+ * technical line stacked]  [View →]. The 5th-position muted "More
+ * treatments — coming soon" row mirrors the conditions block's PTSD
+ * coming-soon row.
  *
- * Indications are derived from each program's linked conditions (the
- * conditions endpoint carries which programs link to it). We aggregate
- * by program-slug across the featured PN conditions to build the "For …"
- * sentence. WST-057 covers all 4 PN conditions per the 0018 seed.
+ * Data:
+ *   - Programs from publicApi.listPrograms()
+ *   - Indications aggregated by program slug from the featured conditions'
+ *     linkedPrograms (avoids extra /programs/:slug round-trips)
  */
+
+const ROMAN = ["i.", "ii.", "iii.", "iv.", "v.", "vi.", "vii."];
 
 interface FeaturedTreatmentsProps {
   /** Optional override of programs to feature; defaults to API listPrograms. */
@@ -82,6 +88,14 @@ function formatIndicationSentence(names: ReadonlyArray<string>): string {
   return `For ${phrase}.`;
 }
 
+function buildTechnicalLine(p: PublicProgramSummary): string {
+  const technicalParts = [p.form, p.phase].filter((v): v is NonNullable<typeof v> => v !== null);
+  if (technicalParts.length === 0) return "";
+  const etcSuffix =
+    p.etcCount > 0 ? ` · Available at ${p.etcCount} ETC${p.etcCount === 1 ? "" : "s"}` : "";
+  return `${technicalParts.join(" · ")}${etcSuffix}`;
+}
+
 export function FeaturedTreatments({ programs }: FeaturedTreatmentsProps) {
   const [list, setList] = useState<ReadonlyArray<PublicProgramSummary> | undefined>(programs);
   const [indications, setIndications] = useState<ProgramIndications>(new Map());
@@ -104,8 +118,8 @@ export function FeaturedTreatments({ programs }: FeaturedTreatmentsProps) {
       .catch((err: unknown) => {
         if (ctrl.signal.aborted) return;
         if (err instanceof ApiNetworkError || err instanceof ApiSchemaError) {
-          // Soft-fail: render an empty state. The home-page rail-style header
-          // still renders so the section's H2 is consistent.
+          // Soft-fail: render an empty state. Section header still renders
+          // so the H2 stays consistent with the rest of the page.
           setList([]);
           setLoading(false);
           return;
@@ -154,26 +168,26 @@ export function FeaturedTreatments({ programs }: FeaturedTreatmentsProps) {
             defaultMessage="III · Treatments"
           />
         </div>
-        <h3 className="featured-treatments__h3">
+        <h2 className="featured-treatments__h2">
           <FormattedMessage
             id="directory.homepage.featured_treatments.h2"
             defaultMessage="Treatments available now in {italic}."
             values={{ italic: <i>Montana</i> }}
           />
-        </h3>
+        </h2>
 
-        <div className="featured-treatments__list" role="list">
+        <div className="featured-treatments__toc" role="list">
           {loading
             ? Array.from({ length: 1 }).map((_, i) => (
                 <div
                   key={`ft-skel-${i}`}
                   className="featured-treatments__row featured-treatments__row--skeleton"
+                  role="listitem"
                   aria-hidden="true"
                 >
-                  <div className="featured-treatments__head">
-                    <div className="featured-treatments__name shimmer" />
-                  </div>
-                  <div className="featured-treatments__meta">
+                  <div className="featured-treatments__num">{ROMAN[i] ?? ""}</div>
+                  <div className="featured-treatments__name shimmer" />
+                  <div className="featured-treatments__sub">
                     <div className="featured-treatments__indications shimmer" />
                     <div className="featured-treatments__technical shimmer" />
                   </div>
@@ -183,20 +197,10 @@ export function FeaturedTreatments({ programs }: FeaturedTreatmentsProps) {
             : null}
 
           {!loading && list && list.length > 0
-            ? list.map((p) => {
+            ? list.map((p, i) => {
                 const linkedNames = indications.get(p.slug) ?? [];
                 const indicationLine = formatIndicationSentence(linkedNames);
-                const technicalParts = [p.form, p.phase].filter(
-                  (v): v is NonNullable<typeof v> => v !== null,
-                );
-                const technicalLine =
-                  technicalParts.length > 0
-                    ? `${technicalParts.join(" · ")}${
-                        p.etcCount > 0
-                          ? ` · Available at ${p.etcCount} ETC${p.etcCount === 1 ? "" : "s"}`
-                          : ""
-                      }`
-                    : "";
+                const technicalLine = buildTechnicalLine(p);
                 return (
                   <Link
                     key={p.slug}
@@ -204,13 +208,14 @@ export function FeaturedTreatments({ programs }: FeaturedTreatmentsProps) {
                     className="featured-treatments__row"
                     role="listitem"
                   >
-                    <div className="featured-treatments__head">
-                      <div className="featured-treatments__name">{p.name}</div>
+                    <div className="featured-treatments__num">{ROMAN[i] ?? `${i + 1}.`}</div>
+                    <div className="featured-treatments__name-cell">
                       <div className="featured-treatments__art" aria-hidden="true">
-                        <TopicalTube size={36} />
+                        <TopicalTube size={40} />
                       </div>
+                      <div className="featured-treatments__name">{p.name}</div>
                     </div>
-                    <div className="featured-treatments__meta">
+                    <div className="featured-treatments__sub">
                       {indicationLine && (
                         <div className="featured-treatments__indications">{indicationLine}</div>
                       )}
@@ -234,28 +239,29 @@ export function FeaturedTreatments({ programs }: FeaturedTreatmentsProps) {
               className="featured-treatments__row featured-treatments__row--muted"
               role="listitem"
             >
-              <div className="featured-treatments__head">
+              <div className="featured-treatments__num">{ROMAN[list.length] ?? ""}</div>
+              <div className="featured-treatments__name-cell">
+                <div className="featured-treatments__art" aria-hidden="true">
+                  <Vial size={40} />
+                </div>
                 <div className="featured-treatments__name">
                   <FormattedMessage
                     id="directory.homepage.featured_treatments.coming_soon_name"
                     defaultMessage="More treatments — coming soon"
                   />
                 </div>
-                <div className="featured-treatments__art" aria-hidden="true">
-                  <Vial size={36} />
-                </div>
               </div>
-              <div className="featured-treatments__meta">
+              <div className="featured-treatments__sub">
                 <div className="featured-treatments__indications">
                   <FormattedMessage
                     id="directory.homepage.featured_treatments.coming_soon_indication"
-                    defaultMessage="For new conditions as Montana sponsors onboard."
+                    defaultMessage="For new conditions as Montana manufacturers onboard."
                   />
                 </div>
                 <div className="featured-treatments__technical">
                   <FormattedMessage
                     id="directory.homepage.featured_treatments.coming_soon_technical"
-                    defaultMessage="Phase 2 sponsor onboarding next."
+                    defaultMessage="Phase 2 manufacturer onboarding next."
                   />
                 </div>
               </div>

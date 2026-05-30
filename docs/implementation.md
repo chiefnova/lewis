@@ -30,10 +30,10 @@ That is **~80–100 engineering days** for a scope that the PRD candidly calls "
 |---|---|---|---|
 | 0 | Pre-development | -2 to 0 | BAAs, providers, repo, toolchain |
 | 1 | Sprint 1 — Foundation | 1–2 | Tenancy, RLS, audit, auth, storage |
-| 2 | Sprint 2 — Sponsor + ETC onboarding | 3–4 | Sponsor wizard, program config, ETC licensure wizard, PPA |
+| 2 | Sprint 2 — Manufacturer + ETC onboarding | 3–4 | Manufacturer wizard, program config, ETC licensure wizard, PPA |
 | 3 | Sprint 3 — ETC operational backbone | 5–6 | P&P manual, staff, ETRB, QAPI, compliance |
 | 4 | Sprint 4 — Patient flow | 7–8 | All 8 patient stages, patient portal end-to-end |
-| 5 | Sprint 5 — Treatment + AE + reporting | 9–10 | Visit doc, transfer, AE 5-day, DPHHS annual, HFAR, sponsor reports |
+| 5 | Sprint 5 — Treatment + AE + reporting | 9–10 | Visit doc, transfer, AE 5-day, DPHHS annual, HFAR, manufacturer reports |
 | 6 | Sprint 6 — Hardening + launch | 11–12 | Admin portal completion, pen test, HIPAA review, a11y, perf, DR, soft launch |
 | 7 | Post-launch (PRD § 22.4) | 13–26 | Iterate, second tenant, SOC 2 evidence, Phase 2 prioritization |
 | 8 | Phase 2 readiness | ongoing | The 10 items in PRD § 7 |
@@ -100,7 +100,7 @@ Open questions from PRD § 23 must lock by these dates or the dependent phase sl
 | 6 | E-signature provider | Phase 1 end (before Sprint 2) | **Documenso self-hosted** — keeps signed-document data inside our HIPAA boundary; alternative HelloSign acceptable but adds a subprocessor |
 | 7 | Public ETC slug strategy | Phase 1 end | **Subdomain** (`etc-name.lewis.health`) on Cloudflare wildcard cert; cheaper than per-ETC certs, cleaner UX |
 | 1 | Net annual profits definition | DPHHS or counsel; MVP 1 ships dual-interpretation | Both GAAP and tax-basis; ETC chooses, choice logged |
-| 4 | Sponsor data sharing default | Resolved before Sprint 1 | Aggregate + de-identified line-level safety only; no identified sponsor PHI in MVP 1 |
+| 4 | Manufacturer data sharing default | Resolved before Sprint 1 | Aggregate + de-identified line-level safety only; no identified manufacturer PHI in MVP 1 |
 | 8 | Search index | Sprint 1 schema; Sprint 3 feature | Postgres FTS for MVP 1; OpenSearch/Algolia only if Phase 2 metrics require it |
 | 9 | Payment installments | Phase 4 design | Defer unless WinSanTor explicitly requests; Stripe Subscriptions if added |
 | 10 | Brand system | Phase 0 (parallel track, not blocking) | Brand work concurrent with engineering |
@@ -164,7 +164,7 @@ These items close the remaining PRD/implementation gaps. They are not optional p
 - Replace the prior grievance-only amendment assumption with a dedicated amendment workflow; grievances may link to amendment requests but are not the same object.
 - Add patient endpoints for record requests, amendment requests, restriction requests, and disclosure accounting.
 - Add ETC/admin review screens for amendment and restriction decisions.
-- Emit `disclosure_events` whenever identified patient data is disclosed to boards, support users, exports, or external recipients. Sponsors receive only aggregate or de-identified line-level safety data in MVP 1; future identified sponsor disclosure requires `patient_data_sharing_consents`.
+- Emit `disclosure_events` whenever identified patient data is disclosed to boards, support users, exports, or external recipients. Manufacturers receive only aggregate or de-identified line-level safety data in MVP 1; future identified manufacturer disclosure requires `patient_data_sharing_consents`.
 - Add full-file export job outputting a patient-readable archive plus machine-readable manifest.
 - Add retention/audit policy: requests and responses are regulated artifacts.
 
@@ -340,7 +340,7 @@ These close the P1 gaps that do not block the core happy path as hard as § 2.1,
 
 - ETC staff can find a patient, AE, protocol, staff file, or document from one search box.
 - Patient search returns only patient-visible records.
-- Sponsor search never returns identified PHI.
+- Manufacturer search never returns identified PHI.
 - Cross-tenant search leakage is covered by semantic SQL/e2e tests.
 
 #### 2.2.3 Subprocessor classification for operational tools
@@ -365,26 +365,26 @@ These close the P1 gaps that do not block the core happy path as hard as § 2.1,
 - Sentry/log/analytics test fixtures prove synthetic PHI is redacted before export.
 - No authenticated synthetic monitoring touches real tenant data.
 
-#### 2.2.4 Sponsor line-level data decision
+#### 2.2.4 Manufacturer line-level data decision
 
-**Decision:** MVP 1 does **not** grant sponsors identified patient-level PHI access. MVP 1 supports aggregate reporting and de-identified line-level safety/AE records only. Identified sponsor access requires a future `patient_data_sharing_consents` workflow and is Phase 8; moving it earlier is a formal scope change with consent, audit, RLS, counsel, and test work attached.
+**Decision:** MVP 1 does **not** grant manufacturers identified patient-level PHI access. MVP 1 supports aggregate reporting and de-identified line-level safety/AE records only. Identified manufacturer access requires a future `patient_data_sharing_consents` workflow and is Phase 8; moving it earlier is a formal scope change with consent, audit, RLS, counsel, and test work attached.
 
-**Phase:** Sprint 5 sponsor reporting.
+**Phase:** Sprint 5 manufacturer reporting.
 
 **To-do list:**
 
 - Change PPA sharing levels to `aggregate_only` and `deidentified_line_level_safety`; remove identified PHI sharing from MVP UI.
-- Add de-identification/tokenization service for sponsor-facing line-level AE/safety records.
-- Emit `disclosure_events` for sponsor exports and sponsor access, even when de-identified, with data scope.
+- Add de-identification/tokenization service for manufacturer-facing line-level AE/safety records.
+- Emit `disclosure_events` for manufacturer exports and manufacturer access, even when de-identified, with data scope.
 - Add k-anonymity suppression for aggregates and small cohorts.
-- Add sponsor RLS tests proving sponsor cannot read patient identifiers, message bodies, documents, H&P, consents, agreements, or raw treatment notes.
+- Add manufacturer RLS tests proving manufacturer cannot read patient identifiers, message bodies, documents, H&P, consents, agreements, or raw treatment notes.
 - Add a Phase 8 stub: `patient_data_sharing_consents` with no active UI in MVP 1.
 
 **Acceptance criteria:**
 
-- Sponsor AE feed has enough safety detail for pharmacovigilance triage but no direct identifiers.
-- PPA cannot grant identified sponsor PHI access in MVP 1.
-- Any future PHI sponsor access is blocked without explicit patient consent and audit/disclosure events.
+- Manufacturer AE feed has enough safety detail for pharmacovigilance triage but no direct identifiers.
+- PPA cannot grant identified manufacturer PHI access in MVP 1.
+- Any future PHI manufacturer access is blocked without explicit patient consent and audit/disclosure events.
 
 #### 2.2.5 Drug accountability
 
@@ -395,10 +395,10 @@ These close the P1 gaps that do not block the core happy path as hard as § 2.1,
 **To-do list:**
 
 - Add `drug_products`, `drug_lots`, `drug_inventory_locations`, `drug_inventory_movements`, `drug_storage_condition_logs`, `drug_dispenses`, and `drug_accountability_reconciliations`.
-- Capture lot/batch, expiration, received quantity, current quantity, storage location, disposition, and sponsor/program linkage.
+- Capture lot/batch, expiration, received quantity, current quantity, storage location, disposition, and manufacturer/program linkage.
 - Capture dispensing at treatment: enrollment, visit, provider, quantity, lot, expiration check, patient-facing medication/treatment name.
 - Block dispensing expired lots.
-- Include drug accountability in treatment documentation and sponsor reports as de-identified operational data.
+- Include drug accountability in treatment documentation and manufacturer reports as de-identified operational data.
 - Route expired/disposed product events to safety/QAPI where appropriate.
 
 **Acceptance criteria:**
@@ -420,7 +420,7 @@ These close the P1 gaps that do not block the core happy path as hard as § 2.1,
 - Enrollment instantiates the program treatment plan and visit schedule into patient-specific plan rows.
 - Treatment documentation writes provider observations and required outcome observations.
 - PRO survey responses map to `program_outcome_measures`, not unstructured survey blobs only.
-- Sponsor aggregate reports and ETRB annual reports read from outcome observations.
+- Manufacturer aggregate reports and ETRB annual reports read from outcome observations.
 
 **Acceptance criteria:**
 
@@ -485,7 +485,7 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
     app/            # staff/business console — Vite/React
       src/
         portals/
-          sponsor/  # sponsor / biotech manufacturer persona
+          manufacturer/  # manufacturer / biotech manufacturer persona
           etc/      # ETC operator persona
           admin/    # Lewis internal admin persona
           shared/   # shared staff/business shell primitives
@@ -495,7 +495,7 @@ Phase 0 also classifies each vendor as `PHI allowed with BAA`, `No PHI by config
     api/            # Hono API — Node
       src/
         domains/
-          sponsors/
+          manufacturers/
           etcs/
           patients/
           boards/
@@ -602,9 +602,9 @@ These items track the local development foundation added before continuing deepe
 
 In `packages/db`:
 
-- Drizzle config with split schema files per domain (tenancy, regulatory, sponsor, etc, etrb, patient, ae, qapi, grievance, compliance, inventory, payments, search, audit_infra).
+- Drizzle config with split schema files per domain (tenancy, regulatory, manufacturer, etc, etrb, patient, ae, qapi, grievance, compliance, inventory, payments, search, audit_infra).
 - Migration 0001 — create the security primitives:
-  - `tenants` (security boundary; kind enum: `sponsor` | `etc` | `patient` | `board` | `lewis_internal`; status; display_name)
+  - `tenants` (security boundary; kind enum: `manufacturer` | `etc` | `patient` | `board` | `lewis_internal`; status; display_name)
   - `users` (Clerk identity, email, name, phone)
   - `tenant_memberships` (user × tenant × role; multi-membership supported per PRD § 8.1; includes status, starts_at, ends_at)
   - `tenant_relationships` (from_tenant_id, to_tenant_id, kind, scope_json, status; used for PPA access, board-to-ETC access, caregiver/guardian access, and future cross-tenant grants)
@@ -613,7 +613,7 @@ In `packages/db`:
   - `file_storage_objects` (Supabase Storage pointer; SHA-256; size; mime; uploaded_by; uploaded_at; bucket; immutable_ref boolean)
   - `notifications` (queue rows; channel enum with `email` only in MVP 1, abstracted for SMS Phase 2)
   - `feature_flags` (per-tenant overrides)
-- Domain legal/business entity tables are not security primitives. `sponsor_organizations`, `etc_organizations`, `patients`, and `boards` each reference `tenants.id`; RLS always keys off tenant ownership and explicit tenant relationships, never off a generic `organizations.kind`.
+- Domain legal/business entity tables are not security primitives. `manufacturer_organizations`, `etc_organizations`, `patients`, and `boards` each reference `tenants.id`; RLS always keys off tenant ownership and explicit tenant relationships, never off a generic `organizations.kind`.
 - Migration 0002 — create state-first regulated-object primitives:
   - `regulatory_jurisdictions` (seed Montana; timezone `America/Denver`; status)
   - `regulatory_rule_versions` (source citation, effective_at, superseded_at, counsel_review_status)
@@ -631,14 +631,14 @@ In `packages/db`:
   - Inpatient: `inpatient_facility_profiles` linked to ETC tenant; nullable RULE 24 evidence fields; validation inactive for outpatient MVP tenants.
   - Payments: `payment_rails`, `payment_obligations`, `payment_transactions`; seed `stripe_card` and `stripe_ach` active, alt-currency rails disabled.
   - HFAR Path A: `hfar_path_a_allocations` inactive until DPHHS/counsel defines qualifying-resident rules.
-  - Sponsor data-sharing future stub: `patient_data_sharing_consents` inactive in MVP 1.
+  - Manufacturer data-sharing future stub: `patient_data_sharing_consents` inactive in MVP 1.
 - Migration 0005 — create tenant-scoped search foundation:
   - `search_index_documents` (source_table, source_id, owner_tenant_id, patient_tenant_id nullable, visibility_classification, title, redacted_snippet, search_vector, indexed_at)
   - `search_index_jobs` (source_table, source_id, requested_at, processed_at, error)
   - Postgres FTS indexes and trigram indexes; no external search vendor in MVP 1.
 - Migration 0006 — create relationship-aware RLS helpers and non-recursive read policies:
   - Fix tenant-membership self reads without recursive policy evaluation.
-  - Patient self, care-team, and consented-sponsor read paths are mediated through explicit tenant relationships.
+  - Patient self, care-team, and consented-manufacturer read paths are mediated through explicit tenant relationships.
   - PPA-related ETC reads are mediated through relationship helper functions rather than organization-kind shortcuts.
 - Migration 0007 — create DB-enforced retention foundation:
   - `app.compute_retention(...)` centralizes retention windows.
@@ -654,7 +654,7 @@ In `packages/db`:
   - Add `app.current_role()` for diagnostics/audit context while keeping authorization policies tied to `tenant_memberships`.
   - Add `app.resolve_authenticated_membership(...)` as the only narrow pre-RLS tenant bootstrap helper used after Clerk verification.
   - Tighten notification, feature-flag, and search-index global reads.
-  - Remove the unused encrypted sponsor tax-id field from the current schema.
+  - Remove the unused encrypted manufacturer tax-id field from the current schema.
 - Migration 0011 — enforce runtime role separation:
   - Create `app_api` and `app_worker` as login-capable `NOBYPASSRLS` runtime roles.
   - Create `app_migrator` as the non-runtime DDL role placeholder for managed environments.
@@ -666,7 +666,7 @@ In `packages/db`:
   - Replace broad `FOR ALL` write policies with command-specific INSERT/UPDATE/DELETE policies so write grants do not widen read visibility.
   - Require verified authority-document evidence before a non-self representative can hold signing authority.
 - Migration 0013 — correct PPA program-read direction:
-  - Sponsor program visibility follows the canonical sponsor-to-ETC PPA relationship direction.
+  - Manufacturer program visibility follows the canonical manufacturer-to-ETC PPA relationship direction.
 - Migration 0014 — scope global write policies to write commands:
   - Replace `FOR ALL` notification and feature-flag write policies with explicit INSERT/UPDATE/DELETE policies so write grants cannot widen SELECT visibility.
 - RLS helper functions live in SQL migrations and read only transaction-local application context:
@@ -739,7 +739,7 @@ In `packages/db`:
   ```mermaid
   flowchart LR
     AppHost[app.lewis.health] --> App[apps/app]
-    App --> Sponsor[apps/app/src/portals/sponsor]
+    App --> Manufacturer[apps/app/src/portals/manufacturer]
     App --> ETC[apps/app/src/portals/etc]
     App --> Admin[apps/app/src/portals/admin]
     PatientHost[patient.lewis.health] --> Patient[apps/patient]
@@ -747,19 +747,19 @@ In `packages/db`:
     App --> API[apps/api]
     Patient --> API
   ```
-- `apps/app` is one deployable staff/business console. Sponsor/biotech manufacturer, ETC, and Lewis internal admin are role-routed modules inside `apps/app/src/portals/*`, not separate frontend applications.
+- `apps/app` is one deployable staff/business console. Manufacturer/biotech manufacturer, ETC, and Lewis internal admin are role-routed modules inside `apps/app/src/portals/*`, not separate frontend applications.
 - `apps/patient` is a separate deployable patient product because it has distinct auth posture, UX, PHI exposure, analytics/logging constraints, accessibility review, bundle, and release risk.
-- API domain modules live under `apps/api/src/domains/{sponsors,etcs,patients,boards,internal-admin}` so backend ownership mirrors the PRD domains without creating extra deployables.
+- API domain modules live under `apps/api/src/domains/{manufacturers,etcs,patients,boards,internal-admin}` so backend ownership mirrors the PRD domains without creating extra deployables.
 - React Router with role-based route trees:
   - `apps/app`:
     - `/` (post-login redirect by active tenant kind × membership role)
-    - `/sponsor/*` (Sponsor / biotech manufacturer portal — module root: `apps/app/src/portals/sponsor`)
+    - `/manufacturer/*` (Manufacturer / biotech manufacturer portal — module root: `apps/app/src/portals/manufacturer`)
     - `/etc/*` (ETC portal — module root: `apps/app/src/portals/etc`)
     - `/admin/*` (Internal admin — module root: `apps/app/src/portals/admin`)
   - `apps/patient`:
     - `/` (discovery / public)
     - `/me/*` (auth-gated patient portal — module root: `apps/patient/src/portal`)
-- Clerk React SDK integrated; MFA enforced for sponsor + ETC users; optional for patients (encouraged at signup).
+- Clerk React SDK integrated; MFA enforced for manufacturer + ETC users; optional for patients (encouraged at signup).
 - TanStack Query client configured; default fetcher reads Clerk session and adds Authorization header. Frontends call only the Hono API; there is no browser-side Supabase database client.
 - react-hook-form + zod resolver wired into a sample form; ESLint rule blocks unstructured form patterns.
 - react-intl `IntlProvider` at app root; `defaultLocale = 'en'`; `messages/en.json` seeded.
@@ -786,40 +786,40 @@ In `packages/db`:
 ### 4.8 Sprint 1 acceptance criteria
 
 - [ ] `mise run ci` green from a clean clone.
-- [ ] Semantic RLS suite proves: sponsor, ETC, patient, board reviewer, patient representative, and Lewis support policies allow only their explicitly scoped rows.
+- [ ] Semantic RLS suite proves: manufacturer, ETC, patient, board reviewer, patient representative, and Lewis support policies allow only their explicitly scoped rows.
 - [ ] Semantic RLS suite proves cross-tenant denial for unrelated tenants across every PHI-bearing table.
 - [x] Runtime DB roles are separate from the migration owner: `app_api`/`app_worker` are `NOBYPASSRLS`, every RLS table is forced, and tests prove app-role reads fail without app context.
-- [x] Architecture-preserved stubs exist for device registry, inpatient profile, payment rails/obligations/transactions, HFAR Path A, and future sponsor patient-data-sharing consents.
+- [x] Architecture-preserved stubs exist for device registry, inpatient profile, payment rails/obligations/transactions, HFAR Path A, and future manufacturer patient-data-sharing consents.
 - [ ] Every regulated table introduced in Sprint 1 has `jurisdiction_id`; test fails on regulated tables without jurisdiction.
 - [ ] Search foundation tables and indexes exist; search RLS tests prove one tenant cannot discover another tenant's rows through snippets or counts.
 - [x] Semantic SQL test proves: `audit_log` UPDATE and DELETE both raise.
 - [x] Clerk React providers and route guards exist for `apps/app` and `apps/patient`; preview Clerk application wiring and app-user MFA enforcement remain deployment tasks.
 - [ ] A test mutation through the API writes the matching `audit_log` row.
 - [ ] Notification dispatcher sends a Resend email end-to-end (preview env).
-- [x] All four product surfaces render their empty navigation per PRD § 8.3: sponsor/biotech manufacturer, ETC, internal admin in `apps/app`, and patient in `apps/patient`.
+- [x] All four product surfaces render their empty navigation per PRD § 8.3: biotech manufacturer, ETC, internal admin in `apps/app`, and patient in `apps/patient`.
 - [ ] Sentry captures a test error from each frontend and from the API; PHI scrubber test passes.
 - [x] Time helpers correctly compute "days until Feb 1 deadline" with America/Denver semantics.
 - [ ] All subprocessors with PHI exposure planned for Phase 2 have signed BAAs.
 
 ---
 
-## 5. Phase 2 — Sponsor + ETC Onboarding (Sprint 2, Weeks 3–4)
+## 5. Phase 2 — Manufacturer + ETC Onboarding (Sprint 2, Weeks 3–4)
 
-**Goals.** Sponsor can onboard, configure a program (with protocol PDF), and invite an ETC. ETC can be created, complete the licensure wizard end-to-end, and produce a DPHHS-ready RULE 5 application package. PPA flow signs cleanly. E-signature provider integrated. The 90-day approval clock is visible on the ETC dashboard skeleton.
+**Goals.** Manufacturer can onboard, configure a program (with protocol PDF), and invite an ETC. ETC can be created, complete the licensure wizard end-to-end, and produce a DPHHS-ready RULE 5 application package. PPA flow signs cleanly. E-signature provider integrated. The 90-day approval clock is visible on the ETC dashboard skeleton.
 
-### 5.1 Sponsor onboarding (PRD § 9.1)
+### 5.1 Manufacturer onboarding (PRD § 9.1)
 
-- Internal admin tooling (very minimal): a Next.js-style script `provision-tenant.ts` that creates a sponsor `tenant`, creates the linked `sponsor_organizations` legal profile, and sends a Clerk invite. (Full admin UI lands Sprint 6.)
-- Onboarding wizard at `/sponsor/onboarding` — captures every field in PRD § 9.1 data block.
+- Internal admin tooling (very minimal): a Next.js-style script `provision-tenant.ts` that creates a manufacturer `tenant`, creates the linked `manufacturer_organizations` legal profile, and sends a Clerk invite. (Full admin UI lands Sprint 6.)
+- Onboarding wizard at `/manufacturer/onboarding` — captures every field in PRD § 9.1 data block.
 - Tax ID column uses pgcrypto application-layer encryption (`pgp_sym_encrypt`) with a key from KMS-equivalent secret.
 - BAA + MSA "signed_at" tracked but PDFs uploaded out-of-band initially (no signing-flow integration for these — they're contracts with Lewis, not regulatory artifacts).
 
-### 5.2 Sponsor program configuration (PRD § 9.2)
+### 5.2 Manufacturer program configuration (PRD § 9.2)
 
-- New page `/sponsor/programs/new` with form fields per PRD § 9.2.
+- New page `/manufacturer/programs/new` with form fields per PRD § 9.2.
 - Eligibility criteria editor — structured form (age range slider, indication picker with ICD-10 search, multi-select for contraindications, free-text for residual). Stored as `eligibility_criteria_json`.
 - Treatment plan template editor — visit cadence, expected duration, milestone sequence, required documentation, and provider role requirements. Stored in `program_treatment_plan_templates` and `program_visit_schedule_templates`, not as a prose blob.
-- Outcome measure builder — measure name, source, cadence, unit, expected direction, required/optional flag, and reporting label. Stored in `program_outcome_measures`; these definitions drive PRO forms, treatment documentation, sponsor aggregates, and ETRB reports.
+- Outcome measure builder — measure name, source, cadence, unit, expected direction, required/optional flag, and reporting label. Stored in `program_outcome_measures`; these definitions drive PRO forms, treatment documentation, manufacturer aggregates, and ETRB reports.
 - Drug accountability setup — product identity, lot/batch fields, storage requirements, expiration/disposition rules, and dispensing constraints. Creates `drug_products` rows; ETC lot receipt happens in Sprint 5 before treatment documentation.
 - Protocol upload via `packages/db/storage` with SHA-256 hash and `immutable_ref = true`.
 - `programs` state machine implemented as enum + transition validators in API; transitions written to `program_versions`.
@@ -870,13 +870,13 @@ Implementation pattern:
 - After submission, ETC admin enters `dphhs_submitted_at`; tenant transitions to `Application Submitted`.
 - 90-day approval clock starts (computed as `dphhs_submitted_at + 90 days`, displayed in America/Denver).
 
-### 5.6 ETC ↔ Sponsor invitation + PPA (PRD § 9.3)
+### 5.6 ETC ↔ Manufacturer invitation + PPA (PRD § 9.3)
 
-- Sponsor admin from `/sponsor/etc-network` invites ETC by legal name + primary contact email.
+- Manufacturer admin from `/manufacturer/etc-network` invites ETC by legal name + primary contact email.
 - If ETC tenant exists by email match, in-app invite. Otherwise Clerk invite that creates ETC tenant on accept.
 - Invitation references the program; on accept, ETC sees PPA generation prompt.
-- PPA template: counsel-approved `legal_content_template_versions` rendered by `packages/pdf/templates/ppa.tsx`. Populated with sponsor + ETC + program details.
-- PPA data-sharing level is limited to `aggregate_only` or `deidentified_line_level_safety` in MVP 1. The UI does not expose identified sponsor PHI sharing; future `patient_data_sharing_consents` stays dormant until Phase 8.
+- PPA template: counsel-approved `legal_content_template_versions` rendered by `packages/pdf/templates/ppa.tsx`. Populated with manufacturer + ETC + program details.
+- PPA data-sharing level is limited to `aggregate_only` or `deidentified_line_level_safety` in MVP 1. The UI does not expose identified manufacturer PHI sharing; future `patient_data_sharing_consents` stays dormant until Phase 8.
 - Both sides sign in-platform via the chosen e-signature provider (Documenso self-hosted recommended).
 - Signed PPA stored as `program_participation_agreements` row + `file_storage_objects` + `rendered_legal_documents` (immutable, with template version ids and input hash).
 - E-sign provider events (signed-by-A, signed-by-B, completed) update `signed_at` columns.
@@ -887,7 +887,7 @@ Implementation pattern:
 - Implement only: license status + 90-day countdown, recent activity feed.
 - Other widgets stubbed with "Coming in Sprint X" so the layout is right.
 
-### 5.8 Sponsor dashboard skeleton (PRD § 8.3 nav)
+### 5.8 Manufacturer dashboard skeleton (PRD § 8.3 nav)
 
 - Build the seven nav items (Programs, ETC Network, Patients, AEs, Reports, Billing, Settings).
 - Programs and ETC Network functional; others stubbed.
@@ -900,15 +900,15 @@ Implementation pattern:
 
 ### 5.10 Sprint 2 acceptance criteria
 
-- [ ] Sponsor can onboard end-to-end and create a program with a protocol PDF.
-- [ ] Sponsor program creation captures treatment plan templates, visit schedule templates, outcome measures, and drug accountability setup as structured rows.
+- [ ] Manufacturer can onboard end-to-end and create a program with a protocol PDF.
+- [ ] Manufacturer program creation captures treatment plan templates, visit schedule templates, outcome measures, and drug accountability setup as structured rows.
 - [ ] Program protocol upload writes immutable `file_storage_objects` row with SHA-256.
 - [ ] Eligibility criteria stored as structured JSON; round-trip rendering works.
 - [ ] ETC can complete the licensure wizard across all 13 sections (save/resume verified).
 - [ ] PDF generation produces a DPHHS-ready package; p95 < 15s.
 - [ ] 90-day approval clock displays correctly in America/Denver.
-- [ ] Sponsor invites an ETC; PPA generated; both parties sign; signed PDF stored immutably.
-- [ ] PPA data-sharing options are limited to aggregate-only or de-identified line-level safety; no identified sponsor PHI toggle exists in MVP UI.
+- [ ] Manufacturer invites an ETC; PPA generated; both parties sign; signed PDF stored immutably.
+- [ ] PPA data-sharing options are limited to aggregate-only or de-identified line-level safety; no identified manufacturer PHI toggle exists in MVP UI.
 - [ ] PPA rendering uses counsel-approved legal template version and records `rendered_legal_documents`.
 - [ ] Tax ID is encrypted at rest (verified by reading raw column).
 - [ ] All Sprint 2 features have compliance trace tests.
@@ -975,7 +975,7 @@ Migrations: `boards`, `board_etc_associations` (M:M), `board_members`, `board_me
 
 #### 6.3.3 Protocol review workflow
 
-- Sponsor uploads protocol → ETC associates with board → triggers `protocol_reviews` row.
+- Manufacturer uploads protocol → ETC associates with board → triggers `protocol_reviews` row.
 - Each reviewer sees read-only protocol artifact.
 - Per RULE 16(6)(a)(i)–(iv) review checklist: safety standards, informed consent procedures, risk-benefit analysis, alternatives evaluation.
 - Vote: Approve / Request Changes / Reject + rationale.
@@ -1031,7 +1031,7 @@ Migrations: `boards`, `board_etc_associations` (M:M), `board_members`, `board_me
 
 - Pure function `computeComplianceScore(etcId)` reading from compliance_obligations, staff_files, etrb associations, transfer_agreements, ae_records, qapi_meetings.
 - 0–100 scale; weights per PRD: AE-window heavy, license binary, others weighted.
-- Surfaced on ETC dashboard, admin Compliance Watch (Sprint 6), and as aggregate in sponsor ETC Network view.
+- Surfaced on ETC dashboard, admin Compliance Watch (Sprint 6), and as aggregate in manufacturer ETC Network view.
 - Daily recompute via job (§ 6.10); on-demand recompute exposed via API.
 
 ### 6.6A Tenant-scoped search (PRD § 13.6)
@@ -1081,7 +1081,7 @@ Migrations: `boards`, `board_etc_associations` (M:M), `board_members`, `board_me
 - [ ] Infection/safety events route into QAPI briefing data.
 - [ ] ETC creates ETRB; composition validator rejects under-spec board.
 - [ ] Conflict declarations are append-only (semantic SQL).
-- [ ] Sponsor's protocol moves through review → approval; vote record + conflict declarations immutable.
+- [ ] Manufacturer's protocol moves through review → approval; vote record + conflict declarations immutable.
 - [ ] Provisional ETC cannot enroll patients (e2e: 403 on `/v1/etcs/:id/patients`).
 - [ ] QAPI committee created; quarterly meeting scheduled; minutes upload tested; 3-year retention lock verified.
 - [ ] Compliance dashboard shows all PRD-listed obligations with correct due dates/evidence status in America/Denver.
@@ -1099,7 +1099,7 @@ Migrations: `boards`, `board_etc_associations` (M:M), `board_members`, `board_me
 
 **Goals.** Stage 1 through Stage 8 of patient intake (PRD § 10.5) work end-to-end. Patient portal is fully functional. First synthetic patient can flow from discovery to scheduled visit on staging without the engineer touching anything outside the UI.
 
-This is the riskiest sprint — most LOC, most integrations, first PHI in flight. Pad the calendar by 20% if possible. Sprint 4 spillover into Sprint 5 is acceptable for non-critical-path items (sponsor de-identified aggregates can slide); Stages 1–8 cannot slide.
+This is the riskiest sprint — most LOC, most integrations, first PHI in flight. Pad the calendar by 20% if possible. Sprint 4 spillover into Sprint 5 is acceptable for non-critical-path items (manufacturer de-identified aggregates can slide); Stages 1–8 cannot slide.
 
 ### 7.1 Public program page (PRD § 15.7)
 
@@ -1327,16 +1327,16 @@ Build the entire patient surface in this sprint. This is what patients actually 
 
 ## 8. Phase 5 — Treatment, AE, Reporting (Sprint 5, Weeks 9–10)
 
-**Goals.** A visit can be documented end-to-end. AE workflow with the 5-day clock works in production-quality. Emergency transfer flow tested. DPHHS annual report and HFAR Path B annual workflows produce DPHHS-formatted PDFs. Sponsor surfaces (de-identified aggregates, AE feed, reports, billing) functional. ETRB annual public report generator produces a real artifact.
+**Goals.** A visit can be documented end-to-end. AE workflow with the 5-day clock works in production-quality. Emergency transfer flow tested. DPHHS annual report and HFAR Path B annual workflows produce DPHHS-formatted PDFs. Manufacturer surfaces (de-identified aggregates, AE feed, reports, billing) functional. ETRB annual public report generator produces a real artifact.
 
 ### 8.1 Drug accountability (PRD §§ 9.2, 10.6, 10.17; RULE 19)
 
 - Migrations already stubbed in Sprint 1; Sprint 5 activates UI/API for `drug_lots`, `drug_inventory_locations`, `drug_inventory_movements`, `drug_storage_condition_logs`, `drug_dispenses`, and `drug_accountability_reconciliations`.
-- ETC receives WST-057 lots with sponsor lot reference, quantity, expiration, storage requirements, certificate/file evidence, and quarantine status.
+- ETC receives WST-057 lots with manufacturer lot reference, quantity, expiration, storage requirements, certificate/file evidence, and quarantine status.
 - Storage condition log supports routine readings and excursions; excursions create safety/QAPI review items when thresholds are breached.
 - Dispensing workflow is visit-linked and patient-specific. It blocks expired, quarantined, depleted, or unreconciled lots before treatment documentation can be completed.
 - Reconciliation view compares received, dispensed, wasted, returned, destroyed, and on-hand quantities; variance requires explanation and medical director/admin approval.
-- Expiration monitoring feeds the RULE 19 safety module and sponsor operational reports as de-identified operational data.
+- Expiration monitoring feeds the RULE 19 safety module and manufacturer operational reports as de-identified operational data.
 
 ### 8.1B Treatment documentation (PRD § 10.6) — RULE 13
 
@@ -1420,10 +1420,10 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
 
 #### 8.3.7 Routing
 
-- On AE creation, immediate notification email to sponsor's regulatory contact per program PPA (`ae_flowdown_email`).
+- On AE creation, immediate notification email to manufacturer's regulatory contact per program PPA (`ae_flowdown_email`).
 - AE row inserted into QAPI review queue (RULE 17(4); QAPI briefing data pull picks it up).
 - AE row inserted into ETRB review queue (RULE 16(6)(e)).
-- Trace test: an AE creation produces the sponsor email + QAPI queue + ETRB queue rows.
+- Trace test: an AE creation produces the manufacturer email + QAPI queue + ETRB queue rows.
 
 #### 8.3.8 Patient self-report path (PRD § 10.10, § 11.8)
 
@@ -1433,22 +1433,22 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
   - Escalates to formal AE workflow.
   - Contacts patient first.
 
-### 8.4 Sponsor surfaces (PRD §§ 9.4, 9.5, 9.6, 9.7)
+### 8.4 Manufacturer surfaces (PRD §§ 9.4, 9.5, 9.6, 9.7)
 
 #### 8.4.1 De-identified aggregates (§ 9.4)
 
-- Sponsor portal `/sponsor/programs/:id/aggregates`.
+- Manufacturer portal `/manufacturer/programs/:id/aggregates`.
 - Total enrolled by ETC + program; treatment status counts; AE counts by severity; structured outcome distributions; drug-accountability status; longitudinal cohort views.
-- MVP sharing model: `aggregate_only` by default; `deidentified_line_level_safety` only if the PPA explicitly grants it. Identified patient-level sponsor PHI is not implemented in MVP 1.
+- MVP sharing model: `aggregate_only` by default; `deidentified_line_level_safety` only if the PPA explicitly grants it. Identified patient-level manufacturer PHI is not implemented in MVP 1.
 - **k-anonymity ≥ 5 enforced** (PRD § 18.5): if a cohort group has < 5 patients, suppress the row.
 
 #### 8.4.2 AE feed (§ 9.5)
 
-- `/sponsor/adverse-events` with per-program filterable list.
+- `/manufacturer/adverse-events` with per-program filterable list.
 - ETC tokenized unless PPA grants ETC-level operational visibility; patient identifiers are always removed in MVP 1.
 - Line-level safety records are produced by a de-identification/tokenization service with a versioned redaction policy; free-text PHI is excluded or manually reviewed before release.
-- Sponsor pharmacovigilance can add internal notes (visible to sponsor only).
-- Every sponsor line-level view/export writes `sponsor_data_access_events`; disclosure-accounting events are emitted when legally required.
+- Manufacturer pharmacovigilance can add internal notes (visible to manufacturer only).
+- Every manufacturer line-level view/export writes `manufacturer_data_access_events`; disclosure-accounting events are emitted when legally required.
 
 #### 8.4.3 Reports (§ 9.6)
 
@@ -1457,12 +1457,12 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
 
 #### 8.4.4 Billing (§ 9.7)
 
-- Stripe Billing for sponsor platform fees:
-  - Per-program flat monthly (configurable per sponsor).
+- Stripe Billing for manufacturer platform fees:
+  - Per-program flat monthly (configurable per manufacturer).
   - Per-treatment-delivered variable.
   - Combination.
-- Sponsor billing dashboard: invoices, payment methods, upcoming.
-- ETCs and patients do NOT see sponsor's financial relationship (PRD § 9.7 explicit).
+- Manufacturer billing dashboard: invoices, payment methods, upcoming.
+- ETCs and patients do NOT see manufacturer's financial relationship (PRD § 9.7 explicit).
 
 ### 8.5 DPHHS annual report (PRD § 10.13) — RULE 22
 
@@ -1500,7 +1500,7 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
 - Migrations: `amendment_requests`, `privacy_restrictions`; `record_requests` and `disclosure_events` already exist from Sprint 4.
 - Amendment workflow: patient submits target record + requested change; ETC clinical/admin reviewer accepts, partially accepts, or denies with reason; response file stored.
 - Restriction workflow: patient requests restriction scope; ETC/admin reviewer accepts or denies; accepted restrictions gate future disclosures and exports.
-- Disclosure accounting: `disclosure_events` emitted for de-identified sponsor line-level safety access where legally required, board review access, support-access grants, exports, external transfer packets, and patient-file releases.
+- Disclosure accounting: `disclosure_events` emitted for de-identified manufacturer line-level safety access where legally required, board review access, support-access grants, exports, external transfer packets, and patient-file releases.
 - Grievances may link to amendment/restriction requests but do not replace them.
 
 ### 8.8 ETRB annual public report (PRD § 10.8) — RULE 16(6)(c)
@@ -1532,7 +1532,7 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
 - [ ] Provider and patient outcomes write structured `outcome_measure_observations` tied to program measures.
 - [ ] Discharge note + instructions emailed to patient.
 - [ ] Discharge creates DB-enforced patient-file retention locks for five years after discharge.
-- [ ] AE created → sponsor regulatory contact emailed within 60 seconds.
+- [ ] AE created → manufacturer regulatory contact emailed within 60 seconds.
 - [ ] AE captures occurred/detected/aware/reported timestamps; delayed reporting cannot reset the compliance clock.
 - [ ] AE 5-day clock job triggers escalation emails at 96h/72h/48h/24h/6h from `dphhs_deadline_at` on staging.
 - [ ] DPHHS-formatted AE PDF renders correctly.
@@ -1541,9 +1541,9 @@ The 5-day regulatory clock is the highest-stakes ongoing operational requirement
 - [ ] HFAR Path B workflow walks ETC through both interpretations; chosen value persisted.
 - [ ] Grievance flow works from patient portal through resolution.
 - [ ] Amendment, privacy restriction, record request, and disclosure accounting workflows work end-to-end.
-- [ ] Sponsor de-identified aggregates suppress < 5 patient cohorts.
-- [ ] Sponsor de-identified line-level safety feed contains no direct identifiers/free-text PHI and writes `sponsor_data_access_events`.
-- [ ] Sponsor billing produces Stripe invoices for platform fees.
+- [ ] Manufacturer de-identified aggregates suppress < 5 patient cohorts.
+- [ ] Manufacturer de-identified line-level safety feed contains no direct identifiers/free-text PHI and writes `manufacturer_data_access_events`.
+- [ ] Manufacturer billing produces Stripe invoices for platform fees.
 - [ ] ETRB annual public report generated for any board with data; published page accessible.
 - [ ] All 6 ETC reports export as PDF + CSV.
 - [ ] All Sprint 5 background jobs run for 7 days in staging without missed runs.
@@ -1604,7 +1604,7 @@ The PRD's existing sprint plan defers the entire admin portal to Sprint 6, which
 
 - PostHog (recommended) wired with tenant scoping + PHI redaction.
 - Event taxonomy `domain.subject.verb` (PRD § 21.5).
-- Funnel dashboards for sponsor / ETC / patient (PRD § 21.3).
+- Funnel dashboards for manufacturer / ETC / patient (PRD § 21.3).
 - Quality metric dashboards (PRD § 21.4):
   - AE reporting compliance % within 5 days
   - Annual report on-time rate
@@ -1672,7 +1672,7 @@ The PRD's existing sprint plan defers the entire admin portal to Sprint 6, which
   - `incident-response.md` — HIPAA Breach Notification Rule timing, escalation paths, comms templates.
   - `oncall.md` — rotation, paging, escalation.
   - `backup-restore.md` — DR steps with screenshots.
-  - `tenant-provisioning.md` — sponsor and ETC creation.
+  - `tenant-provisioning.md` — manufacturer and ETC creation.
   - `support-access-grants.md` — break-glass procedure.
   - `subprocessor-incident.md` — what to do if a subprocessor has a breach.
 - `docs/arch.md` — high-level architecture diagram.
@@ -1718,7 +1718,7 @@ The PRD's existing sprint plan defers the entire admin portal to Sprint 6, which
 
 ## 10. Phase 7 — Post-launch (Weeks 13–26, first 90 days)
 
-**Goals (PRD § 22.4).** Iterate on patient flow based on real data. Onboard a second sponsor and second ETC. Begin SOC 2 evidence collection. Phase 2 prioritization.
+**Goals (PRD § 22.4).** Iterate on patient flow based on real data. Onboard a second manufacturer and second ETC. Begin SOC 2 evidence collection. Phase 2 prioritization.
 
 ### 10.1 Iteration cadence
 
@@ -1738,7 +1738,7 @@ Driven by data, not assumption. Likely candidates:
 
 ### 10.3 Second tenant onboarding
 
-- Second sponsor: validates multi-sponsor isolation in production.
+- Second manufacturer: validates multi-manufacturer isolation in production.
 - Second ETC: validates multi-ETC board sharing pattern (or two-board pattern).
 - Compliance Watch confirms cross-tenant scoring works.
 
@@ -1762,7 +1762,7 @@ Driven by data, not assumption. Likely candidates:
 ### 10.7 Phase 7 acceptance criteria
 
 - [ ] First-cohort patients (≥5) complete treatment without compliance gaps.
-- [ ] Second sponsor onboarded and creating programs.
+- [ ] Second manufacturer onboarded and creating programs.
 - [ ] Second ETC licensed and operating on Lewis.
 - [ ] Compliance Watch shows healthy scores across tenants.
 - [ ] SOC 2 evidence pipeline running.
@@ -1777,9 +1777,9 @@ The 10 PRD § 7 deferred items, with activation triggers:
 | # | Item | Activation trigger |
 |---|---|---|
 | 7.1 | RULE 25 outside-physician network | ETRB has issued RULE 16(6)(f) for the relevant treatment + commercial demand justifies it |
-| 7.2 | Investigational medical device registry depth (RULE 21) | Sprint 1 device stubs already exist; activate full device consent/cybersecurity/long-term tracking when a sponsor brings a device program |
+| 7.2 | Investigational medical device registry depth (RULE 21) | Sprint 1 device stubs already exist; activate full device consent/cybersecurity/long-term tracking when a manufacturer brings a device program |
 | 7.3 | Inpatient ETC physical plant (RULE 24) | Sprint 1 inpatient profile stubs already exist; activate validation when an inpatient ETC tenant onboards |
-| 7.4 | HFAR Path A free-treatment workflow | Sprint 1 allocation stubs already exist; activate when DPHHS publishes "qualifying Montana residents" definition + a sponsor chooses Path A |
+| 7.4 | HFAR Path A free-treatment workflow | Sprint 1 allocation stubs already exist; activate when DPHHS publishes "qualifying Montana residents" definition + a manufacturer chooses Path A |
 | 7.5 | Crypto / alt-currency rails | Sprint 1 payment-rail abstraction already exists; activate a non-USD rail when patient demand and regulatory clarity justify it |
 | 7.6 | Native mobile | Patient analytics show mobile-web friction |
 | 7.7 | SMS notifications | Patient demand or operational need (urgent AE notifications) |
@@ -1789,7 +1789,7 @@ The 10 PRD § 7 deferred items, with activation triggers:
 | — | Live captions for consent sessions | Accessibility upgrade after MVP post-session transcript is stable |
 | — | Direct DPHHS API integration | DPHHS exposes API |
 | — | OpenSearch/Algolia | Postgres FTS pageload metrics suffer |
-| — | Sponsor outbound webhooks | Sponsor BI integration demand |
+| — | Manufacturer outbound webhooks | Manufacturer BI integration demand |
 | — | Primary-source license verification | Vendor available + worth automation cost |
 | — | QuickBooks integration | ETC accounting workflow demand |
 
@@ -1820,7 +1820,7 @@ These run throughout every phase, not bound to a sprint:
 | DPHHS form format changes | 5 | Final rules differ from MAR notice | Templated rendering — re-render from data on rule change | Eng lead |
 | Pen test high-severity finding | 6 | Vendor reports issue late | Compress remediation; defer launch by 1 week if needed | Eng lead |
 | WinSanTor launch ETC license delay | 6 | DPHHS 90-day clock stalls | Communicate weekly; have synthetic ETC for staging UAT | Founding product |
-| Patient flow friction (Sprint 4 spillover) | 4 | Stages 5–6 take longer than estimated | Slip sponsor de-id aggregates to Sprint 6; never slip stages | Eng lead |
+| Patient flow friction (Sprint 4 spillover) | 4 | Stages 5–6 take longer than estimated | Slip manufacturer de-id aggregates to Sprint 6; never slip stages | Eng lead |
 | AE 5-day clock job missed run | 5 | Worker outage | Heartbeat monitor + Sentry Cron monitor; redundant scheduling | Eng lead |
 | RLS regression | continuous | New table without policy | CI gate via "no new tenant_id column without RLS test" lint | Eng lead |
 | Audit log gap | continuous | New mutation without write | CI gate via mutation coverage test | Eng lead |
@@ -1844,7 +1844,7 @@ This proves no PRD section is unaddressed.
 | 3.1 Why now | Pre-launch comms (parallel) |
 | 3.2 Vertical integration thesis | Many-to-many board ↔ ETC schema (Phase 1, locked Phase 3) |
 | 3.3 Competitive intel wall | RLS pattern (Phase 1) |
-| 4.1 Sponsor persona + sub-roles | Phase 2 (sponsor portal); RBAC packages |
+| 4.1 Manufacturer persona + sub-roles | Phase 2 (manufacturer portal); RBAC packages |
 | 4.2 ETC persona + sub-roles | Phases 2–3 (ETC portal); RBAC |
 | 4.3 Patient persona + sub-flows | Phase 4 (Stage 2 sub-flows: caregiver, guardian, minor) |
 | 5 Product principles | Cross-cutting invariants (§ 12 here) |
@@ -1854,11 +1854,11 @@ This proves no PRD section is unaddressed.
 | 8.2 Tenancy model | Phase 1 (`tenants`, `tenant_memberships`, `tenant_relationships`; boards and patients are first-class tenant kinds) |
 | 8.3 Top-level navigation | Phase 1 shells, populated continuously |
 
-### 14.2 PRD § 9 — Sponsor Portal
+### 14.2 PRD § 9 — Manufacturer Portal
 
 | PRD § | Where delivered |
 |---|---|
-| 9.1 Sponsor onboarding | Phase 2 |
+| 9.1 Manufacturer onboarding | Phase 2 |
 | 9.2 Program configuration | Phase 2 |
 | 9.3 ETC Network + PPA | Phase 2 |
 | 9.4 De-identified aggregates | Phase 5 |
@@ -1934,7 +1934,7 @@ This proves no PRD section is unaddressed.
 | PRD § | Migrations land in |
 |---|---|
 | 14.1 Tenancy | Phase 1 |
-| 14.2 Sponsor domain | Phase 2; sponsor access/export events Phase 5 |
+| 14.2 Manufacturer domain | Phase 2; manufacturer access/export events Phase 5 |
 | 14.3 ETC domain | Phases 2–3; drug accountability activation Phase 5; inpatient stubs Phase 1 |
 | 14.4 ETRB domain | Phase 3 |
 | 14.5 Patient domain | Phase 4; drug dispensing/outcome observations Phase 5; device registry stubs Phase 1 |
@@ -1951,7 +1951,7 @@ This proves no PRD section is unaddressed.
 
 | PRD § | Where delivered |
 |---|---|
-| 15.1 Sponsor endpoints | Phase 1 typed scaffold/service seam; Phases 2 + 5 behavior |
+| 15.1 Manufacturer endpoints | Phase 1 typed scaffold/service seam; Phases 2 + 5 behavior |
 | 15.2 ETC endpoints | Phase 1 typed scaffold/service seam; Phases 2–5 behavior |
 | 15.3 ETRB endpoints | Phase 3 |
 | 15.4 Patient endpoints | Phase 1 typed scaffold/service seam; Phase 4 behavior |
@@ -1989,7 +1989,7 @@ All stack choices implemented in Phase 0–1. mise + fnox already committed. Sub
 | 18.2 Encryption (TLS, AES-256, app-layer, fnox) | Phases 0–1 |
 | 18.3 Access control (MFA, RLS, break-glass) | Phase 1 + Phase 6 (break-glass UI) |
 | 18.4 Audit logging (7-year retention) | Phase 1 |
-| 18.5 Data minimization (k-anonymity ≥ 5) | Phase 5 (sponsor aggregates) |
+| 18.5 Data minimization (k-anonymity ≥ 5) | Phase 5 (manufacturer aggregates) |
 | 18.6 Backups + DR | Phase 1 (PITR), Phase 6 (DR drill) |
 | 18.7 Incident response | Phase 6 (runbook) |
 | 18.8 Patient rights (access, amendment, accounting, restriction) | Phase 4 (record requests + disclosure event foundation); Phase 5 (amendment + restriction workflows); Phase 6 polish |

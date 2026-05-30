@@ -21,7 +21,7 @@
 --       on (source_table, source_id) WHERE processed_at IS NULL so concurrent
 --       enqueue calls collapse instead of doubling work.
 --
---   (e) sponsor_organizations.tax_id_encrypted is bytea-without-encryption.
+--   (e) manufacturer_organizations.tax_id_encrypted is bytea-without-encryption.
 --       Drop it. When a real KMS strategy lands, re-add via a forward
 --       migration with pgcrypto + key-source documentation. Better to
 --       not-have than to ship plaintext-as-encrypted.
@@ -225,7 +225,7 @@ create unique index if not exists search_index_jobs_pending_unique
   where processed_at is null;
 
 -- ---------------------------------------------------------------------------
--- (e) Drop sponsor_organizations.tax_id_encrypted
+-- (e) Drop manufacturer_organizations.tax_id_encrypted
 -- ---------------------------------------------------------------------------
 --
 -- The column was declared bytea but no encryption helper, key management,
@@ -239,4 +239,4 @@ create unique index if not exists search_index_jobs_pending_unique
 --   3. The key-source documentation (env var name, KMS arn, rotation policy)
 --   4. A pgTAP test that the raw column is unreadable without the helper
 
-alter table sponsor_organizations drop column if exists tax_id_encrypted;
+alter table manufacturer_organizations drop column if exists tax_id_encrypted;

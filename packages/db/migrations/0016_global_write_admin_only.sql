@@ -6,7 +6,7 @@
 -- `tenant_id IS NULL OR app.can_write_for_tenant(...)` shape, which lets any
 -- authenticated app_api/app_worker session — including one with no app.user_id
 -- set — write rows where tenant_id IS NULL. Per 0009 those NULL-tenant rows
--- are visible to every authenticated tenant, so a sponsor_user, etc_user,
+-- are visible to every authenticated tenant, so a manufacturer_user, etc_user,
 -- patient, or even an unauthenticated app_api session can mint a global
 -- notification or flip a global feature flag.
 --

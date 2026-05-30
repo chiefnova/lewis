@@ -85,7 +85,7 @@ Local + CI secrets, age-encrypted in-repo. Decryptable only by recipients listed
 | Profile | Key | Set | Notes |
 |---|---|---|---|
 | `frontend_directory_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Clerk staging instance publishable key (`pk_test_*`) |
-| `frontend_app_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Same key (shared Clerk instance for staff/sponsor/ETC console) |
+| `frontend_app_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Same key (shared Clerk instance for staff/manufacturer/ETC console) |
 | `frontend_patient_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Same key (shared Clerk instance for patient portal) |
 | `ci` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | CI builds against same staging Clerk |
 | `api_dev` | `CLERK_SECRET_KEY` | 2026-04-27T01:34Z | Server-side Clerk JWT verification (`sk_test_*`) — never reaches browser |
@@ -173,7 +173,7 @@ Set in Vercel dashboard per-project on the Production scope of each project (Ver
 Same shape as directory plus the staff/business surface keys:
 - `VITE_API_BASE_URL`
 - `VITE_CLERK_PUBLISHABLE_KEY`
-- `VITE_STRIPE_PUBLISHABLE_KEY` (sponsor billing UX)
+- `VITE_STRIPE_PUBLISHABLE_KEY` (manufacturer billing UX)
 - `VITE_SENTRY_DSN`
 
 ### `lewis-patient-staging` / `lewis-patient-production` Vercel projects (apps/patient)

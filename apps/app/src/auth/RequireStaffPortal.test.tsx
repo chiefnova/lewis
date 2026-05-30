@@ -35,9 +35,9 @@ describe("RequireStaffPortal", () => {
   it("renders a loading state when Clerk is still hydrating", () => {
     mockUseUser = () => ({ isLoaded: false, user: null });
     render(
-      <MemoryRouter initialEntries={["/sponsor"]}>
-        <RequireStaffPortal portal="sponsor">
-          <div data-testid="protected">Sponsor portal content</div>
+      <MemoryRouter initialEntries={["/manufacturer"]}>
+        <RequireStaffPortal portal="manufacturer">
+          <div data-testid="protected">Manufacturer portal content</div>
         </RequireStaffPortal>
       </MemoryRouter>,
     );
@@ -48,16 +48,16 @@ describe("RequireStaffPortal", () => {
   it("renders children when user has the requested portal", () => {
     mockUseUser = () => ({
       isLoaded: true,
-      user: { publicMetadata: { lewisPortals: ["sponsor", "etc"] } },
+      user: { publicMetadata: { lewisPortals: ["manufacturer", "etc"] } },
     });
     render(
-      <MemoryRouter initialEntries={["/sponsor"]}>
-        <RequireStaffPortal portal="sponsor">
-          <div data-testid="protected">Sponsor portal content</div>
+      <MemoryRouter initialEntries={["/manufacturer"]}>
+        <RequireStaffPortal portal="manufacturer">
+          <div data-testid="protected">Manufacturer portal content</div>
         </RequireStaffPortal>
       </MemoryRouter>,
     );
-    expect(screen.getByTestId("protected").textContent).toContain("Sponsor portal");
+    expect(screen.getByTestId("protected").textContent).toContain("Manufacturer portal");
     expect(screen.getByTestId("user-button")).toBeTruthy();
   });
 
@@ -72,12 +72,12 @@ describe("RequireStaffPortal", () => {
       },
     });
     render(
-      <MemoryRouter initialEntries={["/sponsor"]}>
+      <MemoryRouter initialEntries={["/manufacturer"]}>
         <Routes>
           <Route
-            path="/sponsor"
+            path="/manufacturer"
             element={
-              <RequireStaffPortal portal="sponsor">
+              <RequireStaffPortal portal="manufacturer">
                 <div data-testid="protected">Should not render</div>
               </RequireStaffPortal>
             }
@@ -96,17 +96,17 @@ describe("RequireStaffPortal", () => {
       user: {
         publicMetadata: {
           lewisPortals: ["etc"],
-          lewisDefaultPortal: "sponsor",
+          lewisDefaultPortal: "manufacturer",
         },
       },
     });
     render(
-      <MemoryRouter initialEntries={["/sponsor"]}>
+      <MemoryRouter initialEntries={["/manufacturer"]}>
         <Routes>
           <Route
-            path="/sponsor"
+            path="/manufacturer"
             element={
-              <RequireStaffPortal portal="sponsor">
+              <RequireStaffPortal portal="manufacturer">
                 <div>Should not render</div>
               </RequireStaffPortal>
             }
@@ -120,8 +120,8 @@ describe("RequireStaffPortal", () => {
   it("renders NoAssignedPortal when user has no portals at all", () => {
     mockUseUser = () => ({ isLoaded: true, user: { publicMetadata: {} } });
     render(
-      <MemoryRouter initialEntries={["/sponsor"]}>
-        <RequireStaffPortal portal="sponsor">
+      <MemoryRouter initialEntries={["/manufacturer"]}>
+        <RequireStaffPortal portal="manufacturer">
           <div>Should not render</div>
         </RequireStaffPortal>
       </MemoryRouter>,
@@ -134,18 +134,18 @@ describe("RequireStaffPortal", () => {
       isLoaded: true,
       user: {
         publicMetadata: {
-          lewisPortals: ["evil", "sponsor", "stillEvil"],
+          lewisPortals: ["evil", "manufacturer", "stillEvil"],
         },
       },
     });
     render(
-      <MemoryRouter initialEntries={["/sponsor"]}>
-        <RequireStaffPortal portal="sponsor">
-          <div data-testid="protected">Sponsor portal content</div>
+      <MemoryRouter initialEntries={["/manufacturer"]}>
+        <RequireStaffPortal portal="manufacturer">
+          <div data-testid="protected">Manufacturer portal content</div>
         </RequireStaffPortal>
       </MemoryRouter>,
     );
-    // sponsor IS in the filtered list, so children render
+    // manufacturer IS in the filtered list, so children render
     expect(screen.getByTestId("protected")).toBeTruthy();
   });
 });

@@ -47,7 +47,7 @@ describe("ETC_CONTENT drift detection", () => {
     for (const slug of DB_SEEDED_ETC_SLUGS) {
       const content = getEtcContent(slug);
       const text = content?.aboutParagraphs.join(" ").toLowerCase() ?? "";
-      // "Independent of any sponsor or manufacturer" — required trust signal
+      // "Independent of any manufacturer or manufacturer" — required trust signal
       // per directoryprd.md § 10.2 + § 25 (counsel-reviewed independence
       // statement). The "independent" word should appear.
       expect(text, `${slug} About missing independence framing`).toMatch(/independent/);

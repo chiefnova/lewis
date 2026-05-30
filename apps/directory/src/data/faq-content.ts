@@ -7,7 +7,7 @@
 // plain, calm, peer-level. No marketing tropes. No exclamation points.
 // No emoji. Independence framing surfaced where load-bearing.
 
-export type FaqCategory = "patient" | "physician" | "etc" | "sponsor";
+export type FaqCategory = "patient" | "physician" | "etc" | "manufacturer";
 
 export interface FaqQuestion {
   /** Stable id used for accordion state + future analytics. */
@@ -25,7 +25,7 @@ export const FAQ_CONTENT: ReadonlyArray<FaqQuestion> = [
     id: "what-is-lewis",
     question: "What is Lewis?",
     answer:
-      "Lewis is an independent directory of experimental treatments available in Montana under SB 535. We list every licensed Experimental Treatment Center and the programs they offer, with the same evidence and contact information a treating physician would want. We are not a manufacturer, not a clinic, and we do not enroll patients ourselves — we connect you to a licensed ETC that does.",
+      "Lewis is an independent directory of experimental treatments available in Montana under SB 535. We list every licensed Experimental Treatment Center and the programs they offer, with the same evidence and contact information a treating clinician would want. We are not a manufacturer, not a clinic, and we do not enroll patients ourselves — we connect you to a licensed ETC that does.",
     category: "patient",
     homepage: true,
   },
@@ -33,7 +33,7 @@ export const FAQ_CONTENT: ReadonlyArray<FaqQuestion> = [
     id: "what-is-rtt-montana",
     question: "What is Right to Try in Montana?",
     answer:
-      "Montana SB 535 (2025) created a state framework for licensed clinics — Experimental Treatment Centers — to offer investigational treatments to patients who have evaluated standard-of-care options with their treating physician. Each program operates under an Experimental Treatment Review Board (ETRB)-approved protocol, with mandatory safety reporting and annual public summaries. The framework is narrower than federal Right to Try and operates under MAR 2026-427.1 rules.",
+      "Montana SB 535 (2025) created a state framework for licensed clinics — Experimental Treatment Centers — to offer investigational treatments to patients who have evaluated standard-of-care options with their treating clinician. Each program operates under an Experimental Treatment Review Board (ETRB)-approved protocol, with mandatory safety reporting and annual public summaries. It is a state regulatory regime with its own licensed-clinic and ETRB-review structure, operating under MAR 2026-427.1 rules.",
     category: "patient",
     homepage: true,
   },
@@ -57,7 +57,7 @@ export const FAQ_CONTENT: ReadonlyArray<FaqQuestion> = [
     id: "eligibility",
     question: "How do I know if I'm eligible?",
     answer:
-      "Each program page lists eligibility criteria in plain language, and a short anonymous self-screen tells you whether you may be a fit. Final eligibility is always determined by the ETC's clinical team after reviewing your treating physician's recommendation and current History & Physical — the self-screen is a first filter, not a clinical decision.",
+      "Each program page lists eligibility criteria in plain language, and a short anonymous self-screen tells you whether you may be a fit. Final eligibility is always determined by the ETC's clinical team after reviewing your treating clinician's recommendation and current History & Physical — the self-screen is a first filter, not a clinical decision.",
     category: "patient",
     homepage: true,
   },

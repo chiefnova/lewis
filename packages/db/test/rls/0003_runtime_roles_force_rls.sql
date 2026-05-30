@@ -3,13 +3,13 @@ begin;
 select plan(6);
 
 insert into tenants (id, kind, status, display_name)
-values ('33000000-0000-0000-0000-000000000001', 'sponsor', 'active', 'Runtime Role Test Tenant');
+values ('33000000-0000-0000-0000-000000000001', 'manufacturer', 'active', 'Runtime Role Test Tenant');
 
 insert into users (id, clerk_user_id, email, name)
 values ('33000000-0000-0000-1000-000000000001', 'rls3_runtime_user', 'runtime@test.local', 'Runtime User');
 
 insert into tenant_memberships (user_id, tenant_id, role)
-values ('33000000-0000-0000-1000-000000000001', '33000000-0000-0000-0000-000000000001', 'sponsor_admin');
+values ('33000000-0000-0000-1000-000000000001', '33000000-0000-0000-0000-000000000001', 'manufacturer_admin');
 
 select ok(
   exists (

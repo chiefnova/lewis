@@ -2,14 +2,14 @@ import type { PoolClient } from "@lewis/db";
 import type {
   AppContext,
   CursorPageQuery,
-  SponsorAdverseEventsResponse,
-  SponsorEtcsResponse,
-  SponsorId,
-  SponsorProgramsResponse,
+  ManufacturerAdverseEventsResponse,
+  ManufacturerEtcsResponse,
+  ManufacturerId,
+  ManufacturerProgramsResponse,
 } from "@lewis/shared";
 
 /**
- * Sponsor service layer. Routes call these functions; functions own the DB
+ * Manufacturer service layer. Routes call these functions; functions own the DB
  * queries and business logic. Inputs are pre-validated branded types.
  *
  * All functions take (client, ctx, params) so the per-request transaction
@@ -21,7 +21,7 @@ import type {
  * marker names the table(s) the eventual query will touch and the sprint
  * it lands in per docs/implementation.md § 0.2:
  *   sprint-1 = Foundation (done)
- *   sprint-2 = Sponsor + ETC onboarding (sponsor wizard, program config, PPA)
+ *   sprint-2 = Manufacturer + ETC onboarding (manufacturer wizard, program config, PPA)
  *   sprint-3 = ETC operational backbone (P&P, staff, ETRB, QAPI, compliance)
  *   sprint-4 = Patient flow (8 stages, patient portal end-to-end)
  *   sprint-5 = Treatment + AE + reporting (visit, transfer, AE 5-day, DPHHS, HFAR)
@@ -31,13 +31,13 @@ import type {
 export async function listPrograms(
   _client: PoolClient,
   _ctx: AppContext,
-  params: { sponsorId: SponsorId } & CursorPageQuery,
-): Promise<SponsorProgramsResponse> {
-  // TODO(sprint-2): SELECT FROM programs WHERE sponsor_tenant_id = $sponsorId
+  params: { manufacturerId: ManufacturerId } & CursorPageQuery,
+): Promise<ManufacturerProgramsResponse> {
+  // TODO(sprint-2): SELECT FROM programs WHERE manufacturer_tenant_id = $manufacturerId
   // ORDER BY (created_at, id) cursor LIMIT $limit. RLS-gated by
-  // programs_sponsor_read (0006). Sprint 2 ships sponsor wizard + program config.
+  // programs_manufacturer_read (0006). Sprint 2 ships manufacturer wizard + program config.
   return {
-    sponsorId: params.sponsorId,
+    manufacturerId: params.manufacturerId,
     items: [],
     nextCursor: null,
     hasMore: false,
@@ -47,12 +47,12 @@ export async function listPrograms(
 export async function listEtcs(
   _client: PoolClient,
   _ctx: AppContext,
-  params: { sponsorId: SponsorId } & CursorPageQuery,
-): Promise<SponsorEtcsResponse> {
+  params: { manufacturerId: ManufacturerId } & CursorPageQuery,
+): Promise<ManufacturerEtcsResponse> {
   // TODO(sprint-2): JOIN tenant_relationships ON kind='ppa' to find ETCs
-  // related to this sponsor. Sprint 2 ships the PPA workflow.
+  // related to this manufacturer. Sprint 2 ships the PPA workflow.
   return {
-    sponsorId: params.sponsorId,
+    manufacturerId: params.manufacturerId,
     items: [],
     nextCursor: null,
     hasMore: false,
@@ -62,14 +62,14 @@ export async function listEtcs(
 export async function listAdverseEvents(
   _client: PoolClient,
   _ctx: AppContext,
-  params: { sponsorId: SponsorId } & CursorPageQuery,
-): Promise<SponsorAdverseEventsResponse> {
+  params: { manufacturerId: ManufacturerId } & CursorPageQuery,
+): Promise<ManufacturerAdverseEventsResponse> {
   // TODO(sprint-5): SELECT FROM adverse_events filtered by consent posture.
-  // Data scope is determined by the strongest consent the sponsor holds for
+  // Data scope is determined by the strongest consent the manufacturer holds for
   // each event's patient — defaults to deidentified line-level safety.
-  // Sprint 5 ships AE 5-day workflow + sponsor reports.
+  // Sprint 5 ships AE 5-day workflow + manufacturer reports.
   return {
-    sponsorId: params.sponsorId,
+    manufacturerId: params.manufacturerId,
     dataScope: "deidentified_line_level_safety",
     items: [],
     nextCursor: null,

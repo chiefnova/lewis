@@ -42,7 +42,7 @@ as $$
     when 'patient_file'           then interval '5 years'
     when 'etrb_record'            then interval '5 years'
     when 'qapi_minutes'           then interval '3 years'
-    when 'sponsor_billing'        then interval '7 years'
+    when 'manufacturer_billing'        then interval '7 years'
     when 'patient_agreement'      then interval '5 years'
     when 'informed_consent'       then interval '5 years'
     when 'ae_report'              then interval '7 years'

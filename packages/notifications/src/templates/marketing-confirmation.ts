@@ -53,7 +53,7 @@ export function renderMarketingConfirmationEmail(input: MarketingConfirmationInp
     input.unsubscribeUrl,
     "",
     "Lewis Health · Independent directory",
-    "Not affiliated with any sponsor or ETC.",
+    "Not affiliated with any manufacturer or ETC.",
   ].join("\n");
 
   const html = `<!DOCTYPE html>
@@ -108,7 +108,7 @@ export function renderMarketingConfirmationEmail(input: MarketingConfirmationInp
           <td style="padding:24px 32px;border-top:1px solid rgba(40,30,20,0.08);">
             <p style="font-family:Georgia,serif;font-size:13px;line-height:1.5;color:#7a6a4f;margin:0;">
               Lewis Health · Independent directory · Not affiliated with any
-              sponsor or ETC.
+              manufacturer or ETC.
             </p>
             <p style="font-family:Georgia,serif;font-size:13px;line-height:1.5;color:#7a6a4f;margin:8px 0 0 0;">
               <a href="${unsubscribeUrl}" style="color:#7a6a4f;text-decoration:underline;">Unsubscribe</a>

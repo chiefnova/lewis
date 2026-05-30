@@ -3,14 +3,14 @@
  *
  * publicMetadata is set by Lewis admins via Clerk's server-side API; it is
  * server-trusted but client-readable. The frontends use it for UX routing
- * (e.g. send a sponsor_user to /sponsor by default), and the API will use it
+ * (e.g. send a manufacturer_user to /manufacturer by default), and the API will use it
  * as a hint when resolving the active tenant + membership before setting
  * transaction-local RLS context. The actual authorization gate lives in
  * Postgres RLS policies + app.resolve_authenticated_membership; metadata is
  * defense-in-depth, never the sole gate.
  */
 
-export const STAFF_PORTAL_VALUES = ["sponsor", "etc", "admin"] as const;
+export const STAFF_PORTAL_VALUES = ["manufacturer", "etc", "admin"] as const;
 export type StaffPortal = (typeof STAFF_PORTAL_VALUES)[number];
 
 export const STAFF_PORTALS: ReadonlySet<StaffPortal> = new Set<StaffPortal>(STAFF_PORTAL_VALUES);

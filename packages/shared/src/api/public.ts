@@ -107,7 +107,7 @@ export const PublicConditionLinkedProgram = z.object({
   name: z.string(),
   drug: z.string().nullable(),
   // Phase + form come straight off the programs table. Manufacturer stays
-  // nullable until sponsor display names are exposed through a public-safe
+  // nullable until manufacturer display names are exposed through a public-safe
   // API/RLS path; the directory UI drops missing fields rather than rendering
   // placeholders.
   phase: z.string().nullable(),
@@ -282,7 +282,19 @@ export const MarketingUnsubscribeResponse = z.object({
 export type MarketingUnsubscribeResponse = z.infer<typeof MarketingUnsubscribeResponse>;
 
 // ----- Eligibility self-screen (anonymous) -----
+//
+// Slice 5 — wires the previously-stubbed server bootstrap per § 17.2.
+// The questions themselves live client-side in
+// apps/directory/src/data/eligibility.ts (slice 1) — they're stable
+// per program and changing them is a deploy, not a runtime fetch.
+// The server owns the session token + per-answer persistence + final
+// pass/fail outcome with the failed_criterion text used by the
+// § 17.4 fail-branch UI.
 
+// Optional descriptor surface kept for downstream consumers (the
+// API may emit a static question manifest later); not load-bearing in
+// slice 5. Leaving the type exported so callers don't break if the
+// server starts returning it.
 export const EligibilityQuestion = z.object({
   id: z.string(),
   prompt: z.string(),
@@ -290,60 +302,98 @@ export const EligibilityQuestion = z.object({
 });
 export type EligibilityQuestion = z.infer<typeof EligibilityQuestion>;
 
-export const EligibilityStartResponse = z.object({
-  // Opaque session token. Stored in localStorage; expires server-side after 30 days.
-  sessionToken: z.string(),
+export const EligibilityStartRequest = z.object({
   programSlug: ProgramSlug,
-  questions: z.array(EligibilityQuestion).min(1),
+});
+export type EligibilityStartRequest = z.infer<typeof EligibilityStartRequest>;
+
+export const EligibilityStartResponse = z.object({
+  // Opaque session token. Stored in localStorage on the client; expires
+  // server-side after 30 days (migration 0021 enforces the constraint).
+  sessionToken: z.string().uuid(),
+  programSlug: ProgramSlug,
+  expiresAt: z.string().datetime(),
 });
 export type EligibilityStartResponse = z.infer<typeof EligibilityStartResponse>;
 
-export const EligibilityAnswer = z.object({
-  questionId: z.string(),
-  answer: z.string(),
+// Per-answer append. Mirrors app.directory_eligibility_append_answer(...).
+export const EligibilityAnswerRequest = z.object({
+  questionId: z.string().min(1).max(120),
+  value: z.string().min(1).max(1000),
 });
-export type EligibilityAnswer = z.infer<typeof EligibilityAnswer>;
+export type EligibilityAnswerRequest = z.infer<typeof EligibilityAnswerRequest>;
 
-export const EligibilityAnswersRequest = z.object({
-  answers: z.array(EligibilityAnswer).min(1),
+export const EligibilityAnswerResponse = z.object({
+  accepted: z.boolean(),
 });
-export type EligibilityAnswersRequest = z.infer<typeof EligibilityAnswersRequest>;
+export type EligibilityAnswerResponse = z.infer<typeof EligibilityAnswerResponse>;
+
+// Final outcome. The client evaluates the answers locally (slice 1's
+// evaluate.ts), the server records the decision + reason for audit, and
+// the response surfaces the canonical text the UI renders.
+export const EligibilityCompleteRequest = z.object({
+  passed: z.boolean(),
+  // Required when passed=false; must be null when passed=true. The DB
+  // helper enforces the invariant in plpgsql.
+  failedCriterion: z.string().min(1).max(500).nullable(),
+});
+export type EligibilityCompleteRequest = z.infer<typeof EligibilityCompleteRequest>;
 
 export const EligibilityCompleteResponse = z.object({
-  sessionToken: z.string(),
-  result: z.enum(["likely-eligible", "may-not-be-eligible"]),
-  // The resultSummary is plain-language and safe to surface; raw answers are
-  // never returned to the browser after submission. This keeps the screen
-  // anonymous from the moment it's submitted.
-  resultSummary: z.string(),
+  sessionToken: z.string().uuid(),
+  result: z.enum(["passed", "failed"]),
+  failedCriterion: z.string().nullable(),
 });
 export type EligibilityCompleteResponse = z.infer<typeof EligibilityCompleteResponse>;
 
+// Resume-on-return. Returns 0 rows on expired / unknown so the client
+// can render an "expired session — start over" state without leaking
+// which case it was.
+export const EligibilityResumeResponse = z.object({
+  programSlug: ProgramSlug,
+  answers: z.record(z.string(), z.string()),
+  status: z.enum(["in_progress", "passed", "failed"]),
+  failedCriterion: z.string().nullable(),
+  expiresAt: z.string().datetime(),
+});
+export type EligibilityResumeResponse = z.infer<typeof EligibilityResumeResponse>;
+
 // ----- Connect request -----
+//
+// Slice 5 — § 18.1 + § 18.2. Anonymous-accept; account creation is
+// strictly post-conversion (Clerk lazy-loaded on /connect/confirmed,
+// not on the form). The server-side handler writes via the SECURITY
+// DEFINER directory_connect_request_create helper, attaches an
+// optional eligibility session by token, and enqueues
+// connect_request_send for the worker to email the ETC.
 
 export const ConnectRequestPayload = z.object({
   programSlug: ProgramSlug,
-  // The eligibility token if a screen was completed for this program. The API
-  // will join the screen result onto the connect request server-side and link
-  // it to the patient user record at signup time.
-  eligibilitySessionToken: z.string().nullable(),
+  // Anonymous eligibility token if a screen was completed for this
+  // program. The DB helper attaches the session only if it exists +
+  // is for the same program + has not expired; an invalid token is
+  // silently ignored (the submission still succeeds).
+  eligibilitySessionToken: z.string().uuid().nullable(),
   name: z.string().min(1).max(200),
   email: z.string().email(),
   phone: z.string().max(40).nullable(),
   bestTimeToContact: z.string().max(200).nullable(),
-  // Brief situation field with a strict length cap and a clear UX warning to
-  // not paste medical details. The server-side handler runs PHI-detection on
-  // this field and rejects the submission with a 422 if it looks like PHI
-  // slipped through.
-  situation: z.string().max(1000),
+  // § 18.1 revision: situation is OPTIONAL. The textarea in the UI
+  // surfaces a warning not to share medical details; the server still
+  // accepts up to 1000 chars when present.
+  situation: z.string().max(1000).nullable(),
 });
 export type ConnectRequestPayload = z.infer<typeof ConnectRequestPayload>;
 
 export const ConnectRequestResponse = z.object({
   connectRequestId: z.string().uuid(),
-  // When the patient doesn't yet have a Clerk account, the API responds with a
-  // signup URL. The directory then runs the user through Clerk SignUp and
-  // calls the link-anonymous-screen endpoint after success.
+  // Slice 1 + 2 reserved these fields for a Clerk-pre-conversion flow
+  // (signupUrl + needsAccount) that § 18.2 explicitly rejects:
+  // "Account creation is post-conversion, not pre-conversion. Anonymous
+  // submission is the primary path." Slice 5 keeps the fields in the
+  // response shape for backwards compatibility but the API always
+  // returns needsAccount=false / signupUrl=null. The /connect/confirmed
+  // page offers Clerk signup as an optional follow-up, not a gate.
   signupUrl: z.string().url().nullable(),
   needsAccount: z.boolean(),
 });

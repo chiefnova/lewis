@@ -19,25 +19,29 @@ vi.mock("../api/client", () => ({
       totals: { conditions: 0, treatments: 0, etcs: 0 },
       query: "",
     }),
-    getCondition: vi.fn().mockResolvedValue({
-      slug: "diabetic-peripheral-neuropathy",
-      name: "Diabetic peripheral neuropathy",
-      state: "live",
-      summary: null,
-      icd10Codes: ["E11.40"],
-      programCount: 1,
-      href: "/conditions/diabetic-peripheral-neuropathy",
-      linkedPrograms: [
-        {
-          slug: "wst-057",
-          name: "WST-057",
-          drug: "WST-057",
-          phase: "Phase 2",
-          form: "Topical",
-          manufacturer: null,
-        },
-      ],
-    }),
+    // Per-slug so FeaturedConditions' 5 fetches return 5 distinct conditions
+    // (a single mockResolvedValue collides every card on one React key).
+    getCondition: vi.fn().mockImplementation((slug: string) =>
+      Promise.resolve({
+        slug,
+        name: slug,
+        state: "live",
+        summary: null,
+        icd10Codes: ["E11.40"],
+        programCount: 1,
+        href: `/conditions/${slug}`,
+        linkedPrograms: [
+          {
+            slug: "wst-057",
+            name: "WST-057",
+            drug: "WST-057",
+            phase: "Phase 2",
+            form: "Topical",
+            manufacturer: null,
+          },
+        ],
+      }),
+    ),
     listPrograms: vi.fn().mockResolvedValue({
       programs: [
         {
