@@ -2,20 +2,20 @@ import { z } from "zod";
 
 /**
  * Branded UUID schemas. Each branded type is a distinct compile-time identity
- * so a SponsorId can't be silently passed where a PatientId is expected.
+ * so a ManufacturerId can't be silently passed where a PatientId is expected.
  *
- * At runtime they're plain strings. At compile time `SponsorId !== PatientId`.
+ * At runtime they're plain strings. At compile time `ManufacturerId !== PatientId`.
  *
  * Pattern:
- *   const SponsorId = uuidBrand("SponsorId");
- *   type SponsorId = z.infer<typeof SponsorId>;
+ *   const ManufacturerId = uuidBrand("ManufacturerId");
+ *   type ManufacturerId = z.infer<typeof ManufacturerId>;
  */
 function uuidBrand<B extends string>(_brand: B) {
   return z.string().uuid().brand<B>();
 }
 
-export const SponsorId = uuidBrand("SponsorId");
-export type SponsorId = z.infer<typeof SponsorId>;
+export const ManufacturerId = uuidBrand("ManufacturerId");
+export type ManufacturerId = z.infer<typeof ManufacturerId>;
 
 export const EtcId = uuidBrand("EtcId");
 export type EtcId = z.infer<typeof EtcId>;

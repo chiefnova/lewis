@@ -4,7 +4,7 @@ This is the audit trail of every deployment-related identifier, dashboard settin
 
 Originally drafted as a personal LOCAL-only file; promoted to a tracked repo doc in v0.0.6.2 because the gate rollout produced enough multi-platform operational state (Railway dashboard cleanups, Vercel gate env vars, worker DSN encoding) that an off-repo file was no longer the right home.
 
-Last updated: 2026-04-29 (v0.0.6.2 — gate env vars, Railway dashboard cleanups, worker DSN URL-encoding fix)
+Last updated: 2026-05-01 (v0.0.9.0 — API Dockerfile gains apt chromium + fonts for synchronous program brief PDF rendering; see "API Dockerfile chromium support" below)
 
 ## 🟡 DEFERRED — Stripe, Plaid, Resend, Sentry, PostHog
 
@@ -85,7 +85,7 @@ Local + CI secrets, age-encrypted in-repo. Decryptable only by recipients listed
 | Profile | Key | Set | Notes |
 |---|---|---|---|
 | `frontend_directory_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Clerk staging instance publishable key (`pk_test_*`) |
-| `frontend_app_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Same key (shared Clerk instance for staff/sponsor/ETC console) |
+| `frontend_app_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Same key (shared Clerk instance for staff/manufacturer/ETC console) |
 | `frontend_patient_dev` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | Same key (shared Clerk instance for patient portal) |
 | `ci` | `VITE_CLERK_PUBLISHABLE_KEY` | 2026-04-27T01:33Z | CI builds against same staging Clerk |
 | `api_dev` | `CLERK_SECRET_KEY` | 2026-04-27T01:34Z | Server-side Clerk JWT verification (`sk_test_*`) — never reaches browser |
@@ -173,7 +173,7 @@ Set in Vercel dashboard per-project on the Production scope of each project (Ver
 Same shape as directory plus the staff/business surface keys:
 - `VITE_API_BASE_URL`
 - `VITE_CLERK_PUBLISHABLE_KEY`
-- `VITE_STRIPE_PUBLISHABLE_KEY` (sponsor billing UX)
+- `VITE_STRIPE_PUBLISHABLE_KEY` (manufacturer billing UX)
 - `VITE_SENTRY_DSN`
 
 ### `lewis-patient-staging` / `lewis-patient-production` Vercel projects (apps/patient)
@@ -312,6 +312,31 @@ Project ID: `983fe394-60b4-4b9c-966a-5fb25850e0d6` ([dashboard](https://railway.
 Removed from both [apps/api/Dockerfile](../apps/api/Dockerfile) and [apps/workers/Dockerfile](../apps/workers/Dockerfile) in v0.0.6.2. Railway's BuildKit requires cache mount IDs to be hardcoded as `s/<service-id>-<target>` per service ([Railway docs](https://docs.railway.com/guides/dockerfiles)) and explicitly disallows env vars / ARGs in cache IDs. Hardcoding service IDs would break future production deploys, so the cache mounts are removed entirely. Cold-build cost ~30–60s per service; portability across staging and production was the priority.
 
 If you ever decide to re-add cache mounts (faster CI/Railway rebuilds), use the actual service IDs above and remember to update them when the production env spins up its own services.
+
+---
+
+## ✅ SET — API Dockerfile chromium support (v0.0.9.0)
+
+Slice 3 added `/v1/public/programs/:slug/brief.pdf` — synchronous Puppeteer-rendered single-page clinician brief PDF. The API container now needs Chromium at runtime. Decision was to apt-install Debian's `chromium` instead of letting puppeteer download its bundled Chrome (smaller image, Debian security tracking, reproducible per base-image-digest).
+
+Changes in [apps/api/Dockerfile](../apps/api/Dockerfile):
+
+| Stage | Change | Why |
+|---|---|---|
+| `builder` | `ENV PUPPETEER_SKIP_DOWNLOAD=true` | Skip the 280MB Chromium download during `pnpm install` — the runtime stage uses apt's chromium instead. |
+| `runtime` | `apt-get install -y chromium fonts-liberation fonts-noto-color-emoji` (added alongside existing tini/ca-certificates/tzdata) | Provides Chromium + a fallback font set so the brief PDF's Fraunces+Inter (loaded via Google Fonts at render time) doesn't show .notdef squares if the CDN ever blips. |
+| `runtime` | `ENV PUPPETEER_SKIP_DOWNLOAD=true PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` | Tells puppeteer where to find the apt binary at launch. |
+
+Operational implications:
+
+- **Image size**: API container grows by ~170 MB (chromium + libs + fonts).
+- **Cold-start latency**: First brief.pdf request after container start launches Chromium (~500 ms-1 s on healthy hardware). Subsequent requests reuse the warm shared `Browser` instance via [packages/pdf/src/render.ts](../packages/pdf/src/render.ts).
+- **SIGTERM**: [apps/api/src/index.ts](../apps/api/src/index.ts) lazy-imports `disposeRenderer` so graceful shutdown closes the shared browser before process exit. Captures both `sharedBrowser` and any in-flight `launchPromise` so a launch resolving mid-shutdown still gets closed.
+- **Optional runtime override**: `PUBLIC_SITE_URL` (Railway env, optional — defaults to `https://lewis.health`) controls the footer link in the rendered PDF.
+
+Workers Dockerfile is **unchanged**. `apps/workers/Dockerfile` lines 155-156 keep the chromium install commented out — workers run the BullMQ `pdf` queue for future PHI-bearing async PDFs (patient_agreement, ETRB annual, AE reports), which renders separately and synchronously inside the API request path is the wrong pattern for those.
+
+No new Railway/Vercel env vars required. The brief.pdf endpoint is gated by the existing `public_program_briefs` rate limit (30 req/min/IP) and absorbed by Cloudflare's edge cache (1h max-age + 24h SWR per directoryprd § 28.4).
 
 ---
 

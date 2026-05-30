@@ -102,6 +102,9 @@ jobs:
           curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "${DIR_URL}/robots.txt" -o /dev/null
           echo "directory smoke OK"
 
+      - name: Install Playwright browsers
+        run: pnpm --filter directory exec playwright install --with-deps chromium
+
       - name: Run E2E tests
         env:
           APP_URL: ${{ inputs.app_url }}

@@ -11,8 +11,10 @@ import messages from "./messages/en.json";
 import "@lewis/ui/styles.css";
 import "./styles.css";
 
-const SponsorPortal = lazy(() =>
-  import("./portals/sponsor/SponsorPortal").then((m) => ({ default: m.SponsorPortal })),
+const ManufacturerPortal = lazy(() =>
+  import("./portals/manufacturer/ManufacturerPortal").then((m) => ({
+    default: m.ManufacturerPortal,
+  })),
 );
 const EtcPortal = lazy(() =>
   import("./portals/etc/EtcPortal").then((m) => ({ default: m.EtcPortal })),
@@ -64,12 +66,12 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/sponsor/*",
+    path: "/manufacturer/*",
     element: (
       <RequireSignedIn>
-        <RequireStaffPortal portal="sponsor">
+        <RequireStaffPortal portal="manufacturer">
           <Suspense fallback={<PortalLoading />}>
-            <SponsorPortal />
+            <ManufacturerPortal />
           </Suspense>
         </RequireStaffPortal>
       </RequireSignedIn>

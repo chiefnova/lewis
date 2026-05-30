@@ -11,6 +11,18 @@ main:focus {
   outline: none;
 }
 
+/* Smooth anchor-jumps for in-page TOC links (e.g. /conditions/:slug
+ * sticky TOC). prefers-reduced-motion overrides to instant scroll for
+ * users who've opted out of animation. */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Hero search-pill rotating placeholder.
  *
  * The .search-pill from @lewis/ui has [icon, input, button] as direct flex
@@ -35,6 +47,48 @@ main:focus {
 
 .search-pill__input > input {
   width: 100%;
+}
+
+/* Hero typeahead — Surface 1.5 per directoryprd.md § 13. The container
+ * scopes click-outside detection to the search-pill. The popover itself is
+ * rendered via React Portal into <body> so it escapes the hero <section>'s
+ * overflow:hidden boundary (the hero clips its decorative pill graphics;
+ * an in-flow popover would get cropped at the section edge). The component
+ * sets top/left/width inline from the input's bounding rect. */
+.hero-typeahead {
+  position: relative;
+}
+
+.hero-typeahead-popover {
+  position: absolute;
+  background: var(--paper);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(27, 24, 20, 0.18);
+  /* Cap the dropdown height so a long suggestion list scrolls inside the
+   * popover instead of pushing other hero content downward. 60vh leaves
+   * comfortable room above and below on most laptop viewports. */
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  z-index: 1000;
+  /* Light fade-up — feels smooth without animating layout. */
+  animation: hero-typeahead-in 140ms var(--ease-out) both;
+}
+
+@keyframes hero-typeahead-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-typeahead-popover {
+    animation: none;
+  }
 }
 
 .rotating-placeholder {
@@ -253,6 +307,26 @@ section {
   flex-shrink: 0;
 }
 
+/* Footer wordmark — mirrors the header treatment but at the smaller
+ * 18px attribution scale. Pairs with .serif / .serif.italic from
+ * @lewis/ui base styles for family + axis; these classes only own the
+ * size, weight, tracking, and the muted color on "health". */
+.footer-wordmark-primary {
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.footer-wordmark-secondary {
+  font-size: 18px;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+
 .announce-strip__group {
   display: flex;
   align-items: center;
@@ -267,61 +341,65 @@ section {
 }
 
 @media (max-width: 768px) {
+  /* One compact row: flag + form. The message is dropped on mobile so the
+     strip stays a single line instead of wrapping the long sentence. The
+     "Get notified" button on the form carries the intent. */
   .announce-strip {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 8px;
+    padding: 8px 12px;
+    min-height: 0;
+    justify-content: flex-start;
   }
   .announce-strip__flag {
     position: static;
     transform: none;
     flex-shrink: 0;
   }
-  /* Slightly smaller flag on mobile to balance the tighter chrome. */
   .announce-strip__flag-img {
-    height: 26px;
+    height: 20px;
   }
-  .announce-strip__group {
-    display: contents;
-  }
+  /* Hide the announcement copy on mobile. */
   .announce-strip__text {
-    grid-column: 2;
-    font-size: 11.5px;
-    line-height: 1.35;
-    text-align: center;
-  }
-  .announce-strip__cta {
-    grid-column: 3;
-  }
-}
-
-/* Top nav — desktop shows the full "Browse Treatments" label; mobile swaps
- * to the compact "Browse" label so the pill fits cleanly next to the
- * search button without crowding the logo. */
-.topnav-browse-full {
-  display: inline;
-}
-.topnav-browse-short {
-  display: none;
-}
-@media (max-width: 768px) {
-  .topnav-browse-full {
     display: none;
   }
-  .topnav-browse-short {
-    display: inline;
+  .announce-strip__group {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+  /* Form fills the row on one line: input grows, button stays auto-width,
+     nothing wraps. */
+  .email-signup--announcement {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+  .email-signup--announcement .email-signup__input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
   }
 }
 
-/* Hero section — desktop fills the viewport (minus the 50px announcement
- * strip + 80px sticky nav = 130px chrome) and centers content vertically.
- * Mobile is content-driven with a more compact min-height + extra vertical
- * padding so the headline + search bar feel substantial without leaving a
- * giant empty gap before the next section. */
+/* Hero section — desktop fills the viewport below the 50px announcement
+ * strip + 80px sticky nav, but the content is optically centered between
+ * the announcement strip and the bottom of the viewport. That treats the
+ * sticky nav as overlay chrome for centering instead of letting it push the
+ * hero copy low. Mobile is content-driven with a more compact min-height +
+ * extra vertical padding so the headline + search bar feel substantial
+ * without leaving a giant empty gap before the next section. */
 .hero-section {
-  height: calc(100svh - 130px);
+  --directory-announcement-height: 50px;
+  --directory-nav-height: 80px;
+
+  height: calc(100svh - var(--directory-announcement-height) - var(--directory-nav-height));
   padding: 0;
+}
+
+.hero-section > .container {
+  transform: translateY(calc(var(--directory-nav-height) / -2));
 }
 
 @media (max-width: 768px) {
@@ -330,12 +408,28 @@ section {
     min-height: calc(100svh - 200px);
     padding: 56px 0 72px;
   }
+  .hero-section > .container {
+    transform: none;
+  }
   /* The desktop headline floor (4.6rem ≈ 73.6px) is too tall on mobile —
-   * "experimental" overflows the viewport. Scale it down to a normal
-   * mobile hero size so every word lays out elegantly. */
+   * the lead phrase overflows the viewport. Scale it down to a normal
+   * mobile hero size so every word lays out elegantly. The 2.3rem floor
+   * lets "A new medical" stay on one line within the 327px content
+   * width (375px − 48px padding) before wrapping the italic accent
+   * ("frontier.") below. */
   .hero-section h1 {
-    font-size: clamp(2.8rem, 11vw, 3.4rem) !important;
+    font-size: clamp(2.3rem, 11vw, 3.4rem) !important;
     line-height: 1.05 !important;
+  }
+  /* Mobile hero layout: lead phrase ("A new medical") on its own line,
+   * italic accent ("frontier.") on the line below. The lead never breaks
+   * mid-phrase; the accent becomes a block so it always drops to its own
+   * line. */
+  .hero-headline__lead {
+    white-space: nowrap;
+  }
+  .hero-headline__accent {
+    display: block;
   }
 }
 
@@ -347,6 +441,179 @@ section.hero-section {
 @media (max-width: 768px) {
   section.hero-section {
     padding: 56px 0 72px;
+  }
+}
+
+/* ============================================================
+ * Hero pill scatter — 8 colored product silhouettes scattered in
+ * the negative space around the centered H1 + subtitle + search.
+ * Asymmetric weight (heavier left, anchored by a big cream/olive
+ * capsule), varied size/rotation/opacity creates picasso-style
+ * depth, and a staggered fall-in animation gives motion on load.
+ * Mobile retunes the same assets in the media query below.
+ * ============================================================ */
+.pill-scatter {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.pill-scatter .pill {
+  position: absolute;
+  filter: drop-shadow(0 12px 14px rgba(40, 30, 20, 0.18))
+    drop-shadow(0 4px 5px rgba(40, 30, 20, 0.1));
+  animation: hero-pill-fall 950ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+  transform-origin: 50% 50%;
+}
+.pill-scatter .pill svg {
+  display: block;
+}
+.pill-scatter .pill.depth-far {
+  opacity: 0.92;
+  filter: drop-shadow(0 5px 7px rgba(40, 30, 20, 0.12));
+  --end-opacity: 0.92;
+}
+.pill-scatter .pill.depth-anchor {
+  filter: drop-shadow(0 16px 18px rgba(40, 30, 20, 0.22))
+    drop-shadow(0 5px 6px rgba(40, 30, 20, 0.12));
+}
+
+@keyframes hero-pill-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-36px) var(--rot);
+  }
+  60% {
+    opacity: var(--end-opacity, 1);
+  }
+  82% {
+    transform: translateY(2px) var(--rot);
+  }
+  100% {
+    opacity: var(--end-opacity, 1);
+    transform: translateY(0) var(--rot);
+  }
+}
+
+/* Random-feeling stagger — anchor capsule lands first (heaviest),
+ * other pieces tumble in afterward. */
+.pill-scatter .pill.p1 {
+  animation-delay: 220ms;
+}
+.pill-scatter .pill.p2 {
+  animation-delay: 60ms;
+}
+.pill-scatter .pill.p3 {
+  animation-delay: 380ms;
+}
+.pill-scatter .pill.p4 {
+  animation-delay: 540ms;
+}
+.pill-scatter .pill.p5 {
+  animation-delay: 160ms;
+}
+.pill-scatter .pill.p6 {
+  animation-delay: 460ms;
+}
+.pill-scatter .pill.p7 {
+  animation-delay: 620ms;
+}
+.pill-scatter .pill.p8 {
+  animation-delay: 320ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-scatter .pill {
+    animation: none;
+    transform: var(--rot);
+  }
+}
+
+/* Mobile (≤768px): the measured content band leaves only two safe
+ * lanes: above the H1 and below the search bar. Keep every pill out of
+ * the middle lane; p2/p5 stay visible as scaled bottom anchors. */
+@media (max-width: 768px) {
+  .pill-scatter .pill {
+    display: flex !important;
+  }
+
+  .pill-scatter .pill svg {
+    transform-origin: center;
+  }
+  .pill-scatter .pill.p1 svg {
+    transform: scale(0.76);
+  }
+  .pill-scatter .pill.p2 svg {
+    transform: scale(0.58);
+  }
+  .pill-scatter .pill.p3 svg {
+    transform: scale(0.68);
+  }
+  .pill-scatter .pill.p4 svg {
+    transform: scale(0.72);
+  }
+  .pill-scatter .pill.p5 svg {
+    transform: scale(0.58);
+  }
+  .pill-scatter .pill.p6 svg {
+    transform: scale(0.56);
+  }
+  .pill-scatter .pill.p7 svg {
+    transform: scale(0.76);
+  }
+  .pill-scatter .pill.p8 svg {
+    transform: scale(0.78);
+  }
+
+  .pill-scatter .pill.p1 {
+    top: 5.8% !important;
+    bottom: auto !important;
+    left: 10% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p8 {
+    top: 1% !important;
+    bottom: auto !important;
+    left: 55% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p6 {
+    top: 6.5% !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: 4% !important;
+  }
+  .pill-scatter .pill.p4 {
+    top: 7.8% !important;
+    bottom: auto !important;
+    left: 31% !important;
+    right: auto !important;
+  }
+
+  .pill-scatter .pill.p2 {
+    top: auto !important;
+    bottom: 4.8% !important;
+    left: -7% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p5 {
+    top: auto !important;
+    bottom: 6.5% !important;
+    left: auto !important;
+    right: 0 !important;
+  }
+  .pill-scatter .pill.p3 {
+    top: auto !important;
+    bottom: 0.3% !important;
+    left: 33% !important;
+    right: auto !important;
+  }
+  .pill-scatter .pill.p7 {
+    top: auto !important;
+    bottom: 4% !important;
+    left: auto !important;
+    right: 21% !important;
   }
 }
 
@@ -366,7 +633,7 @@ section.hero-section {
 
   /* Multi-column paragraph/text grids collapse to a single column —
    * used by the "Some treatments don't exist anywhere else." problem
-   * section and the "For treating physicians" two-column block. */
+   * section and the "For treating clinicians" two-column block. */
   .grid-stack-mobile {
     grid-template-columns: 1fr !important;
     gap: 32px !important;
@@ -486,8 +753,13 @@ section.hero-section {
  * shrinks on mobile so the text isn't pushed below the fold. */
 .split-detail {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* 1/3 art · 2/3 content per /design-shotgun Round 1 winner (Variant C,
+   * approved 2026-04-30). The Clinical Evidence + CTA densification on
+   * the right column needs the breathing room; the product art earns its
+   * quiet third on the left. */
+  grid-template-columns: 1fr 2fr;
   min-height: calc(100vh - 130px);
+  align-items: start;
 }
 
 .split-detail > .split-detail-art {
@@ -505,6 +777,405 @@ section.hero-section {
   max-width: 640px;
 }
 
+/* Variant C composition (slice 3): the right column splits into a main
+ * content area and a sticky right rail (anchors + patient CTA + physician
+ * CTAs). Only used by /programs/:slug today; isolating it under its own
+ * class avoids touching the existing split-detail-body that other pages
+ * (e.g. /etcs/:slug) still use. */
+.split-detail > .split-detail-content-grid {
+  display: grid;
+  /* 200px sticky rail per the approved Variant C dimensions. */
+  grid-template-columns: 1fr 200px;
+  gap: 56px;
+  /* Top padding intentionally tight (24px) so "Back to browse" + the H1
+   * align with the top of the sticky art panel on the left. The 64px
+   * top padding the original split-detail-body used left a visible gap
+   * between the panel top and the content's first line — the right
+   * column appeared "shoved down". The bottom 96px keeps a generous
+   * tail past the feedback footer. Horizontal padding is 56px to match
+   * the inter-column gap so the main content has equal breathing room
+   * on both sides (art↔main and main↔rail are both 56px). */
+  padding: 24px 56px 96px;
+  max-width: 1080px;
+}
+.split-detail > .split-detail-content-grid > main {
+  min-width: 0;
+}
+
+/* Editorial section panels for /programs/:slug.
+ *
+ * Flat sections — NO background, NO box. Just an h2 + body content with
+ * generous vertical rhythm between sections. The visual weight of the
+ * page lives in the prose itself; only the .evidence-block and
+ * .program-etc-card carry surfaces.
+ *
+ * This intentionally diverges from the global <Panel> component
+ * (components/Panel.tsx) which renders a --paper-card box. /programs/:slug
+ * is editorial; /etcs/:slug stays card-style — the two pages have
+ * different content density and use different visual systems on purpose.
+ *
+ * Approved 2026-04-30 in /design-shotgun Round 1 (Variant C). */
+/* Override the global `section { padding: 120px 0 }` rule (~line 235).
+ * Without this, every <section className="program-panel"> inherited
+ * 240px of vertical padding, blowing apart the editorial rhythm and
+ * making sections feel disconnected. The approved Variant C design has
+ * exactly 36px between sections, no inner padding. */
+.program-panel {
+  padding: 0;
+  margin-bottom: 36px;
+  /* Section anchors target the .program-panel element via id="about",
+   * id="evidence", etc. Without scroll-margin-top, clicking a rail
+   * anchor scrolls the section to the very top of the viewport — under
+   * the 80px sticky TopNav. 104px = 80px topnav + 24px breathing room,
+   * matching the existing scrollspy precedent used by the conditions
+   * detail TOC. */
+  scroll-margin-top: 104px;
+}
+.program-panel-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px 0;
+  color: var(--ink);
+}
+.program-panel-body {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.program-panel-body p {
+  margin: 0 0 12px 0;
+}
+.program-panel-body p:last-child {
+  margin-bottom: 0;
+}
+.program-panel-body .ink {
+  color: var(--ink);
+}
+
+/* Closing visual for a program-panel section — a museum-mat scholarly
+ * plate sized to read as an inline editorial figure rather than a hero.
+ * Currently shipped on WST-057 only as a Cajal peripheral-nerve plate;
+ * extensible to other PN programs as they onboard. Same mat treatment
+ * grammar as the HomePage Glacier/Bowdoin photos and the Hooker
+ * bitterroot on /about: 14px cream-paper border (#faf5e8), 1px outer
+ * hairline, 4px inner rounded corners on the img.
+ *
+ * Sits inside the .program-panel after the body prose, with 24px top
+ * margin to detach it from the last paragraph. Caption is left-aligned
+ * (vs the centered /for-clinicians frontispiece caption) because the
+ * figure itself isn't centered as a vignette — it's inline editorial. */
+.program-plate {
+  margin: 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  max-width: 660px;
+}
+.program-plate-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.program-plate-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.program-plate figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.45;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .program-plate-mat {
+    padding: 10px;
+  }
+}
+
+.program-back-link {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.program-title {
+  font-family: var(--serif);
+  font-size: 56px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-weight: 400;
+  margin: 0 0 8px 0;
+  outline: none;
+}
+.program-title sup {
+  font-size: 22px;
+  top: -1.2em;
+  position: relative;
+}
+
+.program-available-tag {
+  font-family: var(--serif);
+  font-size: 32px;
+  color: var(--accent);
+  letter-spacing: -0.015em;
+  font-weight: 400;
+  margin: 0 0 14px 0;
+}
+.program-available-tag .italic {
+  font-weight: 300;
+  font-style: italic;
+}
+
+.program-manufacturer-line {
+  color: var(--ink-soft);
+  font-size: 15px;
+  margin: 0 0 40px 0;
+}
+.program-manufacturer-line .ink {
+  color: var(--ink);
+}
+
+/* ETC card lives inside the Where-to-access section. Bordered, lighter
+ * paper-bright background — distinct from the surrounding flat prose. */
+.program-etc-card {
+  border: 1px solid var(--rule);
+  background: var(--paper-bright);
+  padding: 22px;
+  border-radius: 4px;
+}
+.program-etc-name {
+  font-family: var(--serif);
+  font-size: 18px;
+  margin: 0 0 6px 0;
+}
+.program-etc-loc {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.program-etc-prose {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 14px 0;
+}
+.program-accept-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  padding: 5px 11px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+.program-accept-tag::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.program-etc-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Enrollment ordered list — flat, no card background. */
+.program-enrollment {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.75;
+  padding-left: 22px;
+  margin: 0 0 14px 0;
+}
+.program-enrollment-note {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--serif);
+}
+
+/* Cost display — flat, large serif accent number. */
+.program-cost-display {
+  font-family: var(--serif);
+  font-size: 30px;
+  color: var(--accent);
+  letter-spacing: -0.015em;
+  font-weight: 400;
+  margin: 0 0 12px 0;
+}
+.program-cost-disclaimer {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* Feedback footer — flat closing block, attached to the bottom of the
+ * column with a hairline divider. */
+.program-feedback-footer {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+}
+.program-ff-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  margin: 0 0 8px 0;
+}
+.program-ff-body {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0 0 14px 0;
+}
+
+/* Sticky right rail.
+ * top: 104px = 80px topnav + 24px content-grid padding-top. Matches the
+ * rail's natural y-position on initial load so it doesn't jump up when
+ * the user starts scrolling. */
+.program-section-nav {
+  position: sticky;
+  top: 104px;
+  align-self: start;
+  font-family: var(--sans);
+}
+.program-section-nav .psn-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.program-section-nav ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: psn;
+}
+.program-section-nav ol li {
+  counter-increment: psn;
+  position: relative;
+}
+.program-section-nav ol li a {
+  display: block;
+  padding: 8px 0 8px 22px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  border-left: 2px solid transparent;
+  margin-left: -2px;
+  transition:
+    color 100ms ease,
+    border-color 100ms ease;
+  text-decoration: none;
+}
+.program-section-nav ol li a::before {
+  content: counter(psn, decimal-leading-zero);
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.program-section-nav ol li.is-active a {
+  color: var(--ink);
+  border-left-color: var(--accent);
+}
+.program-section-nav ol li a:hover {
+  color: var(--ink);
+}
+
+/* Patient CTA group — the conversion path. Primary fill, full-width,
+ * sits above the physician group so visual hierarchy mirrors business
+ * priority: eligibility check is THE conversion; clinician actions
+ * are supporting. */
+.program-section-nav .psn-cta-patient {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-soft);
+}
+.program-section-nav .psn-cta-patient .psn-label {
+  margin-bottom: 10px;
+}
+.program-section-nav .psn-cta-patient .pill {
+  width: 100%;
+  font-size: 13.5px;
+  padding: 14px 14px;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.program-section-nav .psn-cta-physician {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-soft);
+}
+.program-section-nav .psn-cta-physician .psn-label {
+  margin-bottom: 10px;
+}
+.program-section-nav .psn-cta-physician .pill {
+  width: 100%;
+  font-size: 12.5px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+
+/* Mobile fallback: rail collapses, eligibility CTA renders inline in
+ * the body's Who-this-is-for panel. The .program-mobile-cta wrapper is
+ * hidden on desktop and only appears below 1100px. */
+.program-mobile-cta {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .split-detail > .split-detail-content-grid {
+    grid-template-columns: 1fr;
+    max-width: 720px;
+    padding: 64px 24px 96px;
+    gap: 0;
+  }
+  .program-section-nav {
+    display: none;
+  }
+  .program-mobile-cta {
+    display: block;
+    margin-top: 18px;
+  }
+  .program-mobile-cta .pill {
+    width: 100%;
+    padding: 18px 24px;
+    justify-content: space-between;
+  }
+}
+
 @media (max-width: 1024px) {
   .split-detail {
     grid-template-columns: 1fr;
@@ -517,5 +1188,6513 @@ section.hero-section {
   .split-detail > .split-detail-body {
     padding: 40px 24px 80px;
     max-width: 100%;
+  }
+}
+
+/* Clinical Evidence block — slice 3, design-shotgun Round 1 Variant C.
+ * Card on --paper-card with an accent left-border. Header carries a
+ * 4-field grid (Trial registration / IND / Phase / ETRB approval); body
+ * carries mechanism + key safety prose with a DOI citation footer.
+ * The accent border is the same used on the patient eligibility CTA so
+ * the visual hierarchy ties evidence → conversion. */
+.evidence-block {
+  background: var(--paper-card);
+  padding: 26px 28px;
+  border-radius: 6px;
+  margin: 0;
+  border-left: 3px solid var(--accent);
+}
+.evidence-block .ev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 18px 24px;
+  font-size: 13.5px;
+  margin: 0 0 22px 0;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.evidence-block .ev-field .ev-lbl {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+}
+.evidence-block .ev-field .ev-val {
+  color: var(--ink);
+  font-size: 14px;
+}
+.evidence-block .ev-field .ev-val a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.evidence-block .ev-prose .ev-prose-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin: 18px 0 8px 0;
+}
+.evidence-block .ev-prose .ev-prose-label:first-child {
+  margin-top: 0;
+}
+.evidence-block .ev-prose p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+  margin: 0 0 10px 0;
+}
+.evidence-block .ev-prose .ev-citation {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--serif);
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 12px;
+  margin-top: 18px;
+}
+.evidence-block .ev-prose .ev-citation a {
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+ * Conditions index (`/conditions`) — newspaper-directory layout.
+ *
+ * Three semantic <table> blocks per state ("Available now", "Coming soon",
+ * "Not currently offered"). Each <caption> carries an accent dot (filled blue
+ * for live, hollow ring for coming-soon, none for not-offered), a 30px
+ * Fraunces serif title, and a count chip that floats to the right edge.
+ * Not-offered rows go italic Fraunces ink-soft to step back honestly.
+ *
+ * Approved 2026-04-29 in design-shotgun round 1 — see
+ * ~/.gstack/projects/chiefnova-lewis/designs/conditions-index-20260429/approved.json
+ * ------------------------------------------------------------------------- */
+
+.conditions-index {
+  padding-bottom: 80px;
+}
+
+/* Shared page-header block. Originally landed on the Conditions index (the
+ * design reference for /browse + /etcs too); de-scoped here so every patient
+ * directory index lands with the same eyebrow/H1/lede rhythm and the same
+ * 3px double rule that closes the header. */
+.masthead {
+  border-bottom: 3px double var(--ink);
+  padding: 64px 0 28px;
+  margin-bottom: 32px;
+}
+.masthead-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.masthead h1 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: clamp(40px, 5vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin-bottom: 18px;
+  max-width: 880px;
+}
+.masthead h1 em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+.masthead-lede {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 720px;
+  font-style: italic;
+  font-weight: 300;
+}
+
+.dir-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+/* Caption: <caption> stays default-display (table-caption) so its
+ * border-bottom spans the full table width edge-to-edge. The flex layout
+ * lives on a .caption-row wrapper inside — putting flex on <caption> itself
+ * breaks the table-width inheritance in some renderers. */
+.dir-table caption {
+  text-align: left;
+  padding: 36px 0 18px;
+  border-bottom: 1px solid var(--rule);
+  caption-side: top;
+}
+.dir-table .caption-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.dir-table .caption-dot {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dir-table .caption-dot.is-live {
+  background: var(--accent);
+}
+.dir-table .caption-dot.is-coming {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  box-sizing: border-box;
+}
+.dir-table .caption-title {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-left: 10px;
+}
+.dir-table .caption-row > .caption-title:first-child {
+  margin-left: 0;
+}
+.dir-table .caption-count {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 400;
+  line-height: 1;
+  margin-left: auto;
+}
+.dir-table.is-not .caption-title {
+  color: var(--ink-soft);
+}
+
+.dir-table th {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 400;
+  text-align: left;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.dir-table th.col-icd {
+  width: 130px;
+}
+.dir-table th.col-arrow {
+  width: 40px;
+  text-align: right;
+}
+
+.dir-table tbody tr {
+  border-bottom: 1px solid var(--rule-soft);
+  transition: background-color 120ms ease;
+}
+.dir-table tbody tr:hover {
+  background: rgba(255, 254, 251, 0.5);
+}
+.dir-table tbody tr:hover .row-arrow {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+.dir-table td {
+  padding: 18px 0;
+  vertical-align: top;
+}
+
+.dir-table .row-name {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: 19px;
+  color: var(--ink);
+  font-weight: 400;
+  margin-bottom: 4px;
+  letter-spacing: -0.005em;
+}
+.dir-table .row-name a {
+  color: inherit;
+  text-decoration: none;
+}
+.dir-table .row-name a:hover {
+  color: var(--accent);
+}
+.dir-table .row-summary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 580px;
+}
+.dir-table .row-icd {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  padding-top: 4px;
+}
+.dir-table .row-arrow {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--ink-faint);
+  text-align: right;
+  transition:
+    color 140ms ease,
+    transform 140ms ease;
+  padding-top: 4px;
+}
+
+/* Not-offered: serif italic + ink-soft (mirrors the "step-back" treatment
+ * from variant A — present, browsable, but visually subordinate). */
+.dir-table.is-not .row-name {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.dir-table.is-not .row-name a:hover {
+  color: var(--accent);
+}
+.dir-table.is-not .row-summary {
+  color: var(--ink-faint);
+}
+.dir-table.is-not .row-arrow {
+  color: var(--ink-faint);
+}
+
+.conditions-index .footer-note {
+  border-top: 1px solid var(--rule);
+  margin-top: 48px;
+  padding: 36px 0 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 680px;
+}
+.conditions-index .footer-note a {
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  font-style: normal;
+  text-decoration: none;
+}
+
+@media (max-width: 720px) {
+  .dir-table th.col-arrow,
+  .dir-table .row-arrow {
+    display: none;
+  }
+  .dir-table th.col-icd,
+  .dir-table .row-icd {
+    width: 90px;
+    font-size: 11px;
+  }
+  .dir-table .row-name {
+    font-size: 17px;
+  }
+  .conditions-index .caption-title {
+    font-size: 24px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * ConditionStateBadge — compact status chip used at the top of every
+ * `/conditions/:slug` detail page (and reusable elsewhere — e.g. inline in
+ * search overlay results, future homepage FeaturedConditions cards).
+ *
+ * Same shape across all three states; the dot does the state-signaling work
+ * (filled --accent for live, hollow ring --accent for coming-soon, faded
+ * ink-faint for not-offered). Sentence case label, 600 weight. Mirrors the
+ * dot pattern from .conditions-index .caption-dot so the visual language
+ * carries from the index → detail navigation.
+ *
+ * Approved 2026-04-29 in design-shotgun round 6 — see
+ * ~/.gstack/projects/chiefnova-lewis/designs/condition-state-badge-20260429/approved.json
+ * ------------------------------------------------------------------------- */
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.state-badge .state-badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent);
+}
+
+.state-badge.is-coming .state-badge-dot {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  box-sizing: border-box;
+}
+
+.state-badge.is-not {
+  color: var(--ink-soft);
+}
+
+.state-badge.is-not .state-badge-dot {
+  background: var(--ink-faint);
+  opacity: 0.5;
+}
+
+.state-badge.is-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  gap: 8px;
+}
+.state-badge.is-sm .state-badge-dot {
+  width: 7px;
+  height: 7px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Condition detail page (`/conditions/:slug`) — C1 architecture per
+ * design-shotgun Round 2 + Round 3-5 sub-compositions.
+ *
+ * Reading order: Breadcrumb → ConditionStateBadge → H1 → italic summary →
+ * ICD chips → standalone heading + count + HERO CARD with asset well +
+ * (programs row | Lewis-is-tracking row | not-offered row) → anchor-nav
+ * layout (sticky TOC left, content right) → disclaimer.
+ *
+ * The hero card has a 110px asset well on the left + body on the right +
+ * (for live state) an arrow column. Coming-soon and not-offered share the
+ * same hero card structure — only copy + asset SVG change.
+ *
+ * Approved 2026-04-29 — see ~/.gstack/projects/chiefnova-lewis/designs/
+ * condition-detail-{composition,coming-soon,not-offered,email-signup}-20260429/
+ * ------------------------------------------------------------------------- */
+
+.condition-detail {
+  padding-bottom: 80px;
+}
+
+.condition-detail .breadcrumb {
+  padding: 28px 0 0;
+}
+.condition-detail .breadcrumb a {
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+.condition-detail .breadcrumb a:hover {
+  color: var(--accent);
+}
+
+.condition-detail .badge-row {
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.condition-detail .page-h1 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: clamp(38px, 4.6vw, 52px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 18px;
+  color: var(--ink);
+  /* H1 fills full container width so it doesn't shrink-to-fit short titles
+   * while expanding for long ones — keeps the structural feel identical
+   * across diabetic / chemo / hiv / idiopathic / etc. */
+  width: 100%;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.condition-detail .page-h1 em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.condition-detail .page-summary {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 620px;
+  margin-bottom: 22px;
+}
+
+.condition-detail .icd-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.condition-detail .icd-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  border: 1px solid var(--rule);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+/* Hero section — standalone heading, no parent panel */
+.condition-detail .hero-head {
+  margin-top: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.condition-detail .hero-head h2 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.condition-detail .hero-head .hero-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Hero card — shared shell for live (with arrow + program link),
+ * coming-soon (with email signup), and not-offered (with email signup) */
+.condition-detail .hero-card {
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.condition-detail .hero-card-link {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  align-items: stretch;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 140ms ease;
+}
+.condition-detail .hero-card-link:hover {
+  background: var(--paper-card);
+}
+.condition-detail .hero-card-static {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.condition-detail .hero-asset {
+  background: var(--paper-card);
+  border-right: 1px solid var(--rule-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 12px;
+  min-height: 110px;
+}
+.condition-detail .hero-asset svg {
+  width: 64px;
+  height: 64px;
+  display: block;
+}
+.condition-detail .hero-asset.is-quiet svg {
+  opacity: 0.7;
+}
+
+.condition-detail .hero-card-body {
+  padding: 22px 26px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.condition-detail .hero-card-body h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 21px;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.005em;
+}
+.condition-detail .hero-card-body .program-meta {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.condition-detail .hero-card-body p {
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+.condition-detail .hero-card-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 24px 0 16px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  transition: transform 140ms ease;
+}
+.condition-detail .hero-card-link:hover .hero-card-arrow {
+  transform: translateX(3px);
+}
+
+/* TOC anchor-nav layout (sticky left + content right at desktop) */
+.condition-detail .toc-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 64px;
+  margin-top: 56px;
+  padding-top: 48px;
+  border-top: 1px solid var(--rule);
+}
+@media (max-width: 1023px) {
+  .condition-detail .toc-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .condition-detail .toc {
+    display: none;
+  }
+}
+.condition-detail .toc {
+  position: sticky;
+  /* Clear the sticky TopNav (80px tall) + 24px breathing room. The mockup
+   * used top: 32px because its nav was static, not sticky — production
+   * needs to add the header height back in so the first TOC item ("About
+   * this condition") doesn't get clipped behind the nav as the user
+   * scrolls. */
+  top: 104px;
+  align-self: start;
+}
+.condition-detail .toc-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+.condition-detail .toc ol {
+  list-style: none;
+  padding-left: 0;
+}
+.condition-detail .toc li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  position: relative;
+}
+.condition-detail .toc li:last-child {
+  border-bottom: 0;
+}
+.condition-detail .toc a {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+  text-decoration: none;
+  display: block;
+  transition: color 120ms ease;
+}
+.condition-detail .toc a:hover {
+  color: var(--accent);
+}
+.condition-detail .toc li.is-active a {
+  color: var(--accent);
+  font-weight: 500;
+}
+.condition-detail .toc li.is-active::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 14px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.condition-detail .toc-main {
+  min-width: 0;
+}
+.condition-detail .toc-main .section {
+  padding: 0 0 56px;
+  /* Land anchor jumps and scrollspy thresholds 104px below the viewport
+   * top — clears the 80px sticky TopNav with breathing room so the
+   * section's heading is fully visible after a click. Pairs with the TOC's
+   * `top: 104px` and the useScrollSpy rootMargin offset. */
+  scroll-margin-top: 104px;
+}
+.condition-detail .toc-main .section + .section {
+  padding-top: 48px;
+  border-top: 1px solid var(--rule);
+}
+
+/* Section heading inside TOC content */
+.condition-detail .section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+.condition-detail .section-h2 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  margin-bottom: 18px;
+  color: var(--ink);
+}
+.condition-detail .prose p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink);
+  margin-bottom: 14px;
+  max-width: 680px;
+}
+.condition-detail .prose p.muted {
+  color: var(--ink-soft);
+}
+.condition-detail .prose .source {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-top: 14px;
+  font-style: italic;
+}
+.condition-detail .prose .source a {
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+}
+
+/* Standard of care list + closing block */
+.condition-detail .soc-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 16px;
+}
+.condition-detail .soc-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+.condition-detail .soc-list li:first-child {
+  border-top: 1px solid var(--rule-soft);
+}
+.condition-detail .soc-closing {
+  background: var(--paper-bright);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px;
+  margin-top: 18px;
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 1.6;
+  border-radius: 0 4px 4px 0;
+}
+
+/* "While you wait" panel (coming-soon + not-offered) */
+.condition-detail .while-you-wait {
+  background: var(--paper-card);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  padding: 22px 26px;
+}
+.condition-detail .while-you-wait h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.condition-detail .while-you-wait p {
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin-bottom: 14px;
+  max-width: none;
+}
+.condition-detail .while-you-wait .cta {
+  color: var(--accent);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+
+.condition-detail .not-offered-paths {
+  background: var(--paper-card);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  padding: 22px 26px;
+}
+.condition-detail .not-offered-paths h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.condition-detail .not-offered-path-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.condition-detail .path-card {
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  background: var(--paper-bright);
+  padding: 16px;
+}
+.condition-detail .path-card h4 {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 650;
+  margin-bottom: 8px;
+}
+.condition-detail .path-card p {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+.condition-detail .path-card .cta {
+  color: var(--accent);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+.condition-detail .path-card .condition-email-signup {
+  margin-top: 0;
+}
+
+/* Why-experimental sidebar callout (lives inside TOC content) */
+.condition-detail .callout {
+  padding: 24px 28px;
+  background: var(--paper-card);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+.condition-detail .callout h3 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.condition-detail .callout p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: none;
+}
+
+.condition-detail .advocacy-list {
+  list-style: none;
+  padding-left: 0;
+}
+.condition-detail .advocacy-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink);
+  font-size: 15.5px;
+}
+.condition-detail .advocacy-list li:first-child {
+  border-top: 1px solid var(--rule-soft);
+}
+.condition-detail .advocacy-list a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+
+.condition-detail .disclaimer {
+  margin-top: 48px;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+  color: var(--ink-faint);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+/* Disabled-CTA email signup (Round 7 variant A — horizontal inline) */
+.condition-email-signup {
+  margin-top: 6px;
+}
+.condition-email-signup-row {
+  display: flex;
+  gap: 8px;
+}
+.condition-email-signup input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.condition-email-signup button {
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--paper-card);
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  cursor: not-allowed;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.condition-email-signup-note {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* Mobile fallback — hero card collapses asset above body */
+@media (max-width: 720px) {
+  .condition-detail .hero-card-link,
+  .condition-detail .hero-card-static {
+    grid-template-columns: 1fr;
+  }
+  .condition-detail .not-offered-path-grid {
+    grid-template-columns: 1fr;
+  }
+  .condition-detail .hero-asset {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-soft);
+    min-height: 96px;
+  }
+  .condition-detail .hero-card-arrow {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Skeleton + error states for the conditions surfaces.
+ * Shared visual language across both /conditions and /conditions/:slug:
+ *   - Skeletons use a subtle paper-card shimmer pulse on rule-soft blocks
+ *     so they don't feel mechanical; opacity stays low to read as
+ *     "loading" rather than "real but empty".
+ *   - Error states use a serif heading + muted body + outline pill retry,
+ *     mirroring the rest of the directory's quiet error posture (no red,
+ *     no scary iconography — these are recoverable failures).
+ * ------------------------------------------------------------------------- */
+
+@keyframes lewis-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+/* Search overlay polish — the dialog frame itself uses anchored auto-height
+ * so the bottom edge grows downward with content. To avoid a hard "pop"
+ * when results stream in, suggestion rows fade in subtly. The frame stays
+ * stable; only the new rows animate. Skipped under prefers-reduced-motion. */
+.search-overlay-results {
+  animation: search-overlay-fade-in 120ms var(--ease-out) both;
+}
+
+@keyframes search-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-overlay-results {
+    animation: none;
+  }
+}
+
+.lewis-skeleton {
+  background: var(--rule-soft);
+  border-radius: 4px;
+  animation: lewis-skeleton-pulse 1400ms ease-in-out infinite;
+}
+
+.lewis-skeleton.is-card {
+  border-radius: 8px;
+}
+
+.lewis-error-block {
+  padding: 48px 0 24px;
+  max-width: 580px;
+}
+.lewis-error-block h2 {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 56;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.lewis-error-block p {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+
+/* Loading + error + not-found states for /programs/:slug.
+ * /design-shotgun Round 5 winner (Variant A, approved 2026-04-30 — see
+ * ~/.gstack/projects/chiefnova-lewis/designs/program-loading-error-20260430/approved.json).
+ *
+ * Loading: page-shaped shimmer skeleton — preserves the split layout +
+ * sticky art panel + content silhouette + rail anchor list. The
+ * shimmer animation is a 1.4s linear-gradient sweep; respects
+ * prefers-reduced-motion (falls back to a solid paper-card).
+ *
+ * Error / Not-found: stays inside the layout (topnav + sticky art panel
+ * with caption only, body carries a serif H1-style state message + body
+ * + retry/back action). Calm, recoverable, on-brand. */
+
+.program-skel {
+  background: linear-gradient(
+    90deg,
+    var(--paper-card) 0%,
+    var(--paper-bright) 50%,
+    var(--paper-card) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: program-skel-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes program-skel-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .program-skel {
+    animation: none;
+    background: var(--paper-card);
+  }
+}
+.program-skel-back {
+  width: 90px;
+  height: 13px;
+  margin-bottom: 28px;
+}
+.program-skel-h1 {
+  width: 60%;
+  height: 56px;
+  margin-bottom: 14px;
+}
+.program-skel-tag {
+  width: 40%;
+  height: 32px;
+  margin-bottom: 20px;
+}
+.program-skel-line {
+  width: 80%;
+  height: 14px;
+  margin-bottom: 10px;
+}
+.program-skel-line.short {
+  width: 50%;
+}
+.program-skel-line.med {
+  width: 65%;
+}
+.program-skel-h2 {
+  width: 30%;
+  height: 22px;
+  margin-bottom: 18px;
+}
+.program-skel-section {
+  margin-bottom: 36px;
+  padding-top: 4px;
+}
+.program-skel-art {
+  width: 240px;
+  height: 320px;
+  background: var(--paper-bright);
+  opacity: 0.55;
+  border-radius: 12px;
+}
+.program-skel-rail-label {
+  width: 70%;
+  height: 11px;
+  margin-bottom: 14px;
+}
+.program-skel-rail-item {
+  width: 100%;
+  height: 14px;
+  margin-bottom: 16px;
+}
+
+/* Inline state message (error + not-found). Uses the same .split-detail
+ * shell as the live page so the topnav + sticky art panel stay in
+ * place — only the right column changes. */
+.program-state-msg-h1 {
+  font-family: var(--serif);
+  font-size: 36px;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  font-weight: 400;
+  margin: 0 0 14px 0;
+  color: var(--ink);
+}
+.program-state-msg-body {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0 0 24px 0;
+  max-width: 540px;
+}
+.program-state-msg-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.program-state-msg-retry-link {
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.program-state-msg-retry-link:hover {
+  text-decoration-thickness: 2px;
+}
+.program-state-msg-support {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--serif);
+}
+.program-state-msg-support a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ==========================================================================
+ * Slice 4 (Sprint 4) — Homepage restructure, chrome rewrites, marketing form,
+ * editorial flow per /design-shotgun Round 1 locked Variant B.
+ * ==========================================================================
+ */
+
+/* --- Skeleton shimmer (reused by Featured* loading states) ------------- */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--rule-soft) 0%,
+    rgba(220, 219, 208, 0.7) 50%,
+    var(--rule-soft) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-pulse 1400ms linear infinite;
+  border-radius: 4px;
+}
+@keyframes shimmer-pulse {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* --- EmailSignupForm shared component ----------------------------------- */
+.email-signup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.email-signup__input {
+  flex: 1 1 220px;
+  min-width: 0;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule-soft);
+  border-radius: 9999px;
+  padding: 10px 18px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 120ms var(--ease-out);
+}
+.email-signup__input:focus-visible {
+  border-color: var(--ink);
+}
+.email-signup__input[aria-invalid="true"] {
+  border-color: #c54a4a;
+}
+.email-signup__submit {
+  background: var(--ink);
+  color: var(--paper-bright);
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 20px;
+  font-family: var(--sans);
+  font-size: 14px;
+  cursor: pointer;
+  letter-spacing: 0.005em;
+  transition: background-color 120ms var(--ease-out);
+  white-space: nowrap;
+}
+.email-signup__submit:hover:not(:disabled) {
+  background: #2c241c;
+}
+.email-signup__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.email-signup__error {
+  flex: 0 0 100%;
+  margin: 6px 0 0;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: #a13a3a;
+}
+.email-signup--success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.email-signup__success-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  color: var(--paper-bright);
+  border-radius: 9999px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-style: normal;
+  flex-shrink: 0;
+}
+
+/* --- AnnouncementStrip variant: form sits inline with the announcement --- */
+.email-signup--announcement {
+  flex: 0 0 auto;
+}
+.email-signup--announcement .email-signup__input {
+  width: 200px;
+  flex: 0 0 200px;
+  font-size: 13px;
+  padding: 6px 14px;
+}
+.email-signup--announcement .email-signup__submit {
+  font-size: 13px;
+  padding: 7px 16px;
+}
+
+/* --- BeginningSection banner variant ------------------------------------ */
+.email-signup--banner {
+  background: rgba(27, 24, 20, 0.04);
+  border-radius: 9999px;
+  padding: 5px;
+  border: 1px solid var(--rule-soft);
+}
+.email-signup--banner .email-signup__input {
+  background: transparent;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14.5px;
+}
+.email-signup--banner .email-signup__input:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+.email-signup--banner .email-signup__submit {
+  padding: 11px 22px;
+}
+
+/* --- /browse bottom card variant (used in slice 4 BrowsePage rewrite) --- */
+.email-signup--card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  padding: 12px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.email-signup--card .email-signup__input {
+  flex: 1 1 200px;
+  min-width: 0;
+  font-size: 14px;
+  padding: 9px 16px;
+}
+.email-signup--card .email-signup__submit {
+  flex: 0 0 auto;
+  font-size: 14px;
+  padding: 9px 18px;
+}
+
+/* --- TopNav (slice 4 rewrite) ------------------------------------------- */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--paper);
+}
+.topnav__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.topnav__logo {
+  display: inline-flex;
+  align-items: baseline;
+  text-decoration: none;
+  letter-spacing: -0.025em;
+  flex-shrink: 0;
+  color: var(--ink);
+  margin-right: 8px;
+  /* Optical: the wordmark (23px serif) is geometrically centered with the nav
+   * links (16px), but center-aligning different type sizes leaves the larger
+   * one's baseline ~2px low, so it reads as dropping below the nav line. Nudge
+   * it up to sit on the same baseline. */
+  transform: translateY(-2px);
+}
+.topnav__logo-primary {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+.topnav__logo-secondary {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--ink-soft);
+}
+
+/* Flat-comprehensive groups (slice 4 IA option C). Patient-discovery group
+ * = full ink weight; B2B/About group = ink-soft secondary, smaller. */
+.topnav__group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.topnav__group--secondary {
+  gap: 16px;
+}
+.topnav__sep {
+  width: 0.5px;
+  height: 22px;
+  background: var(--rule-strong);
+  flex-shrink: 0;
+}
+.topnav__link {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--ink);
+  text-decoration: none;
+  /* Symmetric top/bottom border + padding so the glyphs center on the same
+   * line as the wordmark; the underline still only renders on the bottom
+   * (hover/active flips border-bottom-color only). */
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  white-space: nowrap;
+  transition:
+    color 120ms var(--ease-out),
+    border-color 120ms var(--ease-out);
+}
+.topnav__link:hover,
+.topnav__link[data-active="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.topnav__link--secondary {
+  /* Size matches the patient links (inherits 16px from .topnav__link); only
+   * the resting color stays subordinate via --ink-soft. */
+  color: var(--ink-soft);
+}
+/* Hover/active intentionally inherits .topnav__link (accent color + accent
+ * underline) so the B2B/About links hover identically to the patient links;
+ * only the resting size + color stay subordinate. */
+
+/* --- Grouped nav dropdowns (For professionals / Company) ----------------- */
+.topnav__dropdown {
+  position: relative;
+  display: inline-flex;
+}
+/* The trigger is a <button> wearing .topnav__link styling, so reset the UA
+ * button chrome the link rules don't cover. */
+.topnav__dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  cursor: pointer;
+}
+.topnav__dropdown-caret {
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 120ms var(--ease-out);
+}
+.topnav__dropdown-trigger[aria-expanded="true"] .topnav__dropdown-caret {
+  transform: rotate(180deg);
+}
+.topnav__dropdown-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  z-index: 60;
+  animation: nav-dropdown-in 140ms var(--ease-out) both;
+}
+@keyframes nav-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.topnav__dropdown-item {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition:
+    color 120ms var(--ease-out),
+    background-color 120ms var(--ease-out);
+}
+.topnav__dropdown-item:hover,
+.topnav__dropdown-item[data-active="true"] {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .topnav__dropdown-panel {
+    animation: none;
+  }
+  .topnav__dropdown-caret {
+    transition: none;
+  }
+}
+
+.topnav__spacer {
+  flex: 1;
+  min-width: 8px;
+}
+.topnav__magnifier {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-button-sm);
+  background: var(--accent);
+  color: var(--paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 120ms var(--ease-out);
+}
+.topnav__magnifier:hover {
+  background: var(--accent-soft);
+}
+
+/* Hamburger — mobile only (hidden >720px). */
+.topnav__hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--ink-soft);
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.topnav__hamburger:hover {
+  color: var(--ink);
+  background: rgba(27, 24, 20, 0.04);
+}
+
+/* Below 960px the inline nav collapses to mobile chrome (wordmark + magnifier
+ * + hamburger); the drawer carries all 10 destinations. The condensed nav (3
+ * flat links + 2 dropdowns) fits comfortably above this, so it shows on more
+ * screens than the old flat-7 layout did. */
+@media (max-width: 960px) {
+  .topnav__group,
+  .topnav__sep,
+  .topnav__dropdown {
+    display: none;
+  }
+  .topnav__hamburger {
+    display: inline-flex;
+  }
+  .topnav__inner {
+    gap: 12px;
+    padding: 0 16px;
+  }
+}
+
+/* --- SecondaryNavDrawer ------------------------------------------------- */
+.nav-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+}
+.nav-drawer__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(27, 24, 20, 0.32);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  animation: nav-drawer-fade 160ms var(--ease-out) both;
+}
+.nav-drawer__panel {
+  position: relative;
+  width: min(360px, 80vw);
+  height: 100%;
+  background: var(--paper);
+  border-left: 1px solid var(--rule-soft);
+  padding: 64px 32px 32px;
+  overflow-y: auto;
+  animation: nav-drawer-slide 220ms var(--ease-out) both;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.nav-drawer__close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 9999px;
+  background: transparent;
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-drawer__close:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.nav-drawer__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nav-drawer__group--secondary {
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 24px;
+}
+.nav-drawer__group--secondary .nav-drawer__link {
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+.nav-drawer__group--secondary .nav-drawer__link:hover {
+  color: var(--ink);
+}
+.nav-drawer__link {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  transition: color 120ms var(--ease-out);
+}
+.nav-drawer__link:last-child {
+  border-bottom: none;
+}
+.nav-drawer__link:hover {
+  color: var(--accent);
+}
+
+@keyframes nav-drawer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes nav-drawer-slide {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-drawer__overlay,
+  .nav-drawer__panel {
+    animation: none;
+  }
+}
+
+/* --- FeaturedConditions (editorial table-of-contents) ------------------- */
+.featured-conditions {
+  padding: 96px 0;
+  background: var(--paper);
+}
+.featured-conditions__container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.featured-conditions__label {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.featured-conditions__label::before {
+  content: "";
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: var(--ink-faint);
+}
+.featured-conditions__h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0 0 56px;
+  max-width: 760px;
+}
+.featured-conditions__h2 i {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 300;
+}
+.featured-conditions__toc {
+  border-top: 1px solid var(--rule);
+}
+.featured-conditions__row {
+  display: grid;
+  grid-template-columns: 64px 1fr 220px 90px;
+  gap: 28px;
+  align-items: center;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 160ms var(--ease-out);
+}
+.featured-conditions__row:hover {
+  background-color: rgba(0, 0, 0, 0.018);
+}
+.featured-conditions__num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 26px;
+  color: var(--ink-faint);
+  font-weight: 300;
+}
+.featured-conditions__name {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.featured-conditions__sub {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  text-align: right;
+  line-height: 1.45;
+}
+.featured-conditions__chev {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+.featured-conditions__row--muted .featured-conditions__name {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-weight: 300;
+}
+.featured-conditions__row--muted:hover {
+  background-color: transparent;
+  cursor: default;
+}
+.featured-conditions__row--skeleton .featured-conditions__name {
+  height: 28px;
+  width: 60%;
+}
+.featured-conditions__row--skeleton .featured-conditions__sub {
+  height: 16px;
+  width: 80%;
+}
+.featured-conditions__row--skeleton .featured-conditions__chev {
+  height: 14px;
+  width: 40px;
+}
+.featured-conditions__cta {
+  margin-top: 48px;
+  text-align: center;
+}
+.featured-conditions__cta-link {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 3px;
+  text-decoration: none;
+}
+@media (max-width: 720px) {
+  .featured-conditions__row {
+    grid-template-columns: 36px 1fr;
+    gap: 16px;
+  }
+  .featured-conditions__sub {
+    grid-column: 2;
+    text-align: left;
+    font-size: 13px;
+  }
+  .featured-conditions__chev {
+    display: none;
+  }
+  .featured-conditions__name {
+    font-size: 20px;
+  }
+}
+
+/* --- FeaturedTreatments (sibling of FeaturedConditions — same visual
+ * treatment, mirrored row grid + numerals + H2 size; the only deviations
+ * are the section's own label/CTA text and the stacked sub column that
+ * carries indications + technical lines per row.) ----------------------- */
+.featured-treatments {
+  padding: 96px 0;
+  background: var(--paper);
+}
+.featured-treatments__container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.featured-treatments__label {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.featured-treatments__label::before {
+  content: "";
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: var(--ink-faint);
+}
+.featured-treatments__h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0 0 56px;
+  max-width: 760px;
+}
+.featured-treatments__h2 i {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 300;
+}
+.featured-treatments__toc {
+  border-top: 1px solid var(--rule);
+}
+/* Treatments row deviates from the conditions grid (64px 1fr 220px 90px)
+ * because the content shape is inverted: in conditions the NAME is long
+ * and the sub is short metadata; here the name is short (a product code
+ * like WST-057) and the indication line is the load-bearing meat. So we
+ * let name take its natural width and flex the sub column instead. */
+.featured-treatments__row {
+  display: grid;
+  grid-template-columns: 64px auto 1fr 90px;
+  gap: 32px;
+  align-items: center;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 160ms var(--ease-out);
+}
+.featured-treatments__row:hover {
+  background-color: rgba(0, 0, 0, 0.018);
+}
+.featured-treatments__num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 26px;
+  color: var(--ink-faint);
+  font-weight: 300;
+}
+.featured-treatments__name-cell {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.featured-treatments__art {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.featured-treatments__art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.featured-treatments__name {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.featured-treatments__sub {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.featured-treatments__indications {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15.5px;
+  color: var(--ink);
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+}
+.featured-treatments__technical {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  letter-spacing: 0.005em;
+}
+.featured-treatments__chev {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+.featured-treatments__row--muted .featured-treatments__name {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-weight: 300;
+}
+.featured-treatments__row--muted:hover {
+  background-color: transparent;
+  cursor: default;
+}
+.featured-treatments__row--skeleton .featured-treatments__name {
+  height: 28px;
+  width: 60%;
+}
+.featured-treatments__row--skeleton .featured-treatments__indications {
+  height: 16px;
+  width: 80%;
+}
+.featured-treatments__row--skeleton .featured-treatments__technical {
+  height: 14px;
+  width: 60%;
+}
+.featured-treatments__row--skeleton .featured-treatments__chev {
+  height: 14px;
+  width: 40px;
+}
+.featured-treatments__cta {
+  margin-top: 48px;
+  text-align: center;
+}
+.featured-treatments__cta-link {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 3px;
+  text-decoration: none;
+}
+@media (max-width: 720px) {
+  .featured-treatments__row {
+    grid-template-columns: 36px 1fr;
+    gap: 16px;
+  }
+  .featured-treatments__sub {
+    grid-column: 2;
+    text-align: left;
+  }
+  .featured-treatments__indications {
+    font-size: 13px;
+  }
+  .featured-treatments__technical {
+    font-size: 12px;
+  }
+  .featured-treatments__chev {
+    display: none;
+  }
+  .featured-treatments__name {
+    font-size: 20px;
+  }
+}
+
+/* --- Footer (slice 4 rewrite, 5-column) --------------------------------- */
+.foot {
+  background: var(--paper);
+  border-top: 0.5px solid var(--rule-strong);
+  padding: 64px 32px 36px;
+}
+.foot__inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.foot__brand {
+  display: inline-flex;
+  align-items: baseline;
+  margin-bottom: 36px;
+  color: var(--ink);
+}
+.foot__brand-primary {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.foot__brand-secondary {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+.foot__cols {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 32px;
+}
+.foot__col-heading {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 14px;
+  font-weight: 500;
+}
+.foot__col-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.foot__col-list li {
+  padding: 5px 0;
+}
+.foot__col-link {
+  text-decoration: none;
+  color: var(--ink-soft);
+  font-size: 14px;
+  transition: color 120ms var(--ease-out);
+}
+.foot__col-link:hover {
+  color: var(--ink);
+}
+.foot__bar {
+  margin-top: 48px;
+  padding-top: 22px;
+  border-top: 0.5px solid var(--rule-strong);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+  line-height: 1.55;
+  max-width: 780px;
+}
+@media (max-width: 720px) {
+  .foot__cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+}
+
+/* ==========================================================================
+ * Slice 4 — Shared editorial-flow primitives. Used by HowItWorks,
+ * ProblemSection, ForPhysicians, FaqSection, BeginningSection per locked
+ * Variant B. The .featured-conditions__* and .featured-treatments__*
+ * classes still exist for those specific surfaces; these are reusable
+ * primitives for the rest of the homepage.
+ * ==========================================================================
+ */
+/* Horizontal padding lives on the container, NOT the <section>. The global
+ * mobile rule `section { padding: 64px 0 !important }` (~line 615) strips any
+ * side padding off every <section> at ≤768px; putting the gutter on the
+ * container makes these sections immune to it (same pattern as
+ * .featured-conditions__container). Without this, content runs edge-to-edge
+ * on mobile. */
+.ed-section {
+  padding: 96px 0;
+  background: var(--paper);
+}
+.ed-section--card {
+  background: var(--paper-card);
+}
+.ed-section__container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+@media (max-width: 768px) {
+  .ed-section__container {
+    padding: 0 24px;
+  }
+}
+.ed-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ed-label::before {
+  content: "";
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: var(--ink-faint);
+}
+.ed-h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0 0 56px;
+  max-width: 760px;
+}
+.ed-h2 i {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 300;
+}
+.ed-h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--ink-soft);
+  letter-spacing: -0.01em;
+  margin: 0 0 36px;
+}
+.ed-divider {
+  max-width: 980px;
+  margin: 0 auto;
+  border: none;
+  border-top: 1px solid var(--rule-soft);
+  height: 1px;
+}
+
+/* HowItWorks — editorial 3-step grid -------------------------------------- */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.how-item {
+  padding-top: 8px;
+}
+.how-num {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-style: italic;
+  font-size: 56px;
+  color: var(--accent);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-bottom: 24px;
+}
+.how-item h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+  margin: 0 0 12px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.how-item p {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .how-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* ProblemSection — Aesop-style two-column split.
+ *
+ * The eyebrow label + H2 sit above at their natural full-container
+ * width (managed by the existing .ed-label + .ed-h2 globals). Below
+ * them, the section divides into a 2-col grid: Montana landscape
+ * photo on the left (~45% — visual anchor that hooks the eye before
+ * the text explains), body paragraphs stacked on the right (~55% —
+ * comfortable reading column). Photo + caption + body all anchor to
+ * the same top baseline (align-items: start).
+ *
+ * Photo is a raw rectangle (no border, no shadow, no rounded corners)
+ * — magazine spreads don't frame their images. Italic Fraunces caption
+ * underneath ties the photo into the page's typographic voice.
+ *
+ * Mobile (≤720px): grid collapses to a single column with the photo
+ * above the body, gap tightens. */
+.problem-split {
+  display: grid;
+  grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+  gap: 56px;
+  align-items: center;
+}
+.problem-split__photo {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+/* Museum print mat treatment (/design-shotgun Round 8 winner B). The
+ * matframe wraps the img with a 14px cream-paper border (#faf5e8 —
+ * slightly warmer than --paper) and a 1px hairline at the outer edge.
+ * The inner img has 4px rounded corners. Reads as a fine-art print
+ * mounted on archival board, matching Lewis's "careful record /
+ * documented specimen" brand metaphor. */
+.problem-split__photo-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+}
+.problem-split__photo-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.problem-split__photo figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+}
+.problem-split__body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+.problem-split__body p {
+  font-size: 16.5px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .problem-split {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .problem-split__photo-mat {
+    padding: 10px;
+  }
+}
+
+/* ForPhysicians — editorial 2:1 with Rx ornament ------------------------- */
+.for-phys-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+.for-phys-grid h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2rem, 3.4vw, 2.6rem);
+  line-height: 1.15;
+  letter-spacing: -0.022em;
+  margin: 0 0 22px;
+}
+.for-phys-grid h2 i {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 300;
+}
+.for-phys-grid p {
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0 0 28px;
+  max-width: 540px;
+}
+/* Right-column museum-mat plate that replaced the faded ℞ ornament.
+ * Hosts Cajal's 1899 ink drawing of a giant pyramidal neuron in the
+ * Ammon's horn region of the hippocampus. Same museum-mat treatment as
+ * ProblemSection's Glacier photo (slot #1), AboutPage's founding plate
+ * (slot #4), and the homepage Bowdoin prairie (slot #3) — 14px
+ * cream-paper border (#faf5e8), 1px outer hairline, 4px inner rounded
+ * corners on the img. The figcaption renders italic Fraunces below
+ * the mat to anchor the plate into the page's typographic voice and
+ * carry the Wellcome Collection attribution (CC BY 4.0 requirement). */
+.for-phys__plate {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.for-phys__plate-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.for-phys__plate-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.for-phys__plate figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.45;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .for-phys-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .for-phys__plate-mat {
+    padding: 10px;
+  }
+  .for-phys__plate {
+    max-width: 360px;
+    margin: 0 auto;
+  }
+}
+
+/* FaqSection — editorial hairline rows ----------------------------------- */
+.faq-list {
+  border-top: 1px solid var(--rule-soft);
+}
+.faq-row {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  cursor: pointer;
+}
+.faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(18px, 2.2vw, 22px);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  padding: 0;
+}
+.faq-q:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 4px;
+}
+.faq-q__icon {
+  color: var(--ink-faint);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.faq-a {
+  margin-top: 16px;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.7;
+  max-width: 720px;
+}
+
+/* BeginningSection — editorial centered terminus ------------------------- */
+.beginning-inner {
+  text-align: center;
+  max-width: 740px;
+  margin: 0 auto;
+}
+.beginning-inner h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 5.4vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0 0 22px;
+}
+.beginning-inner h2 i {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 300;
+}
+.beginning-inner p {
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.65;
+  max-width: 540px;
+  margin: 0 auto 40px;
+}
+.beginning__form-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+}
+.beginning__hint {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--ink-faint);
+  margin-top: 16px;
+}
+
+/* ==========================================================================
+ * Slice 4 § 16.1 — /etcs index (Round 4 locked Variant A: list-first +
+ * sticky sidekick map). Wider 1180px container for the two-pane; editorial
+ * type + paper-bright cards reused from the rest of the directory.
+ * ==========================================================================
+ */
+.etcs-wrap {
+  /* 1240px matches the global .container used by /conditions — keeps the
+   * masthead double-rule and content column the same width across all three
+   * patient directory indexes. */
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+/* .etcs-head / .etcs-h1 / .etcs-intro removed — /etcs now uses the shared
+ * .masthead block to match /conditions and /browse exactly. */
+.etcs-cols {
+  display: grid;
+  grid-template-columns: 190px 1fr 330px;
+  gap: 40px;
+  padding-bottom: 96px;
+  align-items: start;
+}
+/* Grid items default to min-width:auto, which lets a wide child push the track
+ * past the container (mobile overflow). Allow them to shrink. */
+.etcs-cols > * {
+  min-width: 0;
+}
+
+/* Filter rail */
+.etc-filters__grp {
+  padding: 0 0 22px;
+  margin: 0 0 22px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.etc-filters__grp--last {
+  border-bottom: 0;
+}
+.etc-filters__h4 {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 12px;
+  font-weight: 600;
+  font-family: var(--sans);
+}
+.etc-filters__opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.etc-filters__cb {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.etc-filters__box {
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper-bright);
+  flex-shrink: 0;
+  position: relative;
+}
+.etc-filters__box[data-on] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.etc-filters__box[data-on]::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--paper-bright);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.etc-filters__cb:focus-visible ~ .etc-filters__box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.etc-filters__ct {
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+.etc-filters__note,
+.etc-filters__static {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-family: var(--serif);
+  font-style: italic;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.etc-filters__static {
+  font-style: normal;
+  font-family: var(--sans);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.etc-filters__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.etc-filters__sw {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--rule);
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 120ms var(--ease-out);
+}
+.etc-filters__sw[data-on] {
+  background: var(--accent);
+}
+.etc-filters__sw::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--paper-bright);
+  transition: transform 120ms var(--ease-out);
+}
+.etc-filters__sw[data-on]::after {
+  transform: translateX(14px);
+}
+.etc-filters__cb:focus-visible ~ .etc-filters__sw {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* List + count */
+.etcs-count {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin: 0 0 16px;
+}
+
+/* ETC card */
+.etc-card {
+  position: relative;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 26px 28px;
+  margin-bottom: 18px;
+  transition:
+    border-color 220ms ease,
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+/* The whole card is a click target: the "View profile" link's ::before
+ * stretches over the card (see .etc-card__pill::before). Hover/focus lift
+ * the card so the affordance reads. */
+.etc-card:hover {
+  border-color: var(--accent-ring);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 34px var(--shadow-deep);
+}
+.etc-card:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.etc-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.etc-card__name {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+.etc-card__loc {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.etc-card__badge {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-ring);
+  border-radius: 999px;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+.etc-card__meta {
+  display: flex;
+  gap: 22px;
+  align-items: flex-end;
+  margin: 18px 0 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule-soft);
+}
+.etc-card__mi {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.etc-card__mi b {
+  display: block;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 1px;
+}
+.etc-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.etc-card__tag--muted {
+  color: var(--ink-faint);
+}
+.etc-card__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #3f7d52;
+}
+.etc-card__cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.etc-card__claim {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.etc-card__pill {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+.etc-card__pill::after {
+  content: " \2192";
+}
+/* Stretched-link overlay — makes the entire .etc-card clickable while keeping
+ * a single real anchor for semantics + keyboard focus. Scoped to the dedicated
+ * .etc-card__open class (NOT the shared .etc-card__pill, which is also used by
+ * the "Browse treatments" link and "Clear filters" button — applying the
+ * overlay there would stretch an invisible /browse link over the page). */
+.etc-card__open::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+}
+
+/* "more coming" footer of the list */
+.etcs-more {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule-soft);
+}
+.etcs-more__note {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-faint);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+.etcs-more__back {
+  margin: 16px 0 0;
+}
+
+/* Map sidekick */
+.etcs-mapcol__sticky {
+  position: sticky;
+  top: 24px;
+}
+.etc-map {
+  height: 560px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background: var(--paper-card);
+}
+.etc-map--loading {
+  background: var(--paper-deep);
+}
+.etc-map--fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+}
+.etc-map__pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--accent);
+  transform: rotate(-45deg);
+  box-shadow: 0 4px 10px rgba(20, 16, 10, 0.18);
+}
+.etc-map__fallback-loc {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--ink);
+  margin: 0;
+}
+.etc-map__fallback-note {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin: 6px 0 0;
+}
+/* Mapbox popup content (injected as raw HTML by EtcMap) */
+.etc-map__popup b {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 400;
+  display: block;
+  color: var(--ink);
+}
+.etc-map__popup span {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.etc-map__popup a {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* Error + empty + skeleton */
+.etcs-error {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 28px;
+}
+.etcs-error__msg {
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+.etcs-error__retry {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+.etcs-empty {
+  background: var(--paper-card);
+  border: 1px dashed var(--rule);
+  border-radius: 14px;
+  padding: 28px;
+  color: var(--ink-soft);
+}
+.etcs-empty p {
+  margin: 0 0 14px;
+}
+.etcs-skel {
+  background: var(--rule-soft);
+  border-radius: 6px;
+  animation: etcs-pulse 1.4s ease-in-out infinite;
+}
+.etcs-skel--line {
+  height: 14px;
+  margin: 8px 0;
+}
+.etcs-skel--block {
+  height: 80px;
+  margin-top: 16px;
+}
+.etc-card--skeleton {
+  background: var(--paper-card);
+}
+@keyframes etcs-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .etcs-skel {
+    animation: none;
+  }
+}
+
+/* Mobile: stack rail → list → map (list-first). */
+@media (max-width: 900px) {
+  .etcs-cols {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .etcs-mapcol__sticky {
+    position: static;
+  }
+  .etc-map {
+    height: 360px;
+  }
+  .etc-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+  }
+  .etc-filters__grp {
+    border-bottom: 0;
+    padding: 0;
+    margin: 0;
+  }
+}
+
+/* ==========================================================================
+ * Slice 4 § 16.2 — /etcs/:slug profile (Round 5 locked C+A hybrid:
+ * prose main + sticky clinician-priority rail with a persistent Inquire,
+ * plus a large closing Inquire panel at the end of the body).
+ * ==========================================================================
+ */
+.etcp-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 32px 90px;
+}
+.etcp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 26px 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.etcp-back:hover {
+  color: var(--accent);
+}
+.etcp-head {
+  padding: 18px 0 30px;
+}
+.etcp-h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 5vw, 3.6rem);
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+  margin: 0 0 8px;
+}
+.etcp-sub {
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.etcp-cols {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 48px;
+  align-items: start;
+}
+.etcp-cols > * {
+  min-width: 0;
+}
+
+.etcp-sec {
+  padding: 0 0 30px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.etcp-sec:last-of-type {
+  border-bottom: 0;
+}
+.etcp-prose {
+  font-size: 16px;
+  line-height: 1.72;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+}
+.etcp-prose:last-child {
+  margin-bottom: 0;
+}
+
+.etcp-prog {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: border-color 120ms var(--ease-out);
+}
+.etcp-prog + .etcp-prog {
+  margin-top: 12px;
+}
+.etcp-prog:hover {
+  border-color: var(--accent);
+}
+.etcp-prog__name {
+  font-family: var(--serif);
+  font-size: 21px;
+}
+.etcp-prog__meta {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.etcp-prog__go {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--accent);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.etcp-doc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  text-decoration: none;
+  color: var(--ink);
+}
+.etcp-doc:last-child {
+  border-bottom: 0;
+}
+.etcp-doc__t {
+  font-family: var(--serif);
+  font-size: 16px;
+}
+.etcp-doc__s {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.etcp-doc:hover .etcp-doc__s {
+  color: var(--accent);
+}
+
+/* Large closing Inquire panel (A's component) */
+.etcp-inquire {
+  margin-top: 12px;
+  background: var(--accent);
+  border-radius: 16px;
+  padding: 28px;
+  text-align: center;
+}
+.etcp-inquire__note {
+  color: rgba(255, 254, 251, 0.74);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 auto 16px;
+  max-width: 460px;
+}
+.etcp-inquire__btn {
+  display: inline-block;
+  background: var(--paper-bright);
+  color: var(--accent);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  padding: 13px 28px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: transform 120ms var(--ease-out);
+}
+.etcp-inquire__btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Sticky clinician-priority rail */
+.etcp-rail {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.etcp-panel {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 20px;
+}
+.etcp-panel--key {
+  border-top: 3px solid var(--accent);
+}
+.etcp-panel__lab {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.etcp-lic {
+  display: inline-block;
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-ring);
+  border-radius: 999px;
+  padding: 5px 11px;
+}
+.etcp-accepting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-top: 14px;
+}
+.etcp-claim {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin-top: 10px;
+}
+.etcp-rail-cta {
+  display: block;
+  margin-top: 16px;
+  background: var(--accent);
+  color: var(--paper-bright);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background-color 120ms var(--ease-out);
+}
+.etcp-rail-cta:hover {
+  background: var(--accent-soft);
+}
+.etcp-md__name {
+  font-family: var(--serif);
+  font-size: 19px;
+}
+.etcp-md__cred {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+.etcp-md__box {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+.etcp-md__box-l {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-bottom: 3px;
+}
+.etcp-md__email {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.etcp-md__phone {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin-top: 8px;
+}
+.etcp-loc {
+  font-style: normal;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.etcp-loc__phone {
+  margin-top: 10px;
+}
+.etcp-loc__phone a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.etcp-loc__hours {
+  margin-top: 10px;
+  white-space: pre-line;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.etcp-notfound {
+  padding-top: 60px;
+}
+
+/* Mobile: rail first (key facts + MD + location + compact inquire up top),
+ * then prose body, closing with the big Inquire. Honors "prominent at the
+ * beginning + large at the bottom" on small screens too. */
+@media (max-width: 900px) {
+  .etcp-cols {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .etcp-side {
+    order: -1;
+  }
+  .etcp-rail {
+    position: static;
+  }
+}
+
+/* ==========================================================================
+ * Slice 4 § 11.4b — /browse faceted catalog (Round 6 locked Variant D:
+ * compact editorial rail + square photo-tile cards, trumprx structure with
+ * Lewis clinical content — no pricing, no marketing seals).
+ * ==========================================================================
+ */
+.browse-wrap {
+  /* 1240px + 80px bottom matches /conditions exactly (.container width and the
+   * .conditions-index padding-bottom) so all three patient directory indexes
+   * land on the same content width and footer rhythm. */
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 32px 80px;
+}
+/* .browse-head / .browse-h1 / .browse-intro removed — /browse now uses the
+ * shared .masthead block (eyebrow + serif H1 + serif italic lede + 3px double
+ * rule) to match /conditions and /etcs exactly. */
+
+.browse-cols {
+  display: grid;
+  grid-template-columns: 208px 1fr;
+  gap: 40px;
+  padding-top: 14px;
+  align-items: start;
+}
+.browse-cols > * {
+  min-width: 0;
+}
+
+.browse-rail__grp {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.browse-rail__grp:first-child {
+  padding-top: 0;
+}
+.browse-rail__grp:last-child {
+  border-bottom: 0;
+}
+.browse-rail__h {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 400;
+  margin-bottom: 9px;
+}
+.browse-rail__b {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.browse-rail__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  line-height: 1.3;
+}
+.browse-rail__cb {
+  accent-color: var(--accent);
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.browse-rail__opt[data-on] .browse-rail__n {
+  color: var(--accent);
+}
+.browse-rail__ct {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.browse-rail__more {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-style: italic;
+  font-family: var(--serif);
+  margin: 6px 0 0;
+}
+
+.browse-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.browse-count {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.browse-sort__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.browse-sort {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  background: var(--paper-bright);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.browse-sort:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+.browse-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0 2px;
+}
+.browse-chip {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-ring);
+  border-radius: 999px;
+  padding: 5px 10px 5px 12px;
+  cursor: pointer;
+  transition: background-color 120ms var(--ease-out);
+}
+.browse-chip:hover {
+  background: rgba(44, 74, 107, 0.16);
+}
+.browse-chip__x {
+  margin-left: 7px;
+  color: var(--ink-faint);
+}
+.browse-chip--clear {
+  color: var(--ink-soft);
+  background: none;
+  border-color: var(--rule);
+}
+.browse-chip--clear:hover {
+  background: var(--paper-card);
+}
+
+.browse-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px 22px;
+  margin-top: 20px;
+}
+.browse-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: var(--ink);
+}
+.browse-card__photo {
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  background: radial-gradient(120% 110% at 50% 22%, #fbfaf6 0%, #edebe0 68%, #e4e2d6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition:
+    transform 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+.browse-card:hover .browse-card__photo {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(40, 30, 20, 0.1);
+}
+.browse-card__tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  background: rgba(255, 254, 251, 0.78);
+  border: 1px solid var(--rule-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.browse-card__art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 14px 18px rgba(40, 30, 20, 0.16));
+}
+.browse-card__name {
+  font-family: var(--serif);
+  font-size: 23px;
+  letter-spacing: -0.01em;
+  margin-top: 18px;
+}
+.browse-card__ind {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.browse-card__meta {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin-top: 9px;
+}
+.browse-card__btn {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 9px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-soft);
+  transition:
+    border-color 120ms var(--ease-out),
+    color 120ms var(--ease-out);
+}
+.browse-card:hover .browse-card__btn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.browse-card--skeleton .browse-card__photo {
+  background: var(--paper-card);
+}
+
+.browse-empty {
+  background: var(--paper-card);
+  border: 1px dashed var(--rule);
+  border-radius: 14px;
+  padding: 32px;
+  color: var(--ink-soft);
+  margin-top: 20px;
+}
+.browse-empty p {
+  margin: 0 0 14px;
+}
+
+.browse-signup {
+  margin-top: 44px;
+  background: var(--paper-card);
+  border: 1px solid var(--rule-soft);
+  border-radius: 14px;
+  padding: 22px;
+}
+.browse-signup p {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .browse-cols {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .browse-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+@media (max-width: 560px) {
+  .browse-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+ * Slice 4 § 11.9 — /marketing/confirm + /marketing/unsubscribe landing pages
+ * for Resend token links. Calm centered editorial; tokens are noIndex.
+ * ==========================================================================
+ */
+.mkt-wrap {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 88px 32px 96px;
+  text-align: center;
+}
+.mkt-h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 3.6vw, 2.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+.mkt-body {
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0 auto 28px;
+  max-width: 440px;
+}
+.mkt-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-family: var(--sans);
+  font-size: 26px;
+  line-height: 1;
+}
+.mkt-mark--good {
+  background: var(--accent);
+  color: var(--paper-bright);
+}
+.mkt-mark--quiet {
+  background: var(--paper-card);
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+}
+.mkt-cta {
+  display: inline-block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms var(--ease-out);
+}
+.mkt-cta:hover {
+  border-bottom-color: var(--accent);
+}
+.mkt-loading {
+  color: var(--ink-soft);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  margin: 14px 0 0;
+}
+.mkt-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid var(--rule-soft);
+  border-top-color: var(--accent);
+  margin: 0 auto;
+  animation: mkt-spin 0.9s linear infinite;
+}
+@keyframes mkt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mkt-spinner {
+    animation-duration: 2s;
+  }
+}
+
+/* ==========================================================================
+ *  /eligibility/:slug — § 17.4 fail-branch hybrid (slice 5 design Round 1).
+ *  B's letter-prose left + B's i./ii./iii. letter-row stack right, sized for
+ *  the 380px rail. Pass branch keeps its prior centered layout.
+ *
+ *  Layout note: NO min-height: 100vh on the container. The pass branch
+ *  centers vertically in the viewport because its content is short; the
+ *  fail branch is tall content (prose + rail) that wants to start near the
+ *  top of the visible area, right under the TopNav. A viewport-height
+ *  floor would render a tall void below the content and read as
+ *  "shoved down." Padding-top is 48px (was 72px) because the live page
+ *  already has the TopNav above us — the comparison preview only had a
+ *  thin topbar.
+ * ========================================================================== */
+/* OUTER container: full-width, full-height (minus 80px TopNav), with
+ * flex centering on both axes. The INNER grid is what gets centered.
+ * On a viewport where the grid is shorter than the visible area, the
+ * grid sits perfectly in the middle of the space between TopNav and
+ * the bottom of the viewport. On a viewport where the grid is taller,
+ * min-height stops applying and the content scrolls naturally. */
+.elig-fail {
+  background: var(--paper);
+  min-height: calc(100vh - 80px);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  box-sizing: border-box;
+}
+/* INNER grid: max 1100px wide. Both columns top-align inside the grid
+ * via align-items: start so the eyebrow on the left and the rail-label
+ * on the right share the same Y baseline. */
+.elig-fail__grid {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 64px;
+  align-items: start;
+}
+
+.elig-fail__prose {
+  min-width: 0;
+  /* Reset the global `section { padding: 120px 0; }` rhythm. This section is
+   * a grid column inside a viewport-centered result layout, not a page band. */
+  padding: 0;
+}
+
+.elig-fail__eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 24px;
+}
+.elig-fail__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.elig-fail__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 24px;
+  max-width: 22ch;
+}
+.elig-fail__program {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Load-bearing italic-inline reason. The em inside is the verbatim
+ * failedCriterion clause from the evaluator (or, post item 15, from the
+ * API). */
+.elig-fail__reason {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 18px;
+  max-width: 56ch;
+}
+.elig-fail__reason-em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.elig-fail__lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+  max-width: 56ch;
+}
+.elig-fail__lede:last-of-type {
+  margin-bottom: 0;
+}
+.elig-fail__lede strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.elig-fail__footnote {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 56ch;
+}
+
+/* Right rail — B's letter-row stack, sized for 380px. Matches the
+ * preview exactly. */
+.elig-fail__rail-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 4px;
+  padding-left: 6px;
+}
+.elig-fail__path {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 22px 6px;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+  color: inherit;
+  transition: padding-left 140ms ease;
+}
+.elig-fail__path:hover {
+  padding-left: 14px;
+}
+.elig-fail__path:first-of-type {
+  border-top: 1px solid var(--rule);
+}
+.elig-fail__path:focus-visible {
+  outline: 2px solid var(--accent-ring, var(--accent));
+  outline-offset: 4px;
+}
+.elig-fail__path-num {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 30px;
+  color: var(--ink-faint);
+  line-height: 1;
+  padding-top: 4px;
+}
+.elig-fail__path-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.elig-fail__path-desc {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+.elig-fail__path-cta {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.elig-fail__path-cta::after {
+  content: "→";
+  display: inline-block;
+  transition: transform 120ms ease;
+}
+.elig-fail__path:hover .elig-fail__path-cta::after {
+  transform: translateX(2px);
+}
+
+/* Mobile — collapse to a single column, rail drops below prose, sticky off. */
+@media (max-width: 880px) {
+  .elig-fail {
+    padding: 56px 20px 80px;
+  }
+  .elig-fail__grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .elig-fail__rail {
+    position: static;
+  }
+  .elig-fail__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.4rem);
+  }
+  .elig-fail__reason {
+    font-size: 17.5px;
+  }
+  .elig-fail__lede {
+    font-size: 16px;
+  }
+}
+
+/* ==========================================================================
+ *  /connect/:slug — § 18.1 / 18.2 hybrid form (slice 5 design Round 2).
+ *  B's letter-prose intro left + A/C's boxed inputs + "What happens next"
+ *  letter-row rail right. Sticky rail (top: 112px = 80px TopNav + 32px
+ *  breathing room) so the four-step explainer stays visible as the user
+ *  scrolls through the form.
+ *
+ *  IMPORTANT: the prose column wraps in <div>, not <section>, to avoid
+ *  the global `section { padding: 120px 0 }` rule from bleeding 120px of
+ *  top padding into the left column (see lesson learned on slice 5
+ *  /eligibility fail-branch).
+ * ========================================================================== */
+/* Vertically centers the whole grid (form left + sticky rail right) between
+ * TopNav and footer when content fits the viewport; degrades to natural
+ * scroll when the form is taller than the viewport. Mirrors `.elig-fail`. */
+.connect-form {
+  background: var(--paper);
+  min-height: calc(100vh - 80px);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  box-sizing: border-box;
+}
+
+/* Inner grid: max 1100px wide. Both columns top-align so the eyebrow on the
+ * left and the rail-label on the right share the same Y baseline INSIDE the
+ * centered grid box. */
+.connect-form__grid {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 72px;
+  align-items: start;
+}
+
+/* ----- LEFT: prose + form ----- */
+.connect-form__prose {
+  min-width: 0;
+  /* Defensive padding reset in case this lands inside any `section`-scoped
+   * rhythm later (today the wrapper is a <div>; future markup changes
+   * should also use <div>). */
+  padding: 0;
+}
+
+.connect-form__eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 24px;
+}
+.connect-form__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.connect-form__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.4vw, 3.1rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 22px;
+  max-width: 22ch;
+}
+.connect-form__em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+.connect-form__em-accent {
+  font-style: italic;
+  color: var(--accent);
+}
+
+/* § 18.1 privacy framing — reads as a letter paragraph, not a card. */
+.connect-form__privacy {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 14px;
+  max-width: 56ch;
+}
+.connect-form__privacy-coda {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 16.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0 0 44px;
+  max-width: 56ch;
+}
+
+/* ----- A/C boxed input fields ----- */
+.connect-form__fields {
+  display: grid;
+  gap: 20px;
+}
+.connect-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.connect-form__label {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.connect-form__opt {
+  font-weight: 400;
+  color: var(--ink-faint);
+  font-size: 12px;
+  margin-left: 6px;
+}
+.connect-form__input,
+.connect-form__textarea {
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px 14px;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.connect-form__input:focus,
+.connect-form__textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 95, 198, 0.16);
+}
+.connect-form__input:disabled,
+.connect-form__textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.connect-form__textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.connect-form__help {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 4px 0 0;
+}
+.connect-form__error {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: #b04545;
+  background: rgba(176, 69, 69, 0.06);
+  border-left: 3px solid #b04545;
+  padding: 10px 14px;
+  border-radius: 0 4px 4px 0;
+  margin: 4px 0 0;
+}
+
+.connect-form__submit-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+.connect-form__submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: white;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 13px 24px;
+  border-radius: 999px;
+  transition: background-color 120ms ease;
+}
+.connect-form__submit:hover:not(:disabled) {
+  background: var(--accent-ring, #2a2e8a);
+}
+.connect-form__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.connect-form__submit::after {
+  content: "→";
+}
+
+/* ----- RIGHT: "What happens next" sticky letter-row rail ----- */
+/* Sticky offset = 80px sticky TopNav + 32px breathing room. The rail's
+ * own height is shorter than its surrounding prose, so it stays in view
+ * elegantly as the user scrolls down the form on desktop. */
+.connect-form__rail {
+  position: sticky;
+  top: 112px;
+  padding-top: 4px;
+  /* align-self: start required inside a grid cell so sticky measures
+   * against the cell's natural height, not the (much taller) prose
+   * column. Without this the sticky won't activate as expected. */
+  align-self: start;
+}
+.connect-form__rail-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 4px;
+  padding-left: 6px;
+}
+.connect-form__step {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 22px 6px;
+  border-bottom: 1px solid var(--rule);
+}
+.connect-form__step:first-of-type {
+  border-top: 1px solid var(--rule);
+}
+.connect-form__step-num {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 30px;
+  color: var(--ink-faint);
+  line-height: 1;
+  padding-top: 4px;
+}
+.connect-form__step-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.connect-form__step-desc {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* ----- Loading / not-found / error / success states ----- */
+.connect-form--state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  padding: 32px;
+}
+.connect-form__state-body {
+  max-width: 560px;
+  text-align: center;
+}
+.connect-form__state-lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0 0 32px;
+}
+.connect-form__state-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ink);
+  color: var(--paper-bright);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 999px;
+  transition: background-color 120ms ease;
+}
+.connect-form__state-cta:hover {
+  background: #1f1d18;
+}
+.connect-form__skeleton {
+  width: 100%;
+  max-width: 600px;
+  height: 320px;
+  background: linear-gradient(
+    90deg,
+    rgba(58, 52, 42, 0.04) 0%,
+    rgba(58, 52, 42, 0.08) 50%,
+    rgba(58, 52, 42, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: connect-form-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes connect-form-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .connect-form__skeleton {
+    animation: none;
+  }
+}
+
+.connect-form__success-mark {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-soft, #ecedfa);
+  color: var(--accent);
+  font-size: 28px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  font-weight: 500;
+}
+.connect-form__prep-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--ink);
+  margin: 32px 0 14px;
+  text-align: left;
+}
+.connect-form__prep {
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  padding-left: 22px;
+  margin: 0 0 32px;
+}
+.connect-form__prep li {
+  margin-bottom: 4px;
+}
+
+/* Mobile — collapse to single column; sticky drops. */
+@media (max-width: 880px) {
+  .connect-form {
+    padding: 32px 20px 64px;
+  }
+  .connect-form__grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .connect-form__rail {
+    position: static;
+    padding-top: 0;
+  }
+  .connect-form__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.4rem);
+  }
+  .connect-form__privacy {
+    font-size: 17px;
+  }
+  .connect-form__privacy-coda {
+    font-size: 15.5px;
+    margin-bottom: 32px;
+  }
+}
+
+/* ==========================================================================
+ *  /for-clinicians — slice 5 § 20.
+ *  Single-column editorial letter with a fixed viewport CTA. The structural
+ *  lane is wider than the prose measure so cards and checklists have desktop
+ *  room without turning the body copy into long horizontal lines.
+ * ========================================================================== */
+.for-clin {
+  background: var(--paper);
+  /* Outer container max-width holds the 1180px page-chrome convention
+   * from the rest of the directory. The letter lane inside is centered
+   * and capped at 720px; every section — prose, headings, checklist,
+   * sources, programs — shares that single width. */
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+
+/* Single-column editorial letter — unified with /for-manufacturers and
+ * /for-etcs on one 720px lane. Previously this split into a 680px copy
+ * width centered inside an 840px structural lane; because the copy was
+ * centered (margin: 0 auto) while the checklist/sources/programs filled
+ * 840px, headings sat inset ~80px from the lists they headed. Collapsing
+ * both values to 720px makes copy fill the lane, so the auto side-margins
+ * distribute zero and every section shares the same left and right edge. */
+.for-clin__letter-col {
+  --for-clin-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-clin__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  margin: 0 auto 32px;
+  max-width: var(--for-clin-copy-width);
+  color: var(--ink);
+}
+.for-clin__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Closing vignette before the bibliography — a small centered scholarly
+ * plate that sits immediately above the "Sources cited." h2 section.
+ * Cajal's 1899 Purkinje neuron drawing in the museum-mat treatment used
+ * across the site (Glacier homepage slot #1, Bowdoin prairie homepage
+ * slot #3, HomePage ForClinicians Ammon's-horn, /programs/wst-057
+ * nerve endings, AboutPage 1836 Hooker plate).
+ *
+ * Centered within the wider letter column at 320px max-width — intimate,
+ * the size of an illustrated tailpiece rather than a hero image. The
+ * margins detach it from the preceding paragraph (48px top) and let
+ * the next h2's own 56px top margin breathe below. Caption is centered
+ * (vs the left-aligned captions on landscape photos) because the
+ * figure itself is centered — keeps the visual axis consistent.
+ *
+ * Class name retained as `__frontispiece` from the original placement
+ * for stability; semantically it's now a tailpiece. */
+.for-clin__frontispiece {
+  margin: 48px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 320px;
+}
+.for-clin__frontispiece-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.for-clin__frontispiece-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.for-clin__frontispiece figcaption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: center;
+  line-height: 1.45;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .for-clin__frontispiece {
+    max-width: 260px;
+    margin: 36px auto 0;
+  }
+  .for-clin__frontispiece-mat {
+    padding: 10px;
+  }
+}
+
+/* .for-clin__letter intentionally stays uncapped: structural elements fill
+ * the 720px lane. Unclassed body paragraphs get the shared copy measure
+ * (= the lane), so they run flush with the headings and lists;
+ * specialized paragraphs own their own class rules below. */
+.for-clin__letter > p:not([class]) {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__letter > p:not([class]) strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-clin__letter h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px auto 18px;
+  color: var(--ink);
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__salutation {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* Three-step refer-flow list — lower-roman inline numerals, calm rhythm. */
+.for-clin__process {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 12px 0 22px;
+}
+.for-clin__process > li {
+  counter-increment: step;
+  padding: 16px 0 16px 56px;
+  border-top: 1px solid var(--rule);
+  position: relative;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.for-clin__process > li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-clin__process > li::before {
+  content: counter(step, lower-roman) ".";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  font-style: italic;
+  color: var(--ink-faint);
+  font-size: 22px;
+  font-weight: 300;
+}
+/* Step labels use the same serif voice as the surrounding letter. */
+.for-clin__process > li > strong {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 6px;
+  text-transform: none;
+}
+
+.for-clin__signoff {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-soft);
+  margin: 40px auto 0;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+/* Fixed viewport CTA. Kept outside transformed `.fade-up` wrappers in JSX
+ * because transformed ancestors can trap fixed descendants. */
+.directory-floating-cta {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 10px 8px 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  box-shadow:
+    0 8px 28px rgba(58, 52, 42, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  max-width: 520px;
+  width: max-content;
+}
+.directory-floating-cta__lead {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.directory-floating-cta__action {
+  background: var(--accent);
+  color: var(--paper);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 120ms ease;
+}
+.directory-floating-cta__action:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+.directory-floating-cta__action::after {
+  content: " →";
+}
+/* "Sources cited." section at the bottom of the letter — editorial
+ * bibliography styling with explicit download affordances. Each <li>
+ * is a clickable card: ink-rule border, paper-bright background,
+ * three columns (lower-roman mark · title+meta · "Download PDF ↓"
+ * action), and a strong hover state (accent border + accent title
+ * color + filled-pill download action). Replaces the cramped rail
+ * docs card. */
+.for-clin__sources-lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0 auto 18px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__sources {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+}
+.for-clin__sources li {
+  margin: 0;
+}
+.for-clin__source {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.for-clin__source:hover {
+  border-color: var(--accent);
+  background: var(--paper-bright);
+}
+.for-clin__source:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.for-clin__source-mark {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 28px;
+  color: var(--ink-faint);
+  line-height: 1;
+  text-align: center;
+}
+.for-clin__source:hover .for-clin__source-mark {
+  color: var(--accent);
+}
+.for-clin__source-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.for-clin__source-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 18;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--ink);
+  transition: color 120ms ease;
+}
+.for-clin__source:hover .for-clin__source-title {
+  color: var(--accent);
+}
+.for-clin__source-meta {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.for-clin__source-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+  white-space: nowrap;
+}
+.for-clin__source:hover .for-clin__source-action {
+  background: var(--accent);
+  color: var(--paper);
+}
+.for-clin__source-icon {
+  flex: 0 0 14px;
+}
+
+@media (max-width: 720px) {
+  .for-clin__source {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 18px;
+  }
+  .for-clin__source-action {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .for-clin__source-mark {
+    font-size: 22px;
+  }
+}
+
+/* Inline referral-letter checklist nested inside Step 1. */
+.for-clin__step-includes-head {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+  margin: 20px 0 8px;
+}
+.for-clin__step-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.for-clin__step-checklist li {
+  padding: 5px 0 5px 26px;
+  position: relative;
+}
+.for-clin__step-checklist li::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  position: absolute;
+  left: 0;
+  top: 9px;
+  background: var(--paper);
+}
+.for-clin__cite {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+.for-clin__license-state {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Programs section now lives INSIDE .for-clin__letter-col (no longer a
+ * direct grid child spanning both columns) so it inherits the letter's
+ * H2-to-H2 rhythm and its divider is naturally column-width — matches
+ * all other dividers on the page. Same applies to .for-clin__independence
+ * below.
+ *
+ * Spacing math: 56px margin-top (matches the body's H2 rhythm) + 1px
+ * border + 32px padding-top (gap between divider and H2) ≈ 89px total,
+ * tighter than the original 80+56+1 = 137px and reads as a clean
+ * "new section" break rather than a chapter break. */
+.for-clin__programs {
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid var(--rule);
+}
+/* Match .for-clin__letter h2 styling exactly so the "Available programs."
+ * H2 has the same weight, opsz, size, line-height, and letter-spacing as
+ * every other H2 in the body letter. Zero top margin: the parent
+ * .for-clin__programs's padding-top + border-top already provide the
+ * separation from the previous content. */
+.for-clin__programs-h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 auto 18px;
+  color: var(--ink);
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__programs-sub {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15.5px;
+  color: var(--ink-soft);
+  margin: 0 auto 28px;
+  max-width: var(--for-clin-copy-width);
+}
+.for-clin__programs-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-width: 100%;
+}
+.for-clin__program-card {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: border-color 120ms ease;
+}
+.for-clin__program-card:hover {
+  border-color: var(--rule-strong);
+}
+.for-clin__program-name {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 400;
+  font-size: 18px;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+.for-clin__program-meta {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.for-clin__program-cta {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--accent);
+  padding-top: 4px;
+  white-space: nowrap;
+}
+.for-clin__program-cta::after {
+  content: " →";
+}
+.for-clin__programs-more {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  margin: 14px auto 0;
+  max-width: var(--for-clin-copy-width);
+}
+/* Secondary "browse the full directory" link that replaced the
+ * deleted rail's outline-pill CTA. Quiet inline text link with an
+ * arrow affordance — earns the click only for readers who already
+ * scanned the program card and want more. Underlined on hover, ink
+ * color shift on focus-visible for keyboard nav. */
+.for-clin__programs-browse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(100%, var(--for-clin-copy-width));
+  margin: 14px auto 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.for-clin__programs-browse::after {
+  content: "→";
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.for-clin__programs-browse:hover {
+  border-bottom-color: var(--accent);
+}
+.for-clin__programs-browse:hover::after {
+  transform: translateX(3px);
+}
+.for-clin__programs-browse:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.for-clin__independence {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin: 56px auto 0;
+  max-width: var(--for-clin-copy-width);
+}
+
+/* Mobile — tighter outer padding, smaller H1, and the floating pill
+ * widens to fill the viewport with 12px side margins so it doesn't
+ * feel marooned in the middle of a narrow screen. */
+@media (max-width: 960px) {
+  .for-clin {
+    padding: 48px 20px 80px;
+  }
+  .for-clin__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.3rem);
+  }
+}
+@media (max-width: 640px) {
+  .directory-floating-cta {
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    padding: 8px 8px 8px 18px;
+    gap: 10px;
+    justify-content: space-between;
+  }
+  .directory-floating-cta__lead {
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .directory-floating-cta__action {
+    padding: 8px 14px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+}
+
+/* ==========================================================================
+ *  /for-manufacturers — slice 5 § 21.
+ *  Single-column editorial letter with a fixed viewport CTA.
+ * ========================================================================== */
+.for-spons {
+  background: var(--paper);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+
+/* Visually-hidden utility — keeps content in the a11y tree but invisible
+ * to sighted users. Used on the comparison table's first column header
+ * (where the cell is visually blank) to satisfy axe's empty-table-header
+ * rule. The rule requires actual text content; aria-label alone doesn't
+ * count. */
+.for-spons__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.for-spons__letter-col {
+  --for-spons-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-spons__eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 auto 28px;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.for-spons__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  margin: 0 auto 32px;
+  max-width: var(--for-spons-copy-width);
+  color: var(--ink);
+}
+.for-spons__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+.for-spons__letter p {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__letter p strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-spons__letter h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px auto 18px;
+  color: var(--ink);
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.for-spons__compare-wrap {
+  width: 100%;
+  margin: 8px 0 22px;
+}
+
+/* ----- 8-row analytical comparison table (the load-bearing element). */
+.for-spons__compare {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.for-spons__compare thead th {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: left;
+  padding: 18px 18px 14px;
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.for-spons__compare thead th:first-child {
+  color: var(--ink-faint);
+  background: transparent;
+  width: 35%;
+}
+.for-spons__compare-col-h {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 22;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 18px;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+.for-spons__compare tbody td,
+.for-spons__compare tbody th {
+  padding: 12px 18px;
+  vertical-align: top;
+  border-top: 1px solid var(--rule);
+}
+.for-spons__compare tbody th {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-align: left;
+  background: transparent;
+}
+.for-spons__compare tbody td {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.for-spons__compare tbody td strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-spons__compare tbody tr:last-child th,
+.for-spons__compare tbody tr:last-child td {
+  background: var(--accent-bg);
+  border-top: 1px solid var(--rule-strong);
+}
+.for-spons__compare tbody tr:last-child th {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ----- Platform modules — hairline-bordered tick list. */
+.for-spons__modules {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.for-spons__modules li {
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.for-spons__modules li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-spons__modules li strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-spons__modules li span {
+  color: var(--ink-soft);
+}
+.for-spons__platform-coda {
+  margin-top: 22px;
+}
+
+/* ----- 3-step process list — same lower-roman pattern as /for-clinicians. */
+.for-spons__process {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 12px 0;
+}
+.for-spons__process li {
+  counter-increment: step;
+  padding: 16px 0 16px 56px;
+  border-top: 1px solid var(--rule);
+  position: relative;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.for-spons__process li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-spons__process li::before {
+  content: counter(step, lower-roman) ".";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  font-style: italic;
+  color: var(--ink-faint);
+  font-size: 22px;
+  font-weight: 300;
+}
+.for-spons__process li strong {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+/* ----- Sources cited (mirrors /for-clinicians convention). */
+.for-spons__letter p.for-spons__sources-lede {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0 auto 18px;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__sources {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+}
+.for-spons__source {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.for-spons__source:hover {
+  border-color: var(--accent);
+}
+.for-spons__source:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.for-spons__source-mark {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 56;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 28px;
+  color: var(--ink-faint);
+  line-height: 1;
+  text-align: center;
+}
+.for-spons__source:hover .for-spons__source-mark {
+  color: var(--accent);
+}
+.for-spons__source-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.for-spons__source-title {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 18;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--ink);
+  transition: color 120ms ease;
+}
+.for-spons__source:hover .for-spons__source-title {
+  color: var(--accent);
+}
+.for-spons__source-meta {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.for-spons__source-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+  white-space: nowrap;
+}
+.for-spons__source:hover .for-spons__source-action {
+  background: var(--accent);
+  color: var(--paper);
+}
+.for-spons__source-icon {
+  flex: 0 0 14px;
+}
+
+/* ----- Signoff + independence footnote. */
+.for-spons__letter p.for-spons__signoff {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-soft);
+  margin: 40px auto 0;
+  line-height: 1.6;
+  max-width: var(--for-spons-copy-width);
+}
+.for-spons__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+.for-spons__letter p.for-spons__independence {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin: 56px auto 0;
+  max-width: var(--for-spons-copy-width);
+}
+
+/* Mobile — tighter outer padding. Comparison table becomes horizontally
+ * scrollable to preserve its structure. */
+@media (max-width: 960px) {
+  .for-spons {
+    padding: 48px 20px 80px;
+  }
+  .for-spons__h1 {
+    font-size: clamp(1.9rem, 8vw, 2.3rem);
+  }
+  .for-spons__compare-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .for-spons__compare {
+    min-width: 680px;
+  }
+  .for-spons__compare thead th:first-child {
+    width: auto;
+  }
+}
+@media (max-width: 720px) {
+  .for-spons__source {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 18px;
+  }
+  .for-spons__source-action {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .for-spons__source-mark {
+    font-size: 22px;
+  }
+}
+/* ==========================================================================
+ *  /for-etcs — slice 5 § 22.
+ *  Round 5 winner: ETRB callout up top + RULE-by-RULE compliance table (with
+ *  RULE 16 row highlighted) + Recurring deadlines reference table + "How to
+ *  get started" 5-step funnel in the sticky rail. Same chrome as
+ *  /for-clinicians and /for-manufacturers (1180px wrap, 320px rail, 40px gap,
+ *  756px letter column, 65ch prose cap).
+ * ========================================================================== */
+.for-etcs {
+  background: var(--paper);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+
+/* Single-column editorial letter — same architecture as /for-clinicians
+ * and /for-manufacturers. One 720px lane that every section shares: prose,
+ * headings, both analytical tables, the ETRB callout, the partner block,
+ * and the funnel all sit flush at the same left and right edge. The copy
+ * width equals the lane so paragraph `margin: 0 auto` distributes zero
+ * and nothing staggers. */
+.for-etcs__letter-col {
+  --for-etcs-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-etcs__h1 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 32px;
+  max-width: var(--for-etcs-copy-width);
+  color: var(--ink);
+}
+.for-etcs__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Prose, headings, tables, callouts all fill the 720px lane so every
+ * section shares both edges. Body paragraphs use the copy-width variable
+ * (= the lane) rather than a 65ch cap, so they run flush with the tables
+ * and headings instead of stopping short. */
+.for-etcs__letter {
+  /* fills the lane */
+}
+.for-etcs__letter p {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-etcs-copy-width);
+}
+.for-etcs__letter p strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.for-etcs__letter h2 {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px 0 18px;
+  color: var(--ink);
+}
+.for-etcs__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+.for-etcs__inline-code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.9em;
+  background: rgba(58, 52, 42, 0.06);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ----- ETRB callout — accent-bordered block promoted to top of letter.
+ * Sells the medical-director persona before they hit the RULE table. */
+.for-etcs__etrb-callout {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 28px 32px;
+  margin: 8px 0 24px;
+}
+.for-etcs__etrb-callout-label {
+  font-family: var(--sans) !important;
+  font-size: 11px !important;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+  margin: 0 0 12px !important;
+  max-width: none !important;
+}
+.for-etcs__etrb-callout p {
+  font-family: var(--serif);
+  font-size: 16px !important;
+  line-height: 1.65 !important;
+  color: var(--ink);
+  margin: 0 0 14px !important;
+  max-width: none !important;
+}
+.for-etcs__etrb-callout p:last-child {
+  margin-bottom: 0 !important;
+}
+.for-etcs__etrb-callout p strong {
+  font-weight: 500;
+}
+
+/* ----- Shared table chrome for both compliance + deadlines tables.
+ * Fills the full 756px letter column with hairline rule borders, accent-
+ * tinted header row, and accent-colored last column (compliance only). */
+.for-etcs__ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 22px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.for-etcs__ds-table thead th {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: left;
+  padding: 16px 18px 12px;
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--rule);
+}
+.for-etcs__ds-table tbody td {
+  padding: 11px 18px;
+  vertical-align: top;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* Compliance table — Requirement | RULE | Lewis module. */
+.for-etcs__compliance tbody td:first-child {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.for-etcs__compliance tbody td:nth-child(2) {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.for-etcs__compliance tbody td:last-child {
+  color: var(--accent);
+  font-weight: 500;
+}
+/* RULE 16 row — visual echo of the top callout. */
+.for-etcs__compliance-row--highlight td {
+  background: var(--accent-bg);
+}
+.for-etcs__compliance-row--highlight td:first-child::before {
+  content: "★ ";
+  color: var(--accent);
+  font-style: normal;
+}
+
+/* Deadlines table — Cadence | Requirement | RULE / Section. */
+.for-etcs__deadlines tbody td:first-child {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.for-etcs__deadlines tbody td:nth-child(2) {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.for-etcs__deadlines tbody td:last-child {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.for-etcs__table-coda {
+  font-family: var(--serif) !important;
+  font-style: italic;
+  font-size: 14.5px !important;
+  color: var(--ink-soft) !important;
+  margin: 0 0 24px !important;
+  max-width: var(--for-etcs-copy-width) !important;
+  line-height: 1.6 !important;
+}
+
+/* ----- Design partner block. */
+.for-etcs__partner {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 22px 26px;
+  margin: 8px 0 22px;
+}
+.for-etcs__partner-label {
+  font-family: var(--sans) !important;
+  font-size: 10.5px !important;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+  margin: 0 0 8px !important;
+  max-width: none !important;
+}
+.for-etcs__partner p {
+  font-family: var(--serif);
+  font-size: 15.5px !important;
+  line-height: 1.6 !important;
+  color: var(--ink);
+  margin: 0 !important;
+  max-width: none !important;
+}
+.for-etcs__partner p strong {
+  font-weight: 500;
+}
+
+/* ----- Signoff + independence footnote. */
+.for-etcs__signoff {
+  font-family: var(--serif) !important;
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 16px !important;
+  color: var(--ink-soft) !important;
+  margin: 40px 0 0 !important;
+  line-height: 1.6 !important;
+}
+.for-etcs__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+.for-etcs__independence {
+  font-family: var(--serif) !important;
+  font-variation-settings: "opsz" 14;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-faint) !important;
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin-top: 56px !important;
+  max-width: 60ch !important;
+}
+
+/* ----- RIGHT: sticky reference rail. */
+/* "How to get started" 5-step funnel — now an inline full-width section
+ * (was a card in the deleted sticky rail). Lower-roman numbered process
+ * list matching the .for-clin__process / .for-spons__process register:
+ * 56px left gutter for the roman numeral, hairline rule between steps,
+ * serif title + serif ink-soft description. Fills the 720px lane. */
+.for-etcs__start-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  counter-reset: step;
+}
+.for-etcs__start-list li {
+  counter-increment: step;
+  padding: 16px 0 16px 56px;
+  border-top: 1px solid var(--rule);
+  position: relative;
+}
+.for-etcs__start-list li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-etcs__start-list li::before {
+  content: counter(step, lower-roman) ".";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--ink-faint);
+  font-size: 22px;
+  line-height: 1;
+}
+.for-etcs__start-t {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.for-etcs__start-d {
+  display: block;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 15.5px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+/* Closing secondary line — the inline email + "operating platform" links
+ * that replaced the deleted rail's two CTA pills. The primary email
+ * conversion is the persistent FloatingCta; these are quiet inline text
+ * links in the page's closing paragraph. */
+.for-etcs__start-secondary {
+  font-family: var(--serif) !important;
+  font-variation-settings: "opsz" 14;
+  font-size: 15.5px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-soft) !important;
+  margin: 20px 0 0 !important;
+  max-width: var(--for-etcs-copy-width);
+}
+.for-etcs__inline-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease;
+}
+.for-etcs__inline-link:hover {
+  border-bottom-color: var(--accent);
+}
+.for-etcs__inline-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Mobile — tighter outer padding, smaller H1, tables scroll horizontally
+ * to preserve structure. The single-column lane is already fluid below
+ * 720px, so no grid/rail collapse is needed. */
+@media (max-width: 960px) {
+  .for-etcs {
+    padding: 48px 20px 80px;
+  }
+  .for-etcs__h1 {
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+  .for-etcs__ds-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * /platform — ForPlatformPage (Slice 5 § 23, /design-shotgun Round 6).
+ *
+ * Chrome shared with /for-clinicians, /for-manufacturers, /for-etcs:
+ *   - 1180px wrap with a centered 720px editorial lane
+ *   - prose, headings, tables, change rows, security cards, and signoff share
+ *     the same left/right edge
+ *   - shared fixed viewport CTA handles conversion
+ *
+ * Load-bearing structural elements:
+ *   - .for-plat__handoffs (12-row table — the connecting-tissue narrative)
+ *   - .for-plat__compliance (19-row RULE→module→evidence table)
+ *   - .for-plat__changes (4 persona before/after rows)
+ *   - .for-plat__security-grid (6-card 2-up grid)
+ * -------------------------------------------------------------------------- */
+.for-plat {
+  background: var(--paper);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+.for-plat__letter-col {
+  --for-plat-copy-width: 720px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.for-plat__eyebrow {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 auto 28px;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.for-plat__h1 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: 0;
+  margin: 0 auto 32px;
+  max-width: var(--for-plat-copy-width);
+  color: var(--ink);
+}
+.for-plat__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+.for-plat__letter p {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--ink);
+  margin: 0 auto 22px;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__letter p strong {
+  font-weight: 500;
+}
+.for-plat__letter p em {
+  font-style: italic;
+}
+.for-plat__letter p em.for-plat__accent,
+.for-plat__letter .for-plat__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.for-plat__lede {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 18px !important;
+  color: var(--accent) !important;
+  margin: 0 auto 32px !important;
+  max-width: var(--for-plat-copy-width) !important;
+}
+
+.for-plat__letter h2 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.18;
+  letter-spacing: 0;
+  margin: 64px auto 18px;
+  color: var(--ink);
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__letter h3 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 22;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: 0;
+  margin: 36px auto 12px;
+  color: var(--ink);
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__num {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--accent);
+  margin-right: 8px;
+}
+
+/* --- 12-row handoffs table (load-bearing) --- */
+.for-plat__ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0 8px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: fixed;
+}
+.for-plat__ds-table thead th {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: left;
+  padding: 14px 14px 10px;
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.for-plat__ds-table tbody td {
+  padding: 12px 14px;
+  vertical-align: top;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.for-plat__handoffs-col-from {
+  width: 14%;
+}
+.for-plat__handoffs-col-what {
+  width: 24%;
+}
+.for-plat__handoffs-col-to {
+  width: 14%;
+}
+.for-plat__handoffs-col-stat {
+  width: 22%;
+}
+.for-plat__handoffs-col-lewis {
+  width: 26%;
+}
+.for-plat__handoffs tbody td:nth-child(1) {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-plat__handoffs tbody td:nth-child(2) {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13px;
+  color: var(--ink);
+  font-style: italic;
+}
+.for-plat__handoffs tbody td:nth-child(3) {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-plat__handoffs tbody td:nth-child(4) {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  white-space: normal;
+}
+.for-plat__handoffs tbody td:nth-child(5) {
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 12.5px;
+}
+.for-plat__handoffs-arrow {
+  display: inline-block;
+  color: var(--ink-faint);
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-weight: 500;
+  padding: 0 2px;
+}
+.for-plat__handoffs-coda {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 14.5px !important;
+  color: var(--ink-soft) !important;
+  margin: 14px auto 0 !important;
+  max-width: var(--for-plat-copy-width) !important;
+  line-height: 1.6 !important;
+}
+
+/* --- Persona before/after change rows --- */
+.for-plat__changes {
+  margin: 8px 0 12px;
+}
+.for-plat__change-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 16px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 22px 0;
+  border-top: 1px solid var(--rule);
+}
+.for-plat__change-row:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-plat__change-row__who {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-variation-settings: "opsz" 22;
+  font-weight: 500;
+  font-size: 15.5px !important;
+  color: var(--ink) !important;
+  line-height: 1.3 !important;
+  padding-top: 2px;
+  max-width: none !important;
+  margin: 0 !important;
+}
+.for-plat__change-row__who small {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.for-plat__change-row__before,
+.for-plat__change-row__after {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 14.5px !important;
+  line-height: 1.6 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+.for-plat__change-row__before {
+  color: var(--ink-soft) !important;
+}
+.for-plat__change-row__lbl {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.for-plat__change-row__before .for-plat__change-row__lbl {
+  color: var(--ink-faint);
+}
+.for-plat__change-row__after .for-plat__change-row__lbl {
+  color: var(--accent);
+}
+.for-plat__change-row__arrow {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif) !important;
+  font-weight: 500;
+  color: var(--accent) !important;
+  font-size: 18px !important;
+  padding-top: 24px;
+  text-align: center;
+  margin: 0 !important;
+  max-width: none !important;
+}
+
+/* --- Modules list (light, secondary, in service of the handoffs) --- */
+.for-plat__modules {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.for-plat__modules li {
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.for-plat__modules li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.for-plat__modules li strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.for-plat__modules li span {
+  color: var(--ink-soft);
+}
+
+/* --- 19-row compliance mapping table --- */
+.for-plat__compliance tbody td:first-child {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 13.5px;
+}
+.for-plat__compliance tbody td:nth-child(2) {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.for-plat__compliance tbody td:nth-child(3) {
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 12px;
+}
+.for-plat__compliance tbody td:nth-child(4) {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+.for-plat__compliance-row--highlight td {
+  background: var(--accent-bg);
+}
+.for-plat__compliance-row--highlight td:first-child::before {
+  content: "★ ";
+  color: var(--accent);
+  font-weight: 600;
+}
+.for-plat__table-coda {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 14px !important;
+  color: var(--ink-soft) !important;
+  margin: 14px auto 24px !important;
+  max-width: var(--for-plat-copy-width) !important;
+  line-height: 1.6 !important;
+}
+.for-plat__table-coda strong {
+  color: var(--ink);
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* --- 6-card security posture grid --- */
+.for-plat__security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 8px 0 22px;
+}
+.for-plat__security-card {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+.for-plat__security-card__t {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+  margin: 0 0 8px !important;
+  max-width: none !important;
+}
+.for-plat__security-card__b {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 14.5px !important;
+  line-height: 1.55 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+.for-plat__security-card__b strong {
+  font-weight: 500;
+}
+.for-plat__inline-code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  background: rgba(58, 52, 42, 0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* --- CTA block at end of letter --- */
+.for-plat__cta-block {
+  margin: 56px auto 0;
+  padding: 28px 32px;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__cta-block h2 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 400;
+  font-size: 20px;
+  margin: 0 0 10px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+.for-plat__cta-block p {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: var(--for-plat-copy-width);
+}
+.for-plat__cta-block p strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.for-plat__signoff {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 16px !important;
+  color: var(--ink-soft) !important;
+  margin: 40px auto 0 !important;
+  max-width: var(--for-plat-copy-width) !important;
+}
+.for-plat__signoff strong {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.for-plat__independence {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-faint) !important;
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin: 56px auto 0 !important;
+  max-width: var(--for-plat-copy-width) !important;
+}
+
+/* Mobile — tables become horizontally scrollable. Change rows collapse to
+ * single column with the arrow hidden (the Before/With Lewis labels are
+ * enough cue). Security cards collapse to single column. */
+@media (max-width: 960px) {
+  .for-plat {
+    padding: 48px 20px 80px;
+  }
+  .for-plat__h1 {
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+  .for-plat__ds-table {
+    display: block;
+    overflow-x: auto;
+    table-layout: auto;
+  }
+  .for-plat__security-grid {
+    grid-template-columns: 1fr;
+  }
+  .for-plat__change-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .for-plat__change-row__arrow {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * /about — AboutPage (Slice 5 § 24, /design-shotgun Round 7 winner: C).
+ *
+ * Chrome shared with the B2B letter pages:
+ *   - 1180px wrap, 756px letter column, 320px rail, 40px gap
+ *   - 65ch readability cap on prose paragraphs (.about__letter p)
+ *
+ * C-specific signature:
+ *   - No H2 cards or grids — prose runs uninterrupted at full letter
+ *     width. Section transitions are italic Fraunces "markers" with a
+ *     short accent rule, not full H2s.
+ *   - Founding story stays in normal Fraunces body weight as 3
+ *     paragraphs (expedition setup → bitterroot → metaphor turn).
+ *   - Team signoff borrows the italic Fraunces flourish from the original
+ *     founder-letter framing, but renders "The Lewis team" instead of an
+ *     individual name (Leadership deferred past MVP-0).
+ *   - In-letter contacts strip below the signoff mirrors the rail's
+ *     "Reach us" card — same three emails (press@, investors@, hello@)
+ *     surfaced both above and below the fold for manufacturers/journalists.
+ * -------------------------------------------------------------------------- */
+.about {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 120px;
+}
+.about__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 40px;
+  align-items: start;
+}
+.about__letter-col {
+  min-width: 0;
+  padding: 0;
+}
+
+.about__h1 {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 80;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 22px;
+  max-width: 18ch;
+  color: var(--ink);
+}
+.about__h1-em {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-weight: 300;
+}
+
+/* Letter prose. The .about__letter container itself is uncapped so
+ * structural elements (signoff, contacts strip) fill the full 756px
+ * column; only paragraphs are capped at 65ch for readability. */
+.about__letter p {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 14;
+  font-size: 17px;
+  line-height: 1.74;
+  color: var(--ink);
+  margin: 0 0 24px;
+  max-width: 65ch;
+}
+.about__letter p strong {
+  font-weight: 500;
+}
+.about__letter p em {
+  font-style: italic;
+}
+.about__letter p em.about__accent,
+.about__letter .about__accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* Marker: single italic Fraunces line, not a full H2. Just enough
+ * visual break that long-form prose stays navigable. ::after rule is the
+ * short accent stroke that distinguishes markers from prose. */
+.about__marker {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-style: italic;
+  font-size: 14.5px !important;
+  color: var(--ink-faint) !important;
+  margin: 48px 0 22px !important;
+  letter-spacing: 0.04em;
+  max-width: 65ch !important;
+  line-height: 1.4 !important;
+}
+.about__marker::after {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: var(--accent);
+  margin-top: 10px;
+  opacity: 0.6;
+}
+
+/* Team signoff — italic Fraunces flourish on the team name, mirroring
+ * the original founder-letter signoff style. */
+.about__team-signoff {
+  margin: 56px 0 0;
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  max-width: 65ch;
+}
+.about__team-signoff p {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 15px !important;
+  margin: 0 !important;
+  color: var(--ink-soft) !important;
+}
+.about__team-signoff-name {
+  display: block;
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-variation-settings: "opsz" 80;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 28px;
+  color: var(--ink);
+  margin: 14px 0 4px;
+  letter-spacing: -0.01em;
+}
+.about__team-signoff-title {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* In-letter contacts strip — 3-column horizontal row beneath the
+ * signoff. Mirrors the rail's "Reach us" card. */
+.about__contacts-strip {
+  margin: 32px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--rule);
+  max-width: 65ch;
+}
+.about__contacts-strip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.about__contacts-strip-label {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.about__contacts-strip-email {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.about__contacts-strip-email:hover {
+  text-decoration: underline;
+}
+
+.about__independence {
+  font-family: var(--serif, "Fraunces", Georgia, serif) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-faint) !important;
+  border-top: 1px solid var(--rule);
+  padding-top: 32px;
+  margin-top: 56px !important;
+  max-width: 60ch !important;
+}
+
+/* Sticky rail — 1 primary CTA + "Reach us" card. */
+.about__rail {
+  position: sticky;
+  top: 112px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-self: start;
+}
+.about__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 14px;
+  font-weight: 500;
+  justify-content: center;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+.about__cta--primary {
+  background: var(--accent);
+  color: var(--paper);
+  border: 1px solid var(--accent);
+}
+.about__cta--primary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+.about__cta--primary::after {
+  content: " →";
+}
+
+.about__rail-card {
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+.about__rail-label {
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 14px;
+}
+
+.about__reach {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.about__reach li {
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+}
+.about__reach li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.about__reach li:last-child {
+  padding-bottom: 0;
+}
+.about__reach-t {
+  display: block;
+  font-family: var(--sans, "Inter Tight", -apple-system, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 3px;
+}
+.about__reach-email {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-size: 14.5px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.about__reach-email:hover {
+  text-decoration: underline;
+}
+
+/* Founding-story photo — the 1836 Hooker plate from Curtis's Botanical
+ * Magazine, inserted between paragraphs 2 and 3 of the founding story
+ * (/design-shotgun Round 9 winner: variant C). Museum-mat treatment
+ * (Round 8 winner) matches the Glacier photo on the homepage.
+ *
+ * Centered horizontally within the 756px letter column, capped at
+ * 460px max-width so it stays intimate as a magazine-spread moment
+ * between paragraphs rather than a dominant feature. The italic
+ * Fraunces caption underneath carries the scholarly citation, with
+ * the scientific name toggled to upright per typographic convention
+ * (italic-nested-in-italic = roman). */
+.about__founding-photo {
+  margin: 32px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.about__founding-photo-mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  max-width: 460px;
+  width: 100%;
+}
+.about__founding-photo-mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.about__founding-photo figcaption {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.5;
+  max-width: 460px;
+  width: 100%;
+}
+.about__founding-photo figcaption em {
+  font-style: normal;
+}
+
+/* Mobile — single column, rail loses sticky, contacts strip collapses
+ * to a single-column stack (otherwise the three emails wrap awkwardly
+ * at 375px). */
+@media (max-width: 960px) {
+  .about {
+    padding: 48px 20px 80px;
+  }
+  .about__grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  .about__rail {
+    position: static;
+  }
+  .about__h1 {
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+  .about__contacts-strip-list {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .about__founding-photo-mat {
+    padding: 10px;
+  }
+}
+
+/* HomePage PrairieTransition — a wide panoramic Montana big sky photo
+ * between FaqSection and BeginningSection (the "VII · Coming soon"
+ * newsletter signup). Visual exhale after the FAQ — the unbroken
+ * horizon and active cumulus encode "more is coming as Montana licenses
+ * more programs" — landing immediately before the email opt-in below.
+ *
+ * Museum-mat treatment matches ProblemSection's Glacier photo (slot #1)
+ * and AboutPage's founding plate (slot #4): 14px cream-paper border
+ * (#faf5e8), 1px outer hairline, 4px inner rounded corners on the img.
+ *
+ * Wider than the founding plate (820px vs 460px) because the panoramic
+ * 3.55:1 aspect needs presence to read at all — at 460px it would
+ * become a thin strip. Vertical spacing is symmetric and matches the
+ * page's existing section rhythm: this transition has zero own padding
+ * top/bottom and relies on its neighbors' .ed-section padding (96px) to
+ * give matching breathing room above and below the photo. */
+.home-prairie {
+  padding: 0 32px;
+  background: var(--paper);
+}
+.home-prairie__figure {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 820px;
+  width: 100%;
+}
+.home-prairie__mat {
+  display: block;
+  background: #faf5e8;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  line-height: 0;
+  width: 100%;
+}
+.home-prairie__mat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.home-prairie__figure figcaption {
+  font-family: var(--serif, "Fraunces", Georgia, serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+  text-align: left;
+  line-height: 1.5;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .home-prairie {
+    padding: 0 20px;
+  }
+  .home-prairie__mat {
+    padding: 10px;
   }
 }

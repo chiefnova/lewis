@@ -7,7 +7,7 @@
 -- Coverage map:
 --   * Helper functions:
 --       app.shares_tenant_with                    (0006)
---       app.has_active_consent_for_sponsor        (0006)
+--       app.has_active_consent_for_manufacturer        (0006)
 --       app.role_grants_action                    (0008, extended in 0010)
 --       app.can_write_for_tenant                  (0008)
 --       app.write_audit                            (0009)
@@ -15,7 +15,7 @@
 --   * Rewritten read policies:
 --       users_self_or_tenant_read                  (0006 — recursion fix)
 --       patients_self_read                         (0006 — care_team + consent)
---       programs_sponsor_read                      (0006 — PPA)
+--       programs_manufacturer_read                      (0006 — PPA)
 --   * Triggers / immutability:
 --       audit_log: update/delete/truncate blocked  (0003 + reaffirmed)
 --       audit_log retention auto-populate          (0007)
@@ -38,7 +38,7 @@ select plan(38);
 -- Test cast — fresh UUIDs that don't collide with 0001_foundation
 -- ---------------------------------------------------------------------------
 --   Tenants:
---     S = sponsor
+--     S = manufacturer
 --     E = ETC (care_team for P, M, C)
 --     B = board (review)
 --     P = patient (self-directed adult, has consent with S)
@@ -50,16 +50,16 @@ select plan(38);
 -- ---------------------------------------------------------------------------
 
 insert into tenants (id, kind, status, display_name) values
-  ('22000000-0000-0000-0000-0000000000a1', 'sponsor', 'active', 'Sponsor S'),
+  ('22000000-0000-0000-0000-0000000000a1', 'manufacturer', 'active', 'Manufacturer S'),
   ('22000000-0000-0000-0000-0000000000e1', 'etc', 'active', 'ETC E'),
   ('22000000-0000-0000-0000-0000000000b1', 'board', 'active', 'Board B'),
   ('22000000-0000-0000-0000-0000000000a2', 'patient', 'active', 'Patient P (adult)'),
   ('22000000-0000-0000-0000-0000000000c1', 'patient', 'active', 'Patient C (with caregiver)'),
   ('22000000-0000-0000-0000-0000000000d1', 'patient', 'active', 'Patient M (minor)'),
-  ('22000000-0000-0000-0000-0000000000f1', 'sponsor', 'active', 'Tenant X (unrelated)');
+  ('22000000-0000-0000-0000-0000000000f1', 'manufacturer', 'active', 'Tenant X (unrelated)');
 
 insert into users (id, clerk_user_id, email, name) values
-  ('22000000-0000-0000-1000-000000000001', 'rls2_user_S', 'sponsor_s@test.local', 'Sponsor User'),
+  ('22000000-0000-0000-1000-000000000001', 'rls2_user_S', 'manufacturer_s@test.local', 'Manufacturer User'),
   ('22000000-0000-0000-1000-000000000002', 'rls2_user_E', 'etc_e@test.local', 'ETC User'),
   ('22000000-0000-0000-1000-000000000003', 'rls2_user_B', 'board_b@test.local', 'Board User'),
   ('22000000-0000-0000-1000-000000000004', 'rls2_user_P', 'patient_p@test.local', 'Patient P User'),
@@ -69,11 +69,11 @@ insert into users (id, clerk_user_id, email, name) values
   ('22000000-0000-0000-1000-000000000008', 'rls2_user_Eops', 'ops_e@test.local', 'ETC Ops User');
 
 insert into tenant_memberships (user_id, tenant_id, role) values
-  ('22000000-0000-0000-1000-000000000001', '22000000-0000-0000-0000-0000000000a1', 'sponsor_admin'),
+  ('22000000-0000-0000-1000-000000000001', '22000000-0000-0000-0000-0000000000a1', 'manufacturer_admin'),
   ('22000000-0000-0000-1000-000000000002', '22000000-0000-0000-0000-0000000000e1', 'etc_clinician'),
   ('22000000-0000-0000-1000-000000000003', '22000000-0000-0000-0000-0000000000b1', 'board_reviewer'),
   ('22000000-0000-0000-1000-000000000004', '22000000-0000-0000-0000-0000000000a2', 'patient'),
-  ('22000000-0000-0000-1000-000000000007', '22000000-0000-0000-0000-0000000000f1', 'sponsor_admin'),
+  ('22000000-0000-0000-1000-000000000007', '22000000-0000-0000-0000-0000000000f1', 'manufacturer_admin'),
   ('22000000-0000-0000-1000-000000000008', '22000000-0000-0000-0000-0000000000e1', 'etc_user');
 
 insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, status) values
@@ -95,9 +95,9 @@ begin
     ('22000000-0000-0000-0000-0000000000c1', v_jur, null, 'Patient C'),
     ('22000000-0000-0000-0000-0000000000d1', v_jur, null, 'Minor M');
 
-  -- Active consent: Patient P → Sponsor S
+  -- Active consent: Patient P → Manufacturer S
   insert into patient_data_sharing_consents (
-    patient_tenant_id, sponsor_tenant_id, jurisdiction_id, status, starts_at
+    patient_tenant_id, manufacturer_tenant_id, jurisdiction_id, status, starts_at
   ) values (
     '22000000-0000-0000-0000-0000000000a2',
     '22000000-0000-0000-0000-0000000000a1',
@@ -106,9 +106,9 @@ begin
     now() - interval '1 day'
   );
 
-  -- Sponsor S has a program
+  -- Manufacturer S has a program
   insert into programs (
-    sponsor_tenant_id, jurisdiction_id, name, treatment_form, status
+    manufacturer_tenant_id, jurisdiction_id, name, treatment_form, status
   ) values (
     '22000000-0000-0000-0000-0000000000a1',
     v_jur,
@@ -208,22 +208,22 @@ select ok(
   'shares_tenant_with: cross-tenant returns false'
 );
 
--- 3. has_active_consent_for_sponsor: P has active consent with S
+-- 3. has_active_consent_for_manufacturer: P has active consent with S
 select ok(
-  app.has_active_consent_for_sponsor(
+  app.has_active_consent_for_manufacturer(
     '22000000-0000-0000-0000-0000000000a2'::uuid,
     '22000000-0000-0000-0000-0000000000a1'::uuid
   ),
-  'has_active_consent_for_sponsor: active consent returns true'
+  'has_active_consent_for_manufacturer: active consent returns true'
 );
 
--- 4. has_active_consent_for_sponsor: P has no consent with X
+-- 4. has_active_consent_for_manufacturer: P has no consent with X
 select ok(
-  not app.has_active_consent_for_sponsor(
+  not app.has_active_consent_for_manufacturer(
     '22000000-0000-0000-0000-0000000000a2'::uuid,
     '22000000-0000-0000-0000-0000000000f1'::uuid
   ),
-  'has_active_consent_for_sponsor: no consent returns false'
+  'has_active_consent_for_manufacturer: no consent returns false'
 );
 
 -- ---------------------------------------------------------------------------
@@ -342,13 +342,13 @@ select is(
   '17. patients_self_read: ETC care_team can read patient'
 );
 
--- 18. Sponsor S (with active consent) sees Patient P
+-- 18. Manufacturer S (with active consent) sees Patient P
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000001', true);
 select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a1', true);
 select is(
   (select count(*) from patients where tenant_id = '22000000-0000-0000-0000-0000000000a2'),
   1::bigint,
-  '18. patients_self_read: sponsor with active consent can read patient'
+  '18. patients_self_read: manufacturer with active consent can read patient'
 );
 
 -- 19. Unrelated tenant X cannot see any patients
@@ -361,25 +361,25 @@ select is(
 );
 
 -- ---------------------------------------------------------------------------
--- 20-22: programs_sponsor_read policy (rewritten in 0006)
+-- 20-22: programs_manufacturer_read policy (rewritten in 0006)
 -- ---------------------------------------------------------------------------
 
--- 20. Sponsor S sees their own program
+-- 20. Manufacturer S sees their own program
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000001', true);
 select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000a1', true);
 select is(
-  (select count(*) from programs where sponsor_tenant_id = '22000000-0000-0000-0000-0000000000a1'),
+  (select count(*) from programs where manufacturer_tenant_id = '22000000-0000-0000-0000-0000000000a1'),
   1::bigint,
-  '20. programs_sponsor_read: sponsor self can read own programs'
+  '20. programs_manufacturer_read: manufacturer self can read own programs'
 );
 
 -- 21. ETC E (with PPA to S) sees S's programs
 select set_config('app.user_id', '22000000-0000-0000-1000-000000000002', true);
 select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000e1', true);
 select is(
-  (select count(*) from programs where sponsor_tenant_id = '22000000-0000-0000-0000-0000000000a1'),
+  (select count(*) from programs where manufacturer_tenant_id = '22000000-0000-0000-0000-0000000000a1'),
   1::bigint,
-  '21. programs_sponsor_read: ETC with PPA can read sponsor programs'
+  '21. programs_manufacturer_read: ETC with PPA can read manufacturer programs'
 );
 
 -- 22. Unrelated tenant X cannot see programs
@@ -388,7 +388,7 @@ select set_config('app.active_tenant_id', '22000000-0000-0000-0000-0000000000f1'
 select is(
   (select count(*) from programs),
   0::bigint,
-  '22. programs_sponsor_read: unrelated tenant denied'
+  '22. programs_manufacturer_read: unrelated tenant denied'
 );
 
 -- ---------------------------------------------------------------------------

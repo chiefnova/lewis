@@ -2,11 +2,11 @@ import { z } from "zod";
 
 import { RequestId, SupportTicketId, TenantId, UserId } from "./api/ids.js";
 
-export type TenantKind = "sponsor" | "etc" | "patient" | "board" | "lewis_internal";
+export type TenantKind = "manufacturer" | "etc" | "patient" | "board" | "lewis_internal";
 
 export const TenantRole = z.enum([
-  "sponsor_admin",
-  "sponsor_user",
+  "manufacturer_admin",
+  "manufacturer_user",
   "etc_admin",
   "etc_user",
   "etc_clinician",

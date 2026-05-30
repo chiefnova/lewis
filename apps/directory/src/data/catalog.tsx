@@ -19,6 +19,13 @@ export interface CatalogProgram {
   art: ReactNode;
 }
 
+// CatalogCondition / CONDITIONS / getConditionBySlug / getProgramsForCondition
+// were removed in Slice 2 (v0.0.8.0) when the directory wired up
+// /v1/public/conditions. The DB seed in
+// packages/db/migrations/0018_directory_public_search.sql is now the
+// canonical source of truth; the API hydrates conditions, and editorial
+// content lives in apps/directory/src/data/conditions-content.ts.
+
 export const FEATURED_HOMEPAGE: ReadonlyArray<{
   name: string;
   indication: string;

@@ -1,10 +1,19 @@
-// Sitemap generator. Run via `pnpm --filter directory build:sitemap` once the
-// public catalog endpoint is live so the slug list comes from the API; until
-// then it reads the static seed in src/data/catalog.tsx via a regex (we don't
-// want to pull TSX into a Node script).
+// Sitemap generator. Run via `pnpm --filter directory build:sitemap` (chained
+// after `tsc` and before `vite build` in the directory `build` script).
+// Programs + ETCs are still extracted by regex from the static seed in
+// src/data/catalog.tsx; conditions are kept here as the canonical list since
+// catalog.tsx no longer carries CONDITIONS post-Slice-2 (the runtime reads
+// from /v1/public/conditions). See plans/immutable-squishing-sprout.md
+// architecture decision 1.
 //
-// Output: apps/directory/public/sitemap.xml — Vite copies it verbatim into the
-// build output so Vercel serves it from lewis.health/sitemap.xml.
+// When a new condition lands: add a migration (DB seed), add a content entry
+// in src/data/conditions-content.ts, and add the slug below. The
+// conditions-content drift test catches missing content; this generator
+// catches missing sitemap entries (a missing slug here ships a 0-priority
+// gap on the SEO surface, which is what we're trying to prevent).
+//
+// Output: apps/directory/public/sitemap.xml — Vite copies it verbatim into
+// the build output so Vercel serves it from lewis.health/sitemap.xml.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -23,13 +32,37 @@ const STATIC_PATHS = [
   "/conditions",
   "/etcs",
   "/how-it-works",
+  "/about",
   "/faq",
+  "/for-clinicians",
   "/for-etcs",
-  "/for-sponsors",
+  "/for-manufacturers",
+  "/platform",
   "/privacy",
   "/terms",
   "/cookies",
 ];
+
+// Condition slugs grouped by state. Priority follows the directoryprd.md § 26.2
+// SEO weighting: live > coming_soon > not_offered. Live PN indications carry
+// 0.8 (the patient-facing destinations from Google SERP arrivals), coming_soon
+// 0.7, not_offered 0.5.
+const CONDITION_SLUGS_BY_STATE = {
+  live: [
+    "diabetic-peripheral-neuropathy",
+    "chemotherapy-induced-peripheral-neuropathy",
+    "hiv-induced-peripheral-neuropathy",
+    "idiopathic-peripheral-neuropathy",
+  ],
+  coming_soon: ["ptsd"],
+  not_offered: ["als", "multiple-sclerosis", "rare-cancers", "autoimmune-diseases"],
+};
+
+const STATE_PRIORITY = {
+  live: "0.8",
+  coming_soon: "0.7",
+  not_offered: "0.5",
+};
 
 const catalog = readFileSync(CATALOG_PATH, "utf8");
 
@@ -56,16 +89,22 @@ const etcSlugs = extractSlugs(catalog, "ETCS");
 
 const today = new Date().toISOString().slice(0, 10);
 
-function urlEntry(path) {
-  return `  <url>\n    <loc>${SITE}${path}</loc>\n    <lastmod>${today}</lastmod>\n  </url>`;
+function urlEntry(path, priority) {
+  const priorityLine = priority ? `\n    <priority>${priority}</priority>` : "";
+  return `  <url>\n    <loc>${SITE}${path}</loc>\n    <lastmod>${today}</lastmod>${priorityLine}\n  </url>`;
 }
+
+const conditionEntries = Object.entries(CONDITION_SLUGS_BY_STATE).flatMap(([state, slugs]) =>
+  slugs.map((slug) => urlEntry(`/conditions/${slug}`, STATE_PRIORITY[state])),
+);
 
 const lines = [
   `<?xml version="1.0" encoding="UTF-8"?>`,
   `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
-  ...STATIC_PATHS.map(urlEntry),
+  ...STATIC_PATHS.map((p) => urlEntry(p)),
   ...programSlugs.map((s) => urlEntry(`/programs/${s}`)),
   ...etcSlugs.map((s) => urlEntry(`/etcs/${s}`)),
+  ...conditionEntries,
   `</urlset>`,
 ];
 

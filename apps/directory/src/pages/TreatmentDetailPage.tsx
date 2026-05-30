@@ -1,55 +1,130 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
-import { ETCS, getProgramBySlug } from "../data/catalog";
+import { useEffect, useRef } from "react";
+import { FormattedMessage, useIntl } from "react-intl";
+
+import { ETCS } from "../data/catalog";
+import { getProgramContent } from "../data/programs-content";
 import { ArrowLeft, ArrowRight, PinIcon } from "../components/icons";
 import { TopicalTube } from "../components/Products";
-import { Panel } from "../components/Panel";
+import { ClinicalEvidencePanel } from "../components/ClinicalEvidencePanel";
+import { ProgramCostPanel } from "../components/ProgramCostPanel";
+import { ProgramSectionNav } from "../components/ProgramSectionNav";
+import { TreatmentDetailError } from "../components/TreatmentDetailError";
+import { TreatmentDetailSkeleton } from "../components/TreatmentDetailSkeleton";
+import { TreatmentNotFound } from "../components/TreatmentNotFound";
+import { useProgramDetail } from "./use-program-detail";
+import { buildDrugJsonLd } from "../seo/drug-json-ld";
 import { useSeo, siteUrl } from "../seo/useSeo";
+
+// Slice 3 — directoryprd.md § 15. Full rewrite of the program detail page.
+//
+// Composition follows /design-shotgun Round 1 winner (Variant C, approved
+// 2026-04-30 — see ~/.gstack/projects/chiefnova-lewis/designs/programs-
+// detail-composition-20260430/approved.json). Sticky left product art
+// (1/3 width) + flat editorial body + sticky right rail (2/3 split).
+// Right rail order: section anchors → patient CTA (Check my eligibility,
+// primary fill) → physician CTAs (Refer this patient + Download brief,
+// outline). Mobile fallback (<1100px) collapses the rail and falls back
+// to an inline eligibility CTA inside the Who-this-is-for panel.
+//
+// Each section is FLAT — no card background, no Panel wrapper. The body
+// is a continuous editorial column with .program-panel-title h2s and
+// .program-panel-body prose; visual surfaces (the .evidence-block card
+// and the .program-etc-card) only appear where the content needs to be
+// visually distinct. This is intentional — using Panel cards for every
+// section made the page feel boxy and the spacing felt excessive
+// (sections "appeared to come apart"). Editorial flow is the right
+// rhythm for this surface.
+//
+// Data is API-driven via useProgramDetail(slug) which hits
+// /v1/public/programs/:slug. ETC card content still reads from the local
+// CATALOG until the /v1/public/etcs endpoint ships (slice 4 carryover).
+//
+// SEO: useSeo emits the augmented Drug JSON-LD per § 15.7
+// (clinicalPharmacology, medicineSystem, prescribingInfo).
+
+type SectionDescriptor = { id: string; labelId: string; defaultLabel: string };
+
+// Sections always rendered when a program loads. Cost is appended in the
+// component body only when program.costRange is non-null — otherwise the
+// section + h2 + rail anchor would be a dead heading pointing at an empty
+// ProgramCostPanel (the panel returns null when costRange is null).
+const BASE_SECTIONS: ReadonlyArray<SectionDescriptor> = [
+  { id: "about", labelId: "directory.program.section-nav.about", defaultLabel: "About" },
+  { id: "evidence", labelId: "directory.program.section-nav.evidence", defaultLabel: "Evidence" },
+  {
+    id: "eligibility",
+    labelId: "directory.program.section-nav.eligibility",
+    defaultLabel: "Eligibility",
+  },
+  {
+    id: "etc-where",
+    labelId: "directory.program.section-nav.etc",
+    defaultLabel: "Where to access",
+  },
+  {
+    id: "enrollment",
+    labelId: "directory.program.section-nav.enrollment",
+    defaultLabel: "Enrollment",
+  },
+];
+
+const COST_SECTION: SectionDescriptor = {
+  id: "cost",
+  labelId: "directory.program.section-nav.cost",
+  defaultLabel: "Cost",
+};
 
 export function TreatmentDetailPage() {
   const navigate = useNavigate();
-  const { slug = "wst-057" } = useParams<{ slug: string }>();
-  const program = getProgramBySlug(slug);
-  const offeringEtc = ETCS.find((e) => e.programs.includes(slug));
-  const renderable = program && program.available;
+  const intl = useIntl();
+  const { slug = "" } = useParams<{ slug: string }>();
+  const { program, loading, error, notFound, retry } = useProgramDetail(slug);
+  const content = program ? getProgramContent(program.slug) : undefined;
+  // ETC card hydration — local catalog until /v1/public/etcs ships (slice 4).
+  const offeringEtc = program ? ETCS.find((e) => e.programs.includes(program.slug)) : undefined;
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   useSeo({
     title: program
-      ? `${program.name} in Montana — Lewis Health`
-      : "Treatment not found — Lewis Health",
+      ? intl.formatMessage(
+          { id: "directory.program.seo.title", defaultMessage: "{name} in Montana — Lewis Health" },
+          { name: program.name },
+        )
+      : intl.formatMessage({
+          id: "directory.program.not-found.seo.title",
+          defaultMessage: "Treatment not found — Lewis Health",
+        }),
     description: program
-      ? `${program.name} ${program.indication}. Investigational topical treatment from WinSanTor available at a licensed Montana Experimental Treatment Center under SB 535.`
+      ? `${program.name} ${program.indication}. ${content?.aboutSummary ?? ""}`.trim()
       : undefined,
-    canonical: program ? siteUrl(`/programs/${program.slug}`) : siteUrl("/browse"),
-    jsonLd: program
-      ? {
-          "@context": "https://schema.org",
-          "@type": "Drug",
-          name: program.name,
-          manufacturer: program.manufacturer
-            ? { "@type": "Organization", name: program.manufacturer }
-            : undefined,
-          description: `${program.name} ${program.indication}.`,
-          clinicalPharmacology: "Phase 2 investigational small-molecule, topical formulation.",
-          availableStrength: { "@type": "DrugStrength", description: "Topical formulation" },
-        }
-      : undefined,
+    canonical: siteUrl(program ? `/programs/${program.slug}` : "/browse"),
+    jsonLd: program ? buildDrugJsonLd(program) : undefined,
+    noIndex: notFound || Boolean(error),
   });
 
-  // Worked example for WST-057 — additional programs will arrive once they're
-  // licensed by Montana DPHHS. Until then, navigating to a not-found slug bounces
-  // back to /browse rather than rendering a half-formed page.
+  // Move focus to the page heading on every route change so screen
+  // readers announce the new page. Mirrors the slice 2 pattern in
+  // ConditionDetailPage.
   useEffect(() => {
-    if (!renderable) navigate("/browse", { replace: true });
-  }, [renderable, navigate]);
+    if (program) headingRef.current?.focus();
+  }, [program]);
 
-  if (!program || !program.available) {
-    return null;
-  }
+  if (loading) return <TreatmentDetailSkeleton />;
+  if (notFound) return <TreatmentNotFound />;
+  if (error || !program) return <TreatmentDetailError onRetry={retry} />;
+
+  // Build the section list from program data so the rail anchors match
+  // what's actually rendered. costRange is the only conditional section
+  // today; other sections always render with content from the API + the
+  // editorial content module.
+  const sections: ReadonlyArray<SectionDescriptor> = program.costRange
+    ? [...BASE_SECTIONS, COST_SECTION]
+    : BASE_SECTIONS;
 
   return (
-    <div className="fade-up split-detail">
-      <div className="split-detail-art" style={{ flexDirection: "column", position: "relative" }}>
+    <article className="fade-up split-detail">
+      <div className="split-detail-art" style={{ flexDirection: "column", position: "sticky" }}>
         <TopicalTube size={420} />
         <div
           style={{
@@ -62,229 +137,283 @@ export function TreatmentDetailPage() {
             fontSize: 13,
           }}
         >
-          Actual product appearance may vary.
+          <FormattedMessage
+            id="directory.program.product-disclaimer"
+            defaultMessage="Actual product appearance may vary."
+          />
         </div>
       </div>
-      <div className="split-detail-body">
-        <button
-          onClick={() => navigate("/browse")}
-          style={{
-            fontSize: 13,
-            color: "var(--ink-soft)",
-            marginBottom: 28,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <ArrowLeft />
-          Back to browse
-        </button>
-        <h1
-          className="serif"
-          style={{
-            fontSize: 56,
-            letterSpacing: "-0.02em",
-            lineHeight: 1,
-            marginBottom: 8,
-            fontWeight: 400,
-          }}
-        >
-          WST-057<sup style={{ fontSize: 24, top: "-1em" }}>®</sup>
-        </h1>
-        <div
-          className="serif"
-          style={{
-            fontSize: 36,
-            color: "var(--accent)",
-            letterSpacing: "-0.015em",
-            marginBottom: 14,
-            fontWeight: 400,
-          }}
-        >
-          Available{" "}
-          <span className="italic" style={{ fontWeight: 300 }}>
-            now
-          </span>{" "}
-          in Montana
-        </div>
-        <div style={{ color: "var(--ink-soft)", fontSize: 15, marginBottom: 40 }}>
-          Topical investigational treatment for diabetic peripheral neuropathy from{" "}
-          <span style={{ color: "var(--ink)" }}>WinSanTor®</span>
-        </div>
 
-        <Panel title="About this treatment.">
-          <p style={{ color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.65, marginBottom: 14 }}>
-            WST-057 is a topical small-molecule formulation in development for the treatment of
-            painful diabetic peripheral neuropathy. It targets a peripheral nerve regeneration
-            pathway that has not been addressed by current standard-of-care.
-          </p>
-          <p style={{ color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.65 }}>
-            Currently in <span style={{ color: "var(--ink)" }}>Phase 2</span> clinical evaluation.{" "}
-            <span style={{ color: "var(--ink-soft)", fontStyle: "italic" }}>
-              [COUNSEL REVIEW] — published-evidence link pending source URL.
-            </span>
-          </p>
-        </Panel>
-
-        <Panel title="Who this is for.">
-          <p style={{ color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.65, marginBottom: 22 }}>
-            Adults with confirmed diabetic peripheral neuropathy who have evaluated standard-of-care
-            options including gabapentinoids, SNRIs, and topical agents, and have discussed
-            experimental options with their treating physician.
-          </p>
-          <button
-            className="pill pill-primary"
-            style={{ width: "100%", padding: "16px 28px" }}
-            onClick={() => navigate(`/eligibility/${program.slug}`)}
-          >
-            Check my eligibility <ArrowRight />
+      <div className="split-detail-content-grid">
+        <main>
+          <button type="button" onClick={() => navigate("/browse")} className="program-back-link">
+            <ArrowLeft />
+            <FormattedMessage
+              id="directory.program.back-to-browse"
+              defaultMessage="Back to browse"
+            />
           </button>
-        </Panel>
 
-        <Panel title="Where to access this treatment.">
-          {offeringEtc ? (
-            <>
-              <p style={{ color: "var(--ink-soft)", fontSize: 15, marginBottom: 20 }}>
-                {program.name} is currently available at the following Montana Experimental
-                Treatment Center:
-              </p>
-              <div
-                style={{
-                  border: "1px solid var(--rule)",
-                  borderRadius: 4,
-                  padding: 24,
-                  background: "var(--paper)",
-                }}
-              >
-                <div className="serif" style={{ fontSize: 19, marginBottom: 6 }}>
-                  {offeringEtc.name}
+          <h1 ref={headingRef} tabIndex={-1} className="program-title serif">
+            {program.name}
+          </h1>
+          <div className="program-available-tag serif">
+            <FormattedMessage
+              id="directory.program.available-tag"
+              defaultMessage="Available {nowEm} in Montana"
+              values={{
+                nowEm: (
+                  <span className="italic">
+                    <FormattedMessage
+                      id="directory.program.available-tag.now"
+                      defaultMessage="now"
+                    />
+                  </span>
+                ),
+              }}
+            />
+          </div>
+          <div className="program-manufacturer-line">
+            <FormattedMessage
+              id="directory.program.manufacturer-line"
+              defaultMessage="Topical investigational treatment for {indication} from {manufacturerEm}"
+              values={{
+                indication: program.indication,
+                manufacturerEm: (
+                  <span className="ink">
+                    {program.manufacturer ??
+                      intl.formatMessage({
+                        id: "directory.program.manufacturer.fallback",
+                        defaultMessage: "the manufacturer",
+                      })}
+                  </span>
+                ),
+              }}
+            />
+          </div>
+
+          <section className="program-panel" id="about">
+            <h2 className="program-panel-title">
+              <FormattedMessage
+                id="directory.program.about.heading"
+                defaultMessage="About this treatment."
+              />
+            </h2>
+            <div className="program-panel-body">
+              {content?.aboutParagraphs.map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
+              {!content?.aboutParagraphs.length && program.about && <p>{program.about}</p>}
+            </div>
+            {/* Closing visual for the About section — Cajal's 1899 ink
+                drawing of sensory nerve endings in skin and hair (after
+                Retzius), scanned by the Wellcome Collection (CC BY 4.0).
+                The plate visualizes the biological structure the
+                treatment is aimed at: the hair follicle descending into
+                dermis with sensory nerve endings wrapping its base, the
+                exact peripheral architecture targeted by WST-057.
+                Same museum-mat treatment as the HomePage ForClinicians
+                Ammon's-horn plate, the /for-clinicians frontispiece, and
+                the AboutPage 1836 Hooker bitterroot — one visual grammar
+                across every scholarly artifact on the site. Decorative
+                (aria-hidden); italic Fraunces caption credits the
+                source. Conditionally shipped only for programs targeting
+                peripheral nerves so this doesn't appear on future
+                non-PN programs. */}
+            {program.slug === "wst-057" ? (
+              <figure className="program-plate" aria-hidden="true">
+                <span className="program-plate-mat">
+                  <img
+                    src="/images/cajal/nerve-endings-skin-cajal.webp"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width={1400}
+                    height={1149}
+                  />
+                </span>
+                <figcaption>
+                  Santiago Ramón y Cajal — sensory nerve endings in skin and hair, after Retzius.
+                  (Wellcome Collection)
+                </figcaption>
+              </figure>
+            ) : null}
+          </section>
+
+          <section className="program-panel" id="evidence">
+            <h2 className="program-panel-title">
+              <FormattedMessage
+                id="directory.program.evidence.heading"
+                defaultMessage="Clinical evidence."
+              />
+            </h2>
+            <ClinicalEvidencePanel program={program} />
+          </section>
+
+          <section className="program-panel" id="eligibility">
+            <h2 className="program-panel-title">
+              <FormattedMessage
+                id="directory.program.who.heading"
+                defaultMessage="Who this is for."
+              />
+            </h2>
+            <div className="program-panel-body">
+              <p>{content?.whoThisIsForIntro ?? program.whoThisIsFor}</p>
+            </div>
+            {/* Mobile-only inline CTA. Desktop renders the patient CTA in
+                the right rail; below 1100px the rail is hidden so the
+                conversion path falls back here. CSS in styles.css hides
+                this above 1100px. */}
+            <div className="program-mobile-cta">
+              <Link to={`/eligibility/${program.slug}`} className="pill pill-primary">
+                <FormattedMessage
+                  id="directory.program.cta.patient.eligibility-mobile"
+                  defaultMessage="Check my eligibility"
+                />
+                <ArrowRight />
+              </Link>
+            </div>
+          </section>
+
+          <section className="program-panel" id="etc-where">
+            <h2 className="program-panel-title">
+              <FormattedMessage
+                id="directory.program.where.heading"
+                defaultMessage="Where to access this treatment."
+              />
+            </h2>
+            {offeringEtc ? (
+              <>
+                <div className="program-panel-body" style={{ marginBottom: 14 }}>
+                  <p>
+                    <FormattedMessage
+                      id="directory.program.where.intro"
+                      defaultMessage="{name} is currently available at the following Montana Experimental Treatment Center:"
+                      values={{ name: program.name }}
+                    />
+                  </p>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    color: "var(--ink-soft)",
-                    fontSize: 13.5,
-                    marginBottom: 14,
-                  }}
-                >
-                  <PinIcon /> {offeringEtc.city}, {offeringEtc.state}
+                <div className="program-etc-card">
+                  <div className="program-etc-name">{offeringEtc.name}</div>
+                  <div className="program-etc-loc">
+                    <PinIcon /> {offeringEtc.city}, {offeringEtc.state}
+                  </div>
+                  <p className="program-etc-prose">
+                    <FormattedMessage
+                      id="directory.program.where.etc-blurb"
+                      defaultMessage="An outpatient specialty clinic licensed under Montana's ETC framework. Focus on neurology and pain medicine; staffed by a multidisciplinary clinical team."
+                    />
+                  </p>
+                  <div className="program-accept-tag">
+                    <FormattedMessage
+                      id="directory.program.where.accepting"
+                      defaultMessage="Currently accepting new patients"
+                    />
+                  </div>
+                  <div className="program-etc-actions">
+                    <Link to={`/etcs/${offeringEtc.slug}`} className="pill pill-outline pill-sm">
+                      <FormattedMessage
+                        id="directory.program.where.view-profile"
+                        defaultMessage="View ETC profile"
+                      />
+                      <ArrowRight size={12} />
+                    </Link>
+                    <Link to={`/connect/${program.slug}`} className="pill pill-primary pill-sm">
+                      <FormattedMessage
+                        id="directory.program.where.connect"
+                        defaultMessage="Connect about this treatment"
+                      />
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
                 </div>
-                <p
-                  style={{
-                    color: "var(--ink-soft)",
-                    fontSize: 14.5,
-                    lineHeight: 1.6,
-                    marginBottom: 16,
-                  }}
-                >
-                  An outpatient specialty clinic licensed under Montana's ETC framework. Focus on
-                  neurology and pain medicine; staffed by a multidisciplinary clinical team.
+              </>
+            ) : (
+              <div className="program-panel-body">
+                <p>
+                  <FormattedMessage
+                    id="directory.program.where.no-etc"
+                    defaultMessage="No licensed ETC is currently offering this program."
+                  />
                 </p>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    color: "var(--accent)",
-                    background: "var(--accent-bg)",
-                    padding: "6px 12px",
-                    borderRadius: 9999,
-                    fontSize: 12.5,
-                    fontWeight: 500,
-                    marginBottom: 18,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: "var(--accent)",
-                    }}
-                  />{" "}
-                  Currently accepting new patients
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Link to={`/etcs/${offeringEtc.slug}`} className="pill pill-outline pill-sm">
-                    View ETC profile <ArrowRight size={12} />
-                  </Link>
-                  <button
-                    onClick={() => navigate(`/connect/${program.slug}`)}
-                    className="pill pill-primary pill-sm"
-                  >
-                    Connect about this treatment <ArrowRight size={12} />
-                  </button>
-                </div>
               </div>
-            </>
-          ) : (
-            <p style={{ color: "var(--ink-soft)", fontSize: 15 }}>
-              No licensed ETC is currently offering this program.
-            </p>
+            )}
+          </section>
+
+          <section className="program-panel" id="enrollment">
+            <h2 className="program-panel-title">
+              <FormattedMessage
+                id="directory.program.enrollment.heading"
+                defaultMessage="How enrollment works."
+              />
+            </h2>
+            <ol className="program-enrollment">
+              <li>
+                <FormattedMessage
+                  id="directory.program.enrollment.step1"
+                  defaultMessage="Connect with the ETC. They review your situation."
+                />
+              </li>
+              <li>
+                <FormattedMessage
+                  id="directory.program.enrollment.step2"
+                  defaultMessage="Provide your treating clinician's recommendation and a current H&P."
+                />
+              </li>
+              <li>
+                <FormattedMessage
+                  id="directory.program.enrollment.step3"
+                  defaultMessage="Complete informed consent and the patient agreement before your first visit."
+                />
+              </li>
+            </ol>
+            <div className="program-enrollment-note">
+              <FormattedMessage
+                id="directory.program.enrollment.note"
+                defaultMessage="Lewis never charges patients. You'll pay the ETC directly for the treatment."
+              />
+            </div>
+          </section>
+
+          {program.costRange && (
+            <section className="program-panel" id="cost">
+              <h2 className="program-panel-title">
+                <FormattedMessage
+                  id="directory.program.cost.heading"
+                  defaultMessage="What this typically costs."
+                />
+              </h2>
+              <ProgramCostPanel program={program} />
+            </section>
           )}
-        </Panel>
 
-        <Panel title="How enrollment works.">
-          <ol
-            style={{
-              color: "var(--ink-soft)",
-              fontSize: 15,
-              lineHeight: 1.7,
-              paddingLeft: 22,
-              marginBottom: 18,
-            }}
-          >
-            <li>Connect with the ETC. They review your situation.</li>
-            <li>Provide your treating physician's recommendation and a current H&P.</li>
-            <li>Complete informed consent and the patient agreement before your first visit.</li>
-          </ol>
-          <div style={{ fontSize: 13, color: "var(--ink-soft)", fontStyle: "italic" }}>
-            Lewis never charges patients. You'll pay the ETC directly for the treatment.
+          <div className="program-feedback-footer">
+            <div className="program-ff-title serif">
+              <FormattedMessage
+                id="directory.program.feedback.heading"
+                defaultMessage="Used Lewis?"
+              />
+            </div>
+            <div className="program-ff-body">
+              <FormattedMessage
+                id="directory.program.feedback.body"
+                defaultMessage="If you've worked with an ETC through this directory, please share your story."
+              />
+            </div>
+            <Link
+              to={`/feedback?ref=program:${program.slug}`}
+              className="pill pill-outline pill-sm"
+            >
+              <FormattedMessage
+                id="directory.program.feedback.cta"
+                defaultMessage="Share feedback"
+              />
+            </Link>
           </div>
-        </Panel>
+        </main>
 
-        <Panel title="What this typically costs.">
-          <div
-            className="serif"
-            style={{
-              fontSize: 36,
-              color: "var(--accent)",
-              letterSpacing: "-0.015em",
-              marginBottom: 10,
-              fontWeight: 400,
-            }}
-          >
-            Typically $2,400–$3,800 per course
-          </div>
-          <div style={{ color: "var(--ink-soft)", fontSize: 13.5, lineHeight: 1.6 }}>
-            Costs are set by the ETC. Final pricing is confirmed during enrollment. Insurance does
-            not currently cover experimental treatments under Montana RTT.{" "}
-            <span style={{ fontStyle: "italic" }}>
-              [COUNSEL REVIEW: confirm cost-display copy.]
-            </span>
-          </div>
-        </Panel>
-
-        <div style={{ marginTop: 32, paddingTop: 28, borderTop: "1px solid var(--rule)" }}>
-          <div className="serif" style={{ fontSize: 19, marginBottom: 8 }}>
-            Used Lewis?
-          </div>
-          <div style={{ color: "var(--ink-soft)", fontSize: 14, marginBottom: 14 }}>
-            If you've worked with an ETC through this directory, please share your story.
-          </div>
-          <button
-            type="button"
-            disabled
-            className="pill pill-outline pill-sm"
-            style={{ opacity: 0.55, cursor: "not-allowed" }}
-          >
-            Share Feedback
-          </button>
-        </div>
+        <ProgramSectionNav program={program} sections={sections} />
       </div>
-    </div>
+    </article>
   );
 }

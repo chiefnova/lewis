@@ -9,18 +9,27 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { apiReference } from "@scalar/hono-api-reference";
 
+import { sanitizeAccessLogMessage } from "./access-log-message.js";
 import { boardRoutes } from "./domains/boards/routes.js";
 import { etcRoutes } from "./domains/etcs/routes.js";
 import { internalAdminRoutes } from "./domains/internal-admin/routes.js";
 import { patientRoutes } from "./domains/patients/routes.js";
+import { publicConditionsRoutes } from "./domains/public-conditions/routes.js";
+import { publicEtcsRoutes } from "./domains/public-etcs/routes.js";
+import { publicConnectRoutes } from "./domains/public-connect/routes.js";
+import { publicEligibilityRoutes } from "./domains/public-eligibility/routes.js";
+import { publicMarketingRoutes } from "./domains/public-marketing/routes.js";
+import { publicProgramsRoutes } from "./domains/public-programs/routes.js";
+import { publicSearchRoutes } from "./domains/public-search/routes.js";
 import { searchRoutes } from "./domains/search/routes.js";
-import { sponsorRoutes } from "./domains/sponsors/routes.js";
+import { manufacturerRoutes } from "./domains/manufacturers/routes.js";
 import { webhookRoutes } from "./domains/webhooks/routes.js";
 import { logger as appLogger } from "./logger.js";
 import { ApiError } from "./middleware/errors.js";
 import { requireClerkAuth } from "./middleware/auth.js";
 import { resolveTenant } from "./middleware/tenant.js";
 import { withDbContext } from "./middleware/db-context.js";
+import { withPublicDbContext } from "./middleware/public-context.js";
 import { rateLimit } from "./middleware/rate-limit.js";
 import {
   bodyLimitMiddleware,
@@ -65,7 +74,9 @@ app.use("*", bodyLimitMiddleware);
 // message through pino at info level so it lands in the structured stream.
 app.use(
   "*",
-  honoLogger((message) => appLogger.info({ source: "hono.logger" }, redactPhi(message))),
+  honoLogger((message) =>
+    appLogger.info({ source: "hono.logger" }, sanitizeAccessLogMessage(message)),
+  ),
 );
 
 // ---------------------------------------------------------------------------
@@ -183,6 +194,107 @@ v1Public.get(
 v1Public.use("/webhooks/*", rateLimit({ bucket: "webhooks", max: 120, windowSeconds: 60 }));
 v1Public.route("/webhooks", webhookRoutes);
 
+// Public directory search — anonymous, condition-first, FTS over
+// search_index_documents. See docs/directoryprd.md § 13 and
+// plans/immutable-squishing-sprout.md.
+//
+// Per-IP rate limit (30/min/IP per § 28.5) layered on top of the coarse
+// 600/min public bucket above. withPublicDbContext sets
+// app.role = 'directory_anonymous' inside a transaction; the public-read
+// RLS policies on search_index_documents/programs/conditions/etcs all
+// gate on that role string. NOT a service-role bypass — runtime role
+// stays app_api (NOBYPASSRLS, see migration 0011).
+v1Public.use("/public/search", rateLimit({ bucket: "public_search", max: 30, windowSeconds: 60 }));
+v1Public.use("/public/search", withPublicDbContext);
+v1Public.route("/public/search", publicSearchRoutes);
+
+// /v1/public/conditions — primary patient browse surface (per directoryprd.md
+// § 14). Same anonymous-RLS posture as /public/search, separate rate-limit
+// bucket so a search-spam burst doesn't lock out catalog browsing. 60/min/IP
+// (twice search) — list + detail navigation produces more requests per
+// session than search.
+v1Public.use(
+  "/public/conditions/*",
+  rateLimit({ bucket: "public_conditions", max: 60, windowSeconds: 60 }),
+);
+v1Public.use("/public/conditions/*", withPublicDbContext);
+v1Public.route("/public/conditions", publicConditionsRoutes);
+
+// /v1/public/programs — treatment detail surface (per directoryprd.md § 15).
+// Two GETs (list + detail) plus a third GET that renders the clinician
+// brief PDF via Puppeteer (§ 15.6). Same anonymous-RLS posture as conditions.
+//
+// brief.pdf sits in its own tighter bucket (30/min/IP vs 60/min for the
+// JSON endpoints) because Puppeteer is the most expensive operation in the
+// system. To make that isolation real, the broader /public/programs/*
+// limiter is wrapped to skip the brief.pdf path — otherwise Hono would run
+// BOTH limiters in registration order on the same request, and brief.pdf
+// abuse would consume from the catalog bucket too. With the skip in place,
+// brief.pdf only counts against public_program_briefs and catalog browsing
+// keeps its full 60/min budget under abuse.
+const publicProgramsBucket = rateLimit({
+  bucket: "public_programs",
+  max: 60,
+  windowSeconds: 60,
+});
+v1Public.use(
+  "/public/programs/*/brief.pdf",
+  rateLimit({ bucket: "public_program_briefs", max: 30, windowSeconds: 60 }),
+);
+v1Public.use("/public/programs/*", async (c, next) => {
+  if (c.req.path.endsWith("/brief.pdf")) return next();
+  return publicProgramsBucket(c, next);
+});
+v1Public.use("/public/programs/*", withPublicDbContext);
+v1Public.route("/public/programs", publicProgramsRoutes);
+
+// /v1/public/etcs — ETC catalog surface (per directoryprd.md § 16). Same
+// anonymous-RLS posture as conditions/programs; new ETC profile columns
+// (medical director contact, address, lat/lng, etc.) inherit the existing
+// etcs_directory_public_read policy from migration 0018. 60/min/IP matches
+// programs/conditions — list+detail navigation has comparable per-session
+// volume.
+v1Public.use("/public/etcs/*", rateLimit({ bucket: "public_etcs", max: 60, windowSeconds: 60 }));
+v1Public.use("/public/etcs/*", withPublicDbContext);
+v1Public.route("/public/etcs", publicEtcsRoutes);
+
+// /v1/public/marketing-subscriptions — anonymous email signup (slice 4
+// § 11.2 / 11.9 / 7.5). All three handlers (POST subscribe, GET confirm,
+// GET unsubscribe) go through SECURITY DEFINER helpers added in migration
+// 0020. Tighter 10/min/IP bucket because the subscribe path is the most
+// abuse-attractive endpoint on the directory surface (a script could spam
+// confirmation emails to arbitrary addresses without it).
+v1Public.use(
+  "/public/marketing-subscriptions/*",
+  rateLimit({ bucket: "public_marketing", max: 10, windowSeconds: 60 }),
+);
+v1Public.use("/public/marketing-subscriptions/*", withPublicDbContext);
+v1Public.route("/public/marketing-subscriptions", publicMarketingRoutes);
+
+// /v1/public/connect-requests — anonymous patient → ETC handoff (slice 5
+// § 18.1 / 18.2). Tighter 5/min/IP bucket than marketing because each
+// accepted submission emails a real ETC inbox — the abuse blast radius
+// is higher than a stray marketing-confirmation email. SECURITY DEFINER
+// write helper added in migration 0021; no SELECT path for the
+// directory_anonymous role on connect_requests.
+v1Public.use(
+  "/public/connect-requests/*",
+  rateLimit({ bucket: "public_connect", max: 5, windowSeconds: 60 }),
+);
+v1Public.use("/public/connect-requests/*", withPublicDbContext);
+v1Public.route("/public/connect-requests", publicConnectRoutes);
+
+// /v1/public/eligibility — anonymous server-bootstrapped self-screen
+// (slice 5 § 17.2). 30/min/IP matches the per-question cadence (4
+// questions per screen + start + complete + occasional resume); a
+// typical patient walks through in 1-2 minutes.
+v1Public.use(
+  "/public/eligibility/*",
+  rateLimit({ bucket: "public_eligibility", max: 30, windowSeconds: 60 }),
+);
+v1Public.use("/public/eligibility/*", withPublicDbContext);
+v1Public.route("/public/eligibility", publicEligibilityRoutes);
+
 // ---------------------------------------------------------------------------
 // /v1 — authed sub-router (every route below this gate requires Clerk auth +
 // active tenant membership + a per-request DB transaction with app.* RLS
@@ -211,7 +323,7 @@ v1Authed.use(
 );
 
 v1Authed.route("/search", searchRoutes);
-v1Authed.route("/sponsors", sponsorRoutes);
+v1Authed.route("/manufacturers", manufacturerRoutes);
 v1Authed.route("/etcs", etcRoutes);
 v1Authed.route("/patients", patientRoutes);
 v1Authed.route("/boards", boardRoutes);

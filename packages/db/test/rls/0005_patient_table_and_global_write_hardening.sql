@@ -16,20 +16,20 @@ select plan(11);
 insert into tenants (id, kind, status, display_name) values
   ('55000000-0000-0000-0000-000000000001', 'etc', 'active', 'ETC Hardened Patient Writes'),
   ('55000000-0000-0000-0000-000000000002', 'patient', 'active', 'Patient Hardened Patient Writes'),
-  ('55000000-0000-0000-0000-000000000003', 'sponsor', 'active', 'Sponsor for consent test'),
-  ('55000000-0000-0000-0000-000000000004', 'sponsor', 'active', 'Lewis admin home tenant');
+  ('55000000-0000-0000-0000-000000000003', 'manufacturer', 'active', 'Manufacturer for consent test'),
+  ('55000000-0000-0000-0000-000000000004', 'manufacturer', 'active', 'Lewis admin home tenant');
 
 insert into users (id, clerk_user_id, email, name) values
   ('55000000-0000-0000-1000-000000000001', 'rls5_etc_clinician', 'clin5@test.local', 'ETC Clinician'),
   ('55000000-0000-0000-1000-000000000002', 'rls5_etc_user', 'ops5@test.local', 'ETC Ops User'),
   ('55000000-0000-0000-1000-000000000003', 'rls5_lewis_admin', 'admin5@test.local', 'Lewis Admin'),
-  ('55000000-0000-0000-1000-000000000004', 'rls5_sponsor_user', 'sponsor5@test.local', 'Sponsor User');
+  ('55000000-0000-0000-1000-000000000004', 'rls5_manufacturer_user', 'manufacturer5@test.local', 'Manufacturer User');
 
 insert into tenant_memberships (user_id, tenant_id, role) values
   ('55000000-0000-0000-1000-000000000001', '55000000-0000-0000-0000-000000000001', 'etc_clinician'),
   ('55000000-0000-0000-1000-000000000002', '55000000-0000-0000-0000-000000000001', 'etc_user'),
   ('55000000-0000-0000-1000-000000000003', '55000000-0000-0000-0000-000000000004', 'lewis_admin'),
-  ('55000000-0000-0000-1000-000000000004', '55000000-0000-0000-0000-000000000003', 'sponsor_user');
+  ('55000000-0000-0000-1000-000000000004', '55000000-0000-0000-0000-000000000003', 'manufacturer_user');
 
 insert into tenant_relationships (from_tenant_id, to_tenant_id, kind, status) values
   ('55000000-0000-0000-0000-000000000001', '55000000-0000-0000-0000-000000000002', 'care_team', 'active');
@@ -47,7 +47,7 @@ begin
   select id into v_jur from regulatory_jurisdictions where code = 'US-MT';
 
   insert into investigational_devices (
-    id, sponsor_tenant_id, jurisdiction_id, device_name
+    id, manufacturer_tenant_id, jurisdiction_id, device_name
   ) values (
     '55000000-0000-0000-3000-000000000001',
     '55000000-0000-0000-0000-000000000003',
@@ -134,7 +134,7 @@ select set_config('app.user_id', '55000000-0000-0000-1000-000000000002', true);
 select throws_ok(
   $$
   insert into patient_data_sharing_consents (
-    patient_tenant_id, sponsor_tenant_id, jurisdiction_id, status, starts_at
+    patient_tenant_id, manufacturer_tenant_id, jurisdiction_id, status, starts_at
   ) values (
     '55000000-0000-0000-0000-000000000002',
     '55000000-0000-0000-0000-000000000003',
@@ -153,7 +153,7 @@ select set_config('app.user_id', '55000000-0000-0000-1000-000000000001', true);
 select lives_ok(
   $$
   insert into patient_data_sharing_consents (
-    patient_tenant_id, sponsor_tenant_id, jurisdiction_id, status, starts_at
+    patient_tenant_id, manufacturer_tenant_id, jurisdiction_id, status, starts_at
   ) values (
     '55000000-0000-0000-0000-000000000002',
     '55000000-0000-0000-0000-000000000003',
@@ -192,18 +192,18 @@ select throws_ok(
 -- 0016 — NULL-tenant notifications + feature_flags require role grant
 -- ---------------------------------------------------------------------------
 
--- 8. sponsor_user (no notification:write grant) cannot INSERT a NULL-tenant
+-- 8. manufacturer_user (no notification:write grant) cannot INSERT a NULL-tenant
 --    notification.
 select set_config('app.user_id', '55000000-0000-0000-1000-000000000004', true);
 select set_config('app.active_tenant_id', '55000000-0000-0000-0000-000000000003', true);
 select throws_ok(
   $$
   insert into notifications (tenant_id, channel, template, recipient)
-  values (null, 'email', 'sponsor_attempt_global', 'all')
+  values (null, 'email', 'manufacturer_attempt_global', 'all')
   $$,
   '42501',
   null,
-  'sponsor_user cannot INSERT NULL-tenant notification'
+  'manufacturer_user cannot INSERT NULL-tenant notification'
 );
 
 -- 9. etc_user (no notification:write grant) cannot INSERT a NULL-tenant flag.

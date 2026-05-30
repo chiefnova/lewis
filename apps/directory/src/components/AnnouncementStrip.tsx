@@ -1,7 +1,13 @@
 import { FormattedMessage } from "react-intl";
 
 import montanaFlag from "../assets/montana-flag.svg";
+import { EmailSignupForm } from "./EmailSignupForm";
 
+/**
+ * Slice 4 § 11.2 — revised AnnouncementStrip copy + wired EmailSignupForm.
+ * Replaces the slice-3 disabled-button stub. Renders only on the homepage
+ * (gated in DirectoryLayout via `location.pathname === "/"`).
+ */
 export function AnnouncementStrip() {
   return (
     <div style={{ background: "var(--paper-deep)", borderBottom: "1px solid rgba(40,30,20,0.04)" }}>
@@ -20,24 +26,16 @@ export function AnnouncementStrip() {
           />
         </span>
         <div className="announce-strip__group">
+          {/* Message hides on mobile (≤768px) so the flag + form stay on one
+              compact row; full copy shows on desktop. */}
           <span className="announce-strip__text">
             <FormattedMessage
               id="directory.announcement"
-              defaultMessage="Lewis Health is just getting started. New programs and ETCs are added as Montana licenses them."
+              defaultMessage="Lewis is just getting started. WST-057 is live; new Montana programs are added as ETCs onboard."
             />
           </span>
-          <button
-            type="button"
-            disabled
-            aria-describedby="announcement-cta-pending"
-            className="announce-strip__cta pill pill-outline pill-sm"
-          >
-            <FormattedMessage id="directory.announcement.cta" defaultMessage="Get notified" />
-          </button>
+          <EmailSignupForm source="announcement_strip" variant="announcement" />
         </div>
-        <span id="announcement-cta-pending" className="visually-hidden">
-          Email signup endpoint is not yet wired
-        </span>
       </div>
     </div>
   );

@@ -69,7 +69,7 @@ const REQUIRED_DOMAINS = new Set([
   "internal-admin",
   "patients",
   "search",
-  "sponsors",
+  "manufacturers",
   "webhooks",
 ]);
 

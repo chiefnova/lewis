@@ -38,9 +38,15 @@
  *   drizzle-kit-generated entries if the team ever runs `generate`.
  * - The journal stores `tag` and `when` only; the SHA-256 hash of each
  *   file is computed by drizzle-orm at runtime (migrator.js) and stored
- *   in the `__drizzle_migrations.hash` column. Editing an applied
- *   migration causes a hash mismatch and aborts the next deploy — this
- *   is the safety net we want for HIPAA migration provenance.
+ *   in the `__drizzle_migrations.hash` column. NOTE: drizzle-orm's
+ *   migrator selects which migrations to apply purely by comparing each
+ *   journal `when` against the most-recent applied `created_at`; it does
+ *   NOT re-validate the stored hash of an already-applied migration. So
+ *   editing an applied migration is a SILENT no-op on any DB that already
+ *   ran it (the file is simply never re-read) — it does NOT cause a hash
+ *   mismatch or abort the deploy. Treat migrations as append-only: never
+ *   edit an applied file in place; ship corrections as a new forward
+ *   migration. The hash column is provenance-only, not an integrity gate.
  */
 
 import { readdir, mkdir, writeFile } from "node:fs/promises";

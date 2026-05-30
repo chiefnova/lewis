@@ -1,295 +1,318 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
-import { getEtcBySlug, getProgramBySlug } from "../data/catalog";
-import { ArrowLeft, ArrowRight, PinIcon } from "../components/icons";
-import { TopicalTube } from "../components/Products";
-import { Panel } from "../components/Panel";
-import { useSeo, siteUrl } from "../seo/useSeo";
+import { FormattedMessage } from "react-intl";
 
-function MapPlaceholder({ city }: { city: string }) {
-  return (
-    <svg viewBox="0 0 400 300" width="80%" style={{ maxWidth: 480 }} aria-hidden="true">
-      <rect x="40" y="40" width="320" height="220" fill="var(--paper-card)" stroke="var(--rule)" />
-      <path
-        d="M40 80 L360 80 M40 130 L360 130 M40 180 L360 180 M40 230 L360 230"
-        stroke="var(--rule)"
-        strokeDasharray="2 4"
-        strokeWidth="0.5"
-      />
-      <path
-        d="M100 40 L100 260 M180 40 L180 260 M260 40 L260 260"
-        stroke="var(--rule)"
-        strokeDasharray="2 4"
-        strokeWidth="0.5"
-      />
-      <path
-        d="M60 120 Q120 100 180 130 T340 140 L360 145 L360 220 L40 220 L40 130 Z"
-        fill="var(--paper-deep)"
-        stroke="var(--rule)"
-        strokeWidth="0.8"
-        opacity="0.6"
-      />
-      <text
-        x="200"
-        y="280"
-        textAnchor="middle"
-        fontFamily="var(--serif)"
-        fontSize="11"
-        fill="var(--ink-soft)"
-        fontStyle="italic"
-      >
-        {city}, Montana
-      </text>
-      <circle cx="200" cy="160" r="5" fill="var(--accent)" />
-      <circle
-        cx="200"
-        cy="160"
-        r="14"
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth="1"
-        opacity="0.4"
-      />
-    </svg>
-  );
+import { useEtcDetail } from "./use-etc-detail";
+import { ArrowLeft } from "../components/icons";
+import { ETC_CONTENT, formatEtcName } from "../data/etcs-content";
+import { buildMedicalClinicJsonLd } from "../seo/medical-clinic-json-ld";
+import { useSeo, siteUrl } from "../seo/useSeo";
+import type { PublicEtcOfferedProgram } from "@lewis/shared/api/public";
+
+/**
+ * Slice 4 § 16.2 — /etcs/:slug profile. Round 5 locked the C+A hybrid:
+ *   - C's split: prose in the main column, a sticky clinician-priority rail
+ *     (license, accepting, claim, medical-director clinical contact, location)
+ *     that carries a persistent Inquire button — visible from the first screen.
+ *   - A's large closing Inquire panel after the body, for the reader who
+ *     scrolls all the way down.
+ * Two CTAs at deliberately different weights (quiet-persistent vs big-close).
+ *
+ * API-driven via useEtcDetail. The § 16.4 `ae-summary` document is gone; only
+ * manual + etrb-report remain. No live map here (deferred to 2+ ETCs).
+ */
+
+const FORM_LABEL: Record<string, string> = {
+  topical: "Topical",
+  oral: "Oral",
+  injection: "Injection",
+  infusion: "Infusion",
+};
+function prettyForm(form: string | null): string | null {
+  if (!form) return null;
+  return FORM_LABEL[form] ?? form;
+}
+function prettyPhase(phase: string | null): string | null {
+  if (!phase) return null;
+  const m = /^phase_(\d)$/.exec(phase);
+  return m ? `Phase ${m[1]}` : phase;
+}
+function programMeta(p: PublicEtcOfferedProgram): string {
+  return [p.indication, prettyForm(p.form), prettyPhase(p.phase)]
+    .filter((v): v is string => Boolean(v))
+    .join(" · ");
 }
 
 export function EtcProfilePage() {
-  const { slug = "big-sky" } = useParams<{ slug: string }>();
+  const { slug = "" } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const etc = getEtcBySlug(slug);
-  const offeredProgram = etc ? getProgramBySlug(etc.programs[0] ?? "") : undefined;
+  const { etc, loading, error, notFound, retry } = useEtcDetail(slug);
+
+  const displayName = etc ? formatEtcName(etc.name) : "";
+
+  // Go back to wherever the user came from (the /etcs list, search, a
+  // condition page, etc.). React Router tracks an `idx` in history.state; when
+  // it's > 0 there's an in-app entry to return to. On a cold/direct/external
+  // landing (idx 0 or absent) fall back to the centers index so we never
+  // dead-end or bounce off-site.
+  const goBack = () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (idx > 0) navigate(-1);
+    else navigate("/etcs");
+  };
 
   useSeo({
-    title: etc ? `${etc.name} — Lewis Health` : "ETC not found — Lewis Health",
+    title: etc ? `${displayName} — Lewis Health` : "Experimental Treatment Center — Lewis Health",
     description: etc
-      ? `${etc.name} is a licensed Montana Experimental Treatment Center in ${etc.city}, ${etc.state}. License #${etc.licenseNumber}.`
+      ? `${displayName} is a licensed Montana Experimental Treatment Center in ${etc.city}, Montana. License #${etc.licenseNumber}.`
       : undefined,
-    canonical: etc ? siteUrl(`/etcs/${etc.slug}`) : siteUrl("/etcs"),
-    jsonLd: etc
-      ? {
-          "@context": "https://schema.org",
-          "@type": "MedicalClinic",
-          name: etc.name,
-          address: {
-            "@type": "PostalAddress",
-            streetAddress: etc.address[0],
-            addressLocality: etc.city,
-            addressRegion: etc.state,
-          },
-          telephone: etc.phone,
-          medicalSpecialty: ["Neurology", "Pain Medicine"],
-        }
-      : undefined,
+    canonical: siteUrl(`/etcs/${slug}`),
+    jsonLd: etc ? (buildMedicalClinicJsonLd(etc) as unknown as Record<string, unknown>) : undefined,
+    noIndex: notFound ? true : undefined,
   });
 
-  useEffect(() => {
-    if (!etc) navigate("/etcs", { replace: true });
-  }, [etc, navigate]);
+  if (loading) {
+    return (
+      <div className="etcp-wrap" aria-busy="true">
+        <div className="etcp-head">
+          <div className="etcs-skel etcs-skel--line" style={{ width: 220, height: 40 }} />
+          <div className="etcs-skel etcs-skel--line" style={{ width: 140 }} />
+        </div>
+        <div className="etcp-cols">
+          <div className="etcs-skel etcs-skel--block" style={{ height: 320 }} />
+          <div className="etcs-skel etcs-skel--block" style={{ height: 260 }} />
+        </div>
+      </div>
+    );
+  }
 
-  if (!etc) return null;
+  // Order matters: transient fetch failures must render the retry UI, not the
+  // "Center not found" copy. Only a true 404 (notFound flag from the hook)
+  // shows the not-found surface. !etc fallback after both error AND notFound
+  // are handled is a defensive shim and shouldn't trip in practice.
+  if (error) {
+    return (
+      <div className="etcp-wrap">
+        <div className="etcs-error" role="alert">
+          <p className="etcs-error__msg">
+            <FormattedMessage
+              id="directory.etc.error"
+              defaultMessage="We couldn't load this center just now."
+            />
+          </p>
+          <button type="button" className="etcs-error__retry" onClick={retry}>
+            <FormattedMessage id="directory.etc.retry" defaultMessage="Try again" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !etc) {
+    return (
+      <div className="etcp-wrap etcp-notfound">
+        <h1 className="etcp-h1">
+          <FormattedMessage id="directory.etc.notfound.title" defaultMessage="Center not found" />
+        </h1>
+        <p className="etcp-prose">
+          <FormattedMessage
+            id="directory.etc.notfound.body"
+            defaultMessage="We couldn't find that Experimental Treatment Center."
+          />
+        </p>
+        <Link to="/etcs" className="etcp-rail-cta">
+          <FormattedMessage id="directory.etc.notfound.back" defaultMessage="See all centers" />
+        </Link>
+      </div>
+    );
+  }
+
+  const primary = etc.programs[0];
+  const connectHref = primary ? `/connect/${primary.slug}?via=etc:${etc.slug}` : "/browse";
+  const aboutParagraphs = ETC_CONTENT[etc.slug]?.aboutParagraphs ?? [etc.about];
 
   return (
-    <div className="fade-up split-detail">
-      <div className="split-detail-art">
-        <MapPlaceholder city={etc.city} />
-      </div>
-      <div className="split-detail-body">
-        {offeredProgram && (
-          <button
-            onClick={() => navigate(`/programs/${offeredProgram.slug}`)}
-            style={{
-              fontSize: 13,
-              color: "var(--ink-soft)",
-              marginBottom: 28,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <ArrowLeft />
-            Back to {offeredProgram.name}
-          </button>
-        )}
-        <h1
-          className="serif"
-          style={{
-            fontSize: 48,
-            letterSpacing: "-0.02em",
-            lineHeight: 1.05,
-            marginBottom: 10,
-            fontWeight: 400,
-          }}
-        >
-          {etc.name}
-        </h1>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            color: "var(--ink-soft)",
-            fontSize: 14,
-            marginBottom: 18,
-          }}
-        >
-          <PinIcon /> {etc.city}, {etc.state}
-        </div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            color: "var(--accent)",
-            background: "var(--accent-bg)",
-            padding: "7px 14px",
-            borderRadius: 9999,
-            fontSize: 13,
-            fontWeight: 500,
-            marginBottom: 36,
-          }}
-        >
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} />{" "}
-          Licensed by Montana DPHHS · License #{etc.licenseNumber}
-        </div>
+    <div className="etcp-wrap">
+      <button type="button" className="etcp-back" onClick={goBack}>
+        <ArrowLeft />
+        <FormattedMessage id="directory.etc.back" defaultMessage="Back to ETCs" />
+      </button>
 
-        <Panel title="About.">
-          <p style={{ color: "var(--ink-soft)", fontSize: 15, lineHeight: 1.65 }}>{etc.about}</p>
-        </Panel>
+      <header className="etcp-head">
+        <h1 className="etcp-h1">{displayName}</h1>
+        <div className="etcp-sub">{etc.city}, Montana</div>
+      </header>
 
-        <Panel title="Treatments offered.">
-          {offeredProgram ? (
-            <Link
-              to={`/programs/${offeredProgram.slug}`}
-              style={{
-                display: "flex",
-                gap: 16,
-                padding: 16,
-                background: "var(--paper)",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-            >
-              <div
-                style={{
-                  width: 100,
-                  height: 100,
-                  background: "var(--paper-deep)",
-                  borderRadius: 4,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <TopicalTube size={80} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div className="serif" style={{ fontSize: 19, marginBottom: 4 }}>
-                  {offeredProgram.name}
-                </div>
-                <div style={{ color: "var(--ink-soft)", fontSize: 13.5, marginBottom: 10 }}>
-                  {offeredProgram.indication}
-                </div>
-                <div style={{ color: "var(--accent)", fontSize: 12.5, fontWeight: 500 }}>
-                  ● Currently accepting new patients
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <p style={{ color: "var(--ink-soft)", fontSize: 14.5 }}>
-              No active treatment programs at this time.
-            </p>
-          )}
-        </Panel>
-
-        <Panel title="Location and contact.">
-          <address
-            style={{ color: "var(--ink)", fontSize: 14.5, lineHeight: 1.7, fontStyle: "normal" }}
-          >
-            {etc.address.map((line) => (
-              <div key={line}>{line}</div>
+      <div className="etcp-cols">
+        <main className="etcp-main">
+          <section className="etcp-sec">
+            <div className="ed-label">
+              <FormattedMessage id="directory.etc.about" defaultMessage="About this center" />
+            </div>
+            {aboutParagraphs.map((para, i) => (
+              <p key={i} className="etcp-prose">
+                {para}
+              </p>
             ))}
-            <div style={{ marginTop: 10 }}>
-              <a className="link" href={`tel:${etc.phone.replace(/[^+0-9]/g, "")}`}>
-                {etc.phone}
-              </a>
-            </div>
-            <div style={{ color: "var(--ink-soft)", marginTop: 10, fontSize: 13.5 }}>
-              {etc.hours}
-            </div>
-          </address>
-        </Panel>
+          </section>
 
-        <Panel title="Public documents.">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 14.5 }}>
-            <Link
-              to={`/etcs/${etc.slug}/manual`}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "10px 0",
-                borderBottom: "1px solid var(--rule)",
-              }}
-            >
-              <span>
-                Policy &amp; Procedures Manual{" "}
-                <span style={{ color: "var(--ink-soft)" }}>· PDF</span>
-              </span>
-              <ArrowRight />
-            </Link>
-            <Link
-              to={`/etcs/${etc.slug}/etrb-report`}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "10px 0",
-                borderBottom: "1px solid var(--rule)",
-              }}
-            >
-              <span>
-                ETRB Annual Report 2025 <span style={{ color: "var(--ink-soft)" }}>· PDF</span>
-              </span>
-              <ArrowRight />
-            </Link>
-            <Link
-              to={`/etcs/${etc.slug}/ae-summary`}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "10px 0",
-              }}
-            >
-              <span>
-                Adverse Event Summary 2025 <span style={{ color: "var(--ink-soft)" }}>· PDF</span>
-              </span>
-              <ArrowRight />
+          <section className="etcp-sec">
+            <div className="ed-label">
+              <FormattedMessage id="directory.etc.treatments" defaultMessage="Treatments offered" />
+            </div>
+            {etc.programs.length > 0 ? (
+              etc.programs.map((p) => (
+                <Link key={p.slug} to={`/programs/${p.slug}`} className="etcp-prog">
+                  <div>
+                    <div className="etcp-prog__name">{p.name}</div>
+                    <div className="etcp-prog__meta">{programMeta(p)}</div>
+                  </div>
+                  <span className="etcp-prog__go">
+                    <FormattedMessage
+                      id="directory.etc.view_treatment"
+                      defaultMessage="View treatment →"
+                    />
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <p className="etcp-prose">
+                <FormattedMessage
+                  id="directory.etc.no_programs"
+                  defaultMessage="No active treatment programs at this time."
+                />
+              </p>
+            )}
+          </section>
+
+          <section className="etcp-sec">
+            <div className="ed-label">
+              <FormattedMessage id="directory.etc.documents" defaultMessage="Public documents" />
+            </div>
+            <div className="etcp-docs">
+              <Link to={`/etcs/${etc.slug}/manual`} className="etcp-doc">
+                <span className="etcp-doc__t">
+                  <FormattedMessage
+                    id="directory.etc.doc.manual"
+                    defaultMessage="Policy & Procedures Manual"
+                  />
+                </span>
+                <span className="etcp-doc__s">
+                  <FormattedMessage id="directory.etc.doc.soon" defaultMessage="Coming soon →" />
+                </span>
+              </Link>
+              <Link to={`/etcs/${etc.slug}/etrb-report`} className="etcp-doc">
+                <span className="etcp-doc__t">
+                  <FormattedMessage
+                    id="directory.etc.doc.etrb"
+                    defaultMessage="ETRB Annual Report"
+                  />
+                </span>
+                <span className="etcp-doc__s">
+                  <FormattedMessage id="directory.etc.doc.soon" defaultMessage="Coming soon →" />
+                </span>
+              </Link>
+            </div>
+          </section>
+
+          {/* Large closing Inquire (A's component) */}
+          <div className="etcp-inquire">
+            <p className="etcp-inquire__note">
+              <FormattedMessage
+                id="directory.etc.inquire.note"
+                defaultMessage="Eligibility is decided by the treating clinician and the {name} team — not by Lewis or the program manufacturer."
+                values={{ name: displayName }}
+              />
+            </p>
+            <Link to={connectHref} className="etcp-inquire__btn">
+              <FormattedMessage
+                id="directory.etc.inquire.cta"
+                defaultMessage="Inquire about treatment at this ETC →"
+              />
             </Link>
           </div>
-        </Panel>
+        </main>
 
-        <Panel title="Medical Director.">
-          <div style={{ fontSize: 15 }}>{etc.medicalDirector.name}</div>
-          <div style={{ color: "var(--ink-soft)", fontSize: 13.5, marginTop: 4 }}>
-            {etc.medicalDirector.credentials}
+        {/* Sticky clinician-priority rail */}
+        <aside className="etcp-side">
+          <div className="etcp-rail">
+            <div className="etcp-panel etcp-panel--key">
+              <span className="etcp-lic">
+                <FormattedMessage
+                  id="directory.etc.license"
+                  defaultMessage="License #{number}"
+                  values={{ number: etc.licenseNumber }}
+                />
+              </span>
+              {etc.acceptingPatients && (
+                <div className="etcp-accepting">
+                  <span className="etc-card__dot" aria-hidden="true" />
+                  <FormattedMessage
+                    id="directory.etc.accepting"
+                    defaultMessage="Currently accepting new patients"
+                  />
+                </div>
+              )}
+              <div className="etcp-claim">
+                <FormattedMessage
+                  id="directory.etc.claimed"
+                  defaultMessage="✓ Claimed by operator"
+                />
+              </div>
+              <Link to={connectHref} className="etcp-rail-cta">
+                <FormattedMessage
+                  id="directory.etc.inquire.short"
+                  defaultMessage="Inquire about treatment →"
+                />
+              </Link>
+            </div>
+
+            <div className="etcp-panel">
+              <div className="etcp-panel__lab">
+                <FormattedMessage id="directory.etc.md" defaultMessage="Medical director" />
+              </div>
+              <div className="etcp-md__name">{etc.medicalDirector.name}</div>
+              {etc.medicalDirector.credentials && (
+                <div className="etcp-md__cred">{etc.medicalDirector.credentials}</div>
+              )}
+              {etc.medicalDirector.clinicalEmail && (
+                <div className="etcp-md__box">
+                  <div className="etcp-md__box-l">
+                    <FormattedMessage
+                      id="directory.etc.md.inquiries"
+                      defaultMessage="For clinicians — clinical inquiries"
+                    />
+                  </div>
+                  <a
+                    href={`mailto:${etc.medicalDirector.clinicalEmail}`}
+                    className="etcp-md__email"
+                  >
+                    {etc.medicalDirector.clinicalEmail}
+                  </a>
+                </div>
+              )}
+              {etc.medicalDirector.clinicalPhone && (
+                <div className="etcp-md__phone">{etc.medicalDirector.clinicalPhone}</div>
+              )}
+            </div>
+
+            <div className="etcp-panel">
+              <div className="etcp-panel__lab">
+                <FormattedMessage id="directory.etc.location" defaultMessage="Location & contact" />
+              </div>
+              <address className="etcp-loc">
+                {etc.address.map((line) => (
+                  <div key={line}>{line}</div>
+                ))}
+                {etc.phone && (
+                  <div className="etcp-loc__phone">
+                    <a href={`tel:${etc.phone.replace(/[^+0-9]/g, "")}`}>{etc.phone}</a>
+                  </div>
+                )}
+                {etc.hours && <div className="etcp-loc__hours">{etc.hours}</div>}
+              </address>
+            </div>
           </div>
-        </Panel>
-
-        <button
-          type="button"
-          onClick={() => navigate(offeredProgram ? `/connect/${offeredProgram.slug}` : "/browse")}
-          disabled={!offeredProgram}
-          className="pill pill-primary"
-          style={{
-            width: "100%",
-            padding: "18px 28px",
-            marginTop: 12,
-            opacity: offeredProgram ? 1 : 0.5,
-            cursor: offeredProgram ? "pointer" : "not-allowed",
-          }}
-        >
-          Inquire about treatment at this ETC <ArrowRight />
-        </button>
+        </aside>
       </div>
     </div>
   );

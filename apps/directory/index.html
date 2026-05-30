@@ -4,21 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#E6E5DD" />
-    <title>Lewis Health — Patient Directory</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Lewis — A new medical frontier in Montana</title>
     <meta
       name="description"
-      content="Lewis connects patients to Montana's licensed Experimental Treatment Centers offering investigational treatments under the state's Right to Try framework."
+      content="Lewis is the connecting tissue between patients, clinicians, manufacturers, and Montana's licensed Experimental Treatment Centers — the country's first state-licensed Right to Try regime under SB 535. Search investigational treatments by your condition."
     />
     <link rel="canonical" href="https://lewis.health/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Lewis Health — Patient Directory" />
+    <meta property="og:title" content="Lewis — A new medical frontier in Montana" />
     <meta
       property="og:description"
-      content="Find experimental treatments available in Montana through licensed Experimental Treatment Centers."
+      content="The public directory of investigational treatments at Montana's licensed Experimental Treatment Centers under SB 535. Search by your condition."
     />
     <meta property="og:url" content="https://lewis.health/" />
-    <!-- Brand fonts (Inter Tight, Fraunces) are self-hosted via @fontsource-variable
-         in @lewis/ui/styles/fonts.css. No third-party requests at runtime. -->
+    <!-- The directory is anonymous-first (no PHI), so Fraunces is loaded from
+         Google Fonts here — same source the gate page uses, so the wordmark
+         renders identically across surfaces. The patient and app consoles
+         (which DO touch PHI) keep using the self-hosted @fontsource-variable
+         build per the subprocessor rule in CLAUDE.md / b2bprd.md § 17.9. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..400&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

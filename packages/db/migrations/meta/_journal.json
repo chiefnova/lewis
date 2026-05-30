@@ -120,6 +120,34 @@
       "when": 1767226560000,
       "tag": "0017_rls_policy_supporting_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1767226620000,
+      "tag": "0018_directory_public_search",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1767226680000,
+      "tag": "0019_program_clinical_evidence",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1767226740000,
+      "tag": "0020_etcs_extended_and_marketing",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1767226800000,
+      "tag": "0021_connect_requests_and_eligibility_sessions",
+      "breakpoints": true
     }
   ]
 }

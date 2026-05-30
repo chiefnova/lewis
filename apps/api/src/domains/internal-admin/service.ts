@@ -9,7 +9,7 @@ import type {
 
 /**
  * Internal-admin service layer. Routes are role-gated (lewis_admin) and
- * audit-logged before reaching these functions. See sponsors/service.ts for
+ * audit-logged before reaching these functions. See manufacturers/service.ts for
  * the sprint-marker key (docs/implementation.md § 0.2).
  */
 

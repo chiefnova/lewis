@@ -86,25 +86,14 @@ export function FeedbackPage() {
   );
 }
 
-export function ForEtcsPage() {
-  return (
-    <StaticShell
-      title="For ETCs"
-      path="/for-etcs"
-      body="Lewis is the operating platform for Montana's Experimental Treatment Center regime. Licensed ETCs use Lewis to manage their P&P manual, ETRB, patient intake, adverse-event reporting, and annual filings."
-    />
-  );
-}
+// ForEtcsPage moved to apps/directory/src/pages/ForEtcsPage.tsx in slice 5
+// — it's now a real page with the ETRB callout, RULE-by-RULE compliance
+// coverage table, recurring deadlines table, and "How to get started"
+// rail per directoryprd.md § 22. No longer a StaticShell stub.
 
-export function ForSponsorsPage() {
-  return (
-    <StaticShell
-      title="For Sponsors"
-      path="/for-sponsors"
-      body="Drug manufacturers can list their investigational programs in the Lewis directory once a licensed Montana ETC is offering them. Listing is free; Lewis charges per enrolled patient via the operating platform."
-    />
-  );
-}
+// ForManufacturersPage moved to apps/directory/src/pages/ForManufacturersPage.tsx
+// in slice 5 — it's now a real page with the two-paths analytical
+// comparison table per directoryprd.md § 21. No longer a StaticShell stub.
 
 export function HowItWorksPage() {
   return (
@@ -116,12 +105,27 @@ export function HowItWorksPage() {
   );
 }
 
+// AboutPage moved to apps/directory/src/pages/AboutPage.tsx in slice 5 —
+// it's now a real page with the Corps of Discovery + Lewisia rediviva
+// founding story, the team-collective voice, and contacts surfaced
+// twice (in-letter strip + sticky-rail card). /design-shotgun Round 7
+// winner: variant C · Letter from the team.
+
+// PlatformPage moved to apps/directory/src/pages/ForPlatformPage.tsx in
+// slice 5 — it's now a real page with the connecting-tissue narrative,
+// 12-row handoffs table, compliance mapping, and security posture per
+// /design-shotgun Round 6.
+
+// ForCliniciansPage moved to apps/directory/src/pages/ForCliniciansPage.tsx
+// in slice 5 — it's now a real page with counsel-grade legal copy per
+// directoryprd.md § 20. No longer a StaticShell stub.
+
 export function FaqPage() {
   return (
     <StaticShell
       title="Frequently asked questions"
       path="/faq"
-      body="Common questions from patients, treating physicians, and ETC staff. The homepage FAQ section is the canonical source; this dedicated page is for direct linking and longer-form answers."
+      body="Common questions from patients, treating clinicians, and ETC staff. The homepage FAQ section is the canonical source; this dedicated page is for direct linking and longer-form answers."
     />
   );
 }
@@ -136,48 +140,25 @@ export function NotFoundPage() {
   );
 }
 
-export function SearchPage() {
-  return (
-    <StaticShell
-      title="Search"
-      path="/search"
-      body="Cross-content search across programs, ETCs, and conditions is wired up server-side once the public API surface lands. Until then, use the browse catalog filters."
-    />
-  );
-}
+// ConditionsIndexPage now lives at apps/directory/src/pages/conditions/ConditionsIndexPage.tsx
+// (replaced the StaticShell placeholder in Slice 2 — directoryprd.md § 14).
 
-export function ConditionsIndexPage() {
-  return (
-    <StaticShell
-      title="Conditions"
-      path="/conditions"
-      body="An index of conditions covered by listed programs. Builds out as more programs are licensed by Montana DPHHS."
-    />
-  );
-}
+// EtcsIndexPage moved to its own module (apps/directory/src/pages/EtcsIndexPage.tsx)
+// in slice 4 — it's now a real API-driven page, no longer a StaticShell stub.
 
-export function EtcsIndexPage() {
-  return (
-    <StaticShell
-      title="Experimental Treatment Centers"
-      path="/etcs"
-      body="Index of all licensed Montana Experimental Treatment Centers. The launch ETC is in Bozeman; additional centers will appear here as they are licensed by DPHHS."
-    />
-  );
-}
-
-export function EtcDocumentPage({ kind }: { kind: "manual" | "etrb-report" | "ae-summary" }) {
+// § 16.4 — `ae-summary` removed; folded into the ETRB annual report. Only the
+// manual + etrb-report documents remain.
+export function EtcDocumentPage({ kind }: { kind: "manual" | "etrb-report" }) {
   const { slug = "" } = useParams<{ slug: string }>();
   const titles: Record<typeof kind, string> = {
     manual: "Policy & Procedures Manual",
     "etrb-report": "ETRB Annual Report",
-    "ae-summary": "Adverse Event Summary",
   };
   return (
     <StaticShell
       title={titles[kind]}
       path={`/etcs/${slug}/${kind}`}
-      body="ETC public documents are surfaced here in HTML and downloadable PDF form. Versions are immutable; new revisions create a new version, never overwrite. [COUNSEL REVIEW] — confirm the rendering policy for redacted patient identifiers in AE summaries (RULE 16(6)(c))."
+      body="ETC public documents are surfaced here in HTML and downloadable PDF form once auto-rendered from app.lewis.health. Versions are immutable; new revisions create a new version, never overwrite."
     />
   );
 }

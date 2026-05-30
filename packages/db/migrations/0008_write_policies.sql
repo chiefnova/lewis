@@ -43,14 +43,14 @@
 --   notification:write        — enqueue notifications
 --   feature_flag:write        — toggle feature_flags
 --   regulatory:write          — manage regulatory_jurisdictions / regulatory_rule_versions (lewis_admin)
---   sponsor:write             — sponsor_organizations (sponsor_admin or lewis_admin)
+--   manufacturer:write             — manufacturer_organizations (manufacturer_admin or lewis_admin)
 --   etc:write                 — etcs (etc_admin or lewis_admin)
 --   patient:write             — patients (patient self, ETC care_team, lewis_admin)
---   program:write             — programs (sponsor_admin)
---   device:write              — investigational_devices (sponsor_admin)
+--   program:write             — programs (manufacturer_admin)
+--   device:write              — investigational_devices (manufacturer_admin)
 --   facility:write            — inpatient_facility_profiles (etc_admin)
 --   payment_rail:write        — payment_rails (lewis_admin)
---   payment_obligation:write  — payment_obligations (etc_admin or sponsor_admin per legal_basis)
+--   payment_obligation:write  — payment_obligations (etc_admin or manufacturer_admin per legal_basis)
 --   payment_transaction:write — payment_transactions (system role via webhook handler — not a user-facing action)
 --   hfar:write                — hfar_path_a_allocations (etc_admin)
 --   consent:write             — patient_data_sharing_consents (patient self)
@@ -58,7 +58,7 @@
 --   search_index:write        — search_index_documents / search_index_jobs (system role)
 --
 -- Roles referenced (from tenant_memberships.role):
---   sponsor_admin, sponsor_user
+--   manufacturer_admin, manufacturer_user
 --   etc_admin, etc_user, etc_clinician
 --   patient
 --   board_reviewer
@@ -79,24 +79,24 @@ language sql
 immutable
 as $$
   select case action
-    when 'tenant:write'              then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'tenant:write'              then role_name in ('manufacturer_admin', 'etc_admin', 'lewis_admin')
     when 'user:write'                then role_name in ('lewis_admin')
-    when 'membership:write'          then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
-    when 'relationship:write'        then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'membership:write'          then role_name in ('manufacturer_admin', 'etc_admin', 'lewis_admin')
+    when 'relationship:write'        then role_name in ('manufacturer_admin', 'etc_admin', 'lewis_admin')
     when 'support_grant:write'       then role_name in ('lewis_admin')
     when 'audit:write'               then true  -- any authenticated session can write audit rows; immutability trigger from 0003 handles tampering
-    when 'file:write'                then role_name in ('sponsor_admin', 'sponsor_user', 'etc_admin', 'etc_user', 'etc_clinician', 'patient', 'lewis_admin')
+    when 'file:write'                then role_name in ('manufacturer_admin', 'manufacturer_user', 'etc_admin', 'etc_user', 'etc_clinician', 'patient', 'lewis_admin')
     when 'notification:write'        then role_name in ('lewis_admin')  -- normally enqueued by workers, not directly by users
     when 'feature_flag:write'        then role_name in ('lewis_admin')
     when 'regulatory:write'          then role_name in ('lewis_admin')
-    when 'sponsor:write'             then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'manufacturer:write'             then role_name in ('manufacturer_admin', 'lewis_admin')
     when 'etc:write'                 then role_name in ('etc_admin', 'lewis_admin')
     when 'patient:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
-    when 'program:write'             then role_name in ('sponsor_admin', 'lewis_admin')
-    when 'device:write'              then role_name in ('sponsor_admin', 'lewis_admin')
+    when 'program:write'             then role_name in ('manufacturer_admin', 'lewis_admin')
+    when 'device:write'              then role_name in ('manufacturer_admin', 'lewis_admin')
     when 'facility:write'            then role_name in ('etc_admin', 'lewis_admin')
     when 'payment_rail:write'        then role_name in ('lewis_admin')
-    when 'payment_obligation:write'  then role_name in ('sponsor_admin', 'etc_admin', 'lewis_admin')
+    when 'payment_obligation:write'  then role_name in ('manufacturer_admin', 'etc_admin', 'lewis_admin')
     when 'payment_transaction:write' then role_name in ('lewis_admin')  -- normally written by webhook worker
     when 'hfar:write'                then role_name in ('etc_admin', 'lewis_admin')
     when 'consent:write'             then role_name in ('patient', 'etc_admin', 'etc_clinician', 'lewis_admin')
@@ -289,10 +289,10 @@ create policy regulatory_rule_versions_write on regulatory_rule_versions
 -- Architecture stubs (0004)
 -- ---------------------------------------------------------------------------
 
-create policy sponsor_organizations_write on sponsor_organizations
+create policy manufacturer_organizations_write on manufacturer_organizations
   for all to public
-  using (app.can_write_for_tenant(tenant_id, 'sponsor:write'))
-  with check (app.can_write_for_tenant(tenant_id, 'sponsor:write'));
+  using (app.can_write_for_tenant(tenant_id, 'manufacturer:write'))
+  with check (app.can_write_for_tenant(tenant_id, 'manufacturer:write'));
 
 create policy etcs_write on etcs
   for all to public
@@ -312,13 +312,13 @@ create policy patients_write on patients
 
 create policy programs_write on programs
   for all to public
-  using (app.can_write_for_tenant(sponsor_tenant_id, 'program:write'))
-  with check (app.can_write_for_tenant(sponsor_tenant_id, 'program:write'));
+  using (app.can_write_for_tenant(manufacturer_tenant_id, 'program:write'))
+  with check (app.can_write_for_tenant(manufacturer_tenant_id, 'program:write'));
 
 create policy investigational_devices_write on investigational_devices
   for all to public
-  using (app.can_write_for_tenant(sponsor_tenant_id, 'device:write'))
-  with check (app.can_write_for_tenant(sponsor_tenant_id, 'device:write'));
+  using (app.can_write_for_tenant(manufacturer_tenant_id, 'device:write'))
+  with check (app.can_write_for_tenant(manufacturer_tenant_id, 'device:write'));
 
 create policy inpatient_facility_profiles_write on inpatient_facility_profiles
   for all to public

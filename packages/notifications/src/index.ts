@@ -1,15 +1,15 @@
-export type NotificationChannel = "email";
+/**
+ * @lewis/notifications — typed Resend wrapper + queue payload contracts +
+ * email templates. The API enqueues jobs onto BullMQ; this package is the
+ * shared spec the worker handlers + API enqueue calls agree on.
+ *
+ * Slice 4 introduces the marketing-confirmation flow (see queue-payloads.ts
+ * + templates/marketing-confirmation.ts). Future flows (patient invite,
+ * account created, password reset) follow the same pattern: payload schema
+ * here, handler in apps/workers/src/handlers/.
+ */
 
-export type NotificationTemplate = "invite" | "account_created" | "password_reset";
-
-export type NotificationPayload = {
-  channel: NotificationChannel;
-  template: NotificationTemplate;
-  recipient: string;
-  data: Record<string, string>;
-};
-
-export async function sendNotification(payload: NotificationPayload): Promise<void> {
-  void payload;
-  // Sprint 1 wires the queue contract. Provider dispatch lands behind the worker.
-}
+export * from "./queue-payloads.js";
+export * from "./send-email.js";
+export * from "./templates/marketing-confirmation.js";
+export * from "./templates/connect-request.js";

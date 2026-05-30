@@ -1,4 +1,4 @@
-create table sponsor_organizations (
+create table manufacturer_organizations (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null unique references tenants(id),
   legal_name text not null,
@@ -36,7 +36,7 @@ create table patients (
 
 create table programs (
   id uuid primary key default gen_random_uuid(),
-  sponsor_tenant_id uuid not null references tenants(id),
+  manufacturer_tenant_id uuid not null references tenants(id),
   jurisdiction_id uuid not null references regulatory_jurisdictions(id),
   name text not null,
   drug text,
@@ -55,7 +55,7 @@ create table programs (
 
 create table investigational_devices (
   id uuid primary key default gen_random_uuid(),
-  sponsor_tenant_id uuid not null references tenants(id),
+  manufacturer_tenant_id uuid not null references tenants(id),
   program_id uuid references programs(id),
   jurisdiction_id uuid not null references regulatory_jurisdictions(id),
   device_name text not null,
@@ -134,7 +134,7 @@ create table hfar_path_a_allocations (
 create table patient_data_sharing_consents (
   id uuid primary key default gen_random_uuid(),
   patient_tenant_id uuid not null references tenants(id),
-  sponsor_tenant_id uuid not null references tenants(id),
+  manufacturer_tenant_id uuid not null references tenants(id),
   jurisdiction_id uuid not null references regulatory_jurisdictions(id),
   program_id uuid references programs(id),
   scope_json jsonb not null default '{}'::jsonb,
@@ -164,7 +164,7 @@ values
   ('digital_currency', 'disabled', 'USD', 'disabled')
 on conflict (rail_type, provider, currency_code) do nothing;
 
-alter table sponsor_organizations enable row level security;
+alter table manufacturer_organizations enable row level security;
 alter table etcs enable row level security;
 alter table patients enable row level security;
 alter table programs enable row level security;
@@ -177,7 +177,7 @@ alter table hfar_path_a_allocations enable row level security;
 alter table patient_data_sharing_consents enable row level security;
 alter table patient_device_registry_entries enable row level security;
 
-create policy sponsor_organizations_tenant_read on sponsor_organizations
+create policy manufacturer_organizations_tenant_read on manufacturer_organizations
   for select using (tenant_id = app.current_tenant_id() or app.has_active_support_grant(tenant_id, 'tenant:read'));
 
 create policy etcs_tenant_read on etcs
@@ -186,11 +186,11 @@ create policy etcs_tenant_read on etcs
 create policy patients_self_read on patients
   for select using (tenant_id = app.current_tenant_id() or app.has_active_support_grant(tenant_id, 'patient:read'));
 
-create policy programs_sponsor_read on programs
-  for select using (sponsor_tenant_id = app.current_tenant_id());
+create policy programs_manufacturer_read on programs
+  for select using (manufacturer_tenant_id = app.current_tenant_id());
 
-create policy investigational_devices_sponsor_read on investigational_devices
-  for select using (sponsor_tenant_id = app.current_tenant_id());
+create policy investigational_devices_manufacturer_read on investigational_devices
+  for select using (manufacturer_tenant_id = app.current_tenant_id());
 
 create policy inpatient_facility_profiles_etc_read on inpatient_facility_profiles
   for select using (etc_tenant_id = app.current_tenant_id() or app.has_active_support_grant(etc_tenant_id, 'tenant:read'));

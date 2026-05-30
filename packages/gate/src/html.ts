@@ -19,6 +19,7 @@ const TEMPLATE = (error: boolean): string => `<!doctype html>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>lewis.health</title>
     <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20ry%3D%226%22%20fill%3D%22%23E6E5DD%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%229%22%20fill%3D%22%232C4A6B%22%2F%3E%3C%2Fsvg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -35,6 +36,7 @@ const TEMPLATE = (error: boolean): string => `<!doctype html>
         --accent: #2c4a6b;
         --rule: #c2bfae;
         --rule-soft: #e4dcc8;
+        --form-rhythm: 36px;
         --serif: "Fraunces", Georgia, serif;
         --sans: "Inter Tight", -apple-system, system-ui, sans-serif;
         --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -48,6 +50,11 @@ const TEMPLATE = (error: boolean): string => `<!doctype html>
         font-family: var(--sans);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        /* Lock Fraunces' opsz axis at 56 — same value the directory uses
+         * via @lewis/ui base.css so the wordmark renders identically on
+         * both surfaces regardless of browser/zoom variations. Inter Tight
+         * has no opsz axis and silently ignores this. */
+        font-variation-settings: "opsz" 56;
       }
       body {
         min-height: 100svh;
@@ -76,7 +83,7 @@ const TEMPLATE = (error: boolean): string => `<!doctype html>
         color: var(--ink-soft);
       }
       .tagline {
-        margin-top: 18px;
+        margin: 18px 0 0;
         font-family: var(--serif);
         font-style: italic;
         font-weight: 300;
@@ -90,7 +97,7 @@ const TEMPLATE = (error: boolean): string => `<!doctype html>
         color: var(--accent);
       }
       form {
-        margin-top: 56px;
+        margin: var(--form-rhythm) 0 0;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -143,7 +150,7 @@ const TEMPLATE = (error: boolean): string => `<!doctype html>
       button:hover { background: #3a5a7c; }
       button:active { transform: scale(0.98); }
       .footnote {
-        margin-top: 36px;
+        margin: var(--form-rhythm) 0 0;
         font-size: 12.5px;
         line-height: 1.5;
         color: var(--ink-faint);
@@ -155,7 +162,7 @@ const TEMPLATE = (error: boolean): string => `<!doctype html>
         font-weight: 300;
       }
       .gate-error {
-        margin-top: 14px;
+        margin: 14px 0 0;
         font-size: 13px;
         color: #8a3a2a;
         font-family: var(--serif);
@@ -280,6 +287,7 @@ export function loadingHtml(): string {
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>lewis.health</title>
     <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20ry%3D%226%22%20fill%3D%22%23E6E5DD%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%229%22%20fill%3D%22%232C4A6B%22%2F%3E%3C%2Fsvg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

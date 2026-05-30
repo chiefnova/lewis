@@ -31,10 +31,20 @@
 
   --color-rule: #c2bfae;
   --color-rule-soft: #e4dcc8;
+  /* Translucent warm ink for chrome separators (nav group + footer dividers)
+   * rendered as a 0.5px hairline. 0.5px is the physical floor (1 device pixel
+   * on retina), so the low alpha is what makes the line read as a fine thread
+   * rather than a solid rule, while staying visible against --paper. */
+  --color-rule-strong: rgba(58, 52, 42, 0.34);
 
   /* ---- Type ------------------------------------------------- */
-  --font-sans: "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif;
-  --font-serif: "Fraunces", "Tiempos Headline", Georgia, serif;
+  /* "Fraunces" comes first so apps that load Google Fonts (e.g. the public
+   * directory) use the same font source as the gate page and render the
+   * wordmark identically. Apps that don't load Google Fonts (patient + app
+   * consoles, per the PHI/subprocessor rule) silently fall through to the
+   * self-hosted "Fraunces Variable" build via @fontsource-variable. */
+  --font-sans: "Inter Tight Variable", "Inter Tight", "Söhne", -apple-system, system-ui, sans-serif;
+  --font-serif: "Fraunces", "Fraunces Variable", "Tiempos Headline", georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
   /* ---- Border radius scale ---------------------------------- */
@@ -88,6 +98,7 @@
 
   --rule: var(--color-rule);
   --rule-soft: var(--color-rule-soft);
+  --rule-strong: var(--color-rule-strong);
 
   --serif: var(--font-serif);
   --sans: var(--font-sans);

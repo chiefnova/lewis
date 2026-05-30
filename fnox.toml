@@ -41,9 +41,15 @@ CLERK_WEBHOOK_SECRET= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxC
 # PLAID_CLIENT_ID = { provider = "age" }
 # PLAID_SECRET = { provider = "age" }
 # PLAID_WEBHOOK_SECRET = { provider = "age" }
-# DEFERRED — Resend (PRD § 13 — transactional email)
+# Resend (transactional email — slice 4 marketing confirmations).
+# Value provisioned out-of-band — fnox set --profile api_dev RESEND_API_KEY <key>.
+# The API itself doesn't call Resend (workers do), but it shares the env so a
+# future API-side resend integration doesn't fragment the secret store.
 # RESEND_API_KEY = { provider = "age" }
 # RESEND_WEBHOOK_SECRET = { provider = "age" }
+# Frontend-facing absolute base URL the API embeds in confirmation/unsubscribe
+# emails. Local dev defaults to http://localhost:13003 if unset.
+# LEWIS_DIRECTORY_BASE_URL = { provider = "age" }
 # DEFERRED — Sentry (PRD § 18)
 # SENTRY_DSN = { provider = "age" }
 SUPABASE_URL= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSArdU5vNFV4akhDRFVCb2w5NmxERERzU0Z5SGloQTQzZUtZSXl3ZTZTZTA4CkpOVncycGNWZ2x3Y3Fxd3JHdVFsWitkTGhxMnpkRlJYbytGcDhGdTBnK2MKLT4gWDI1NTE5IHVkeHJneUZWZUNDSmVoaUV4b0xsNHlybVN4QWtROVZEazFiQ1F4cFprVm8KeWF1bmhLWjkyRlp4UjE5K1NINzhCNE5Mc2RINlA5U3ZpOUtWQnp2T2wvVQotPiBVTXNCfCtWLWdyZWFzZSBrcSBiRwpIV2dGRkRHRk9SZkxmWmpXaTRyQks0dGNjK0d0Z3NaSnB1U2NldURXRGpBeXU1aVRUSkFiRXJYNWI3Vzh6ZmlaCmtlYnRXbnd6RndwaFBKYXlhQmQyN1BCR3VBeE53bzRUMjBuUVpKMG1IblNDWXBHWWlJSUhBejh3Ci0tLSBTQjI5eWtDb0xOcWFzYkdZOElOUEtQYmIrV3FERFV1bm1ZMVIrcVZDOEpvCqljvzI3ArSztg2k3FUrFPfqOsq8gPe3AaqVAj09kaS0Lv2Q0QDKq7NuISljWLfh098CmlgL3xGbDwhwTaLGtyhdAroQvMCfaA==" }
@@ -58,8 +64,23 @@ SUPABASE_URL= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyN
 CLERK_SECRET_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBFVlJPdEdkeS92Q01LcDVhellmNjQzU3QwN0xCc0xMcURJem03czJNOFZNCkRsYnhBaFp4TXNsSHpjanJKaVM5MHBFR0lkWCttZFRpeU93TUpVcnUxZW8KLT4gWDI1NTE5IGFacEVEL09adnpGOTlzMk16N0pqQUhEMUtZeGxxUUQ0cHoxV09wVTRBVGMKUkwyVmJYOGZEZzBEcU1PaFZQeG9OUWJpTFNTdjJBcnlSRmc3WFJEb2tzawotPiBpb3FRLCRsLWdyZWFzZSBOMyZ1bElERCBfJDhxQkViCjhqNG5zSEZ5clFCZ2lNZm1ORFRPdlNxaFdPMXJVRUk3aGFyUngxZlV2Vk01Z3puZ2NQOUlmckQ3L3I0Vyt6OVEKMkY4Ti82L0xJU2pVeXcxOFVIVFMKLS0tIDVNK285VXVwUWhUcDZTTGFpZ0Jwb0JhV0hnNHdIY0FFdkhVcExBTTduZTQKVWmthnNJrXNqswIzdgGLNFKkxwBn415uusBhvAqwkVdp/9fJ/1JSX82vNkifBnrjTND95FIQcbhp2TQ+hHS5Ejaefq4NL1RmaIUC16lMFFZGoQ==" }
 # DEFERRED — Stripe (PRD § 14)
 # STRIPE_SECRET_KEY = { provider = "age" }
-# DEFERRED — Resend (PRD § 13 — transactional email)
+# Resend (transactional email — slice 4 marketing-confirmation + slice 5
+# patient → ETC connect-request flows). Workers call the Resend SDK from
+# packages/notifications/sendEmail when the notifications queue dispatches a
+# marketing_confirmation_send OR connect_request_send job. Provision:
+#   fnox set --profile workers_dev RESEND_API_KEY re_xxxxxxxxxxxxxxxxxxxxxxxx
+#   fnox set --profile workers_dev LEWIS_MARKETING_FROM "Lewis Health <hello@lewis.health>"
+# Without RESEND_API_KEY in NODE_ENV=development|test the worker logs a
+# "would-have-sent" warning and completes the job — for dev so the connect
+# form + marketing form e2e flows work end-to-end without provisioning
+# Resend. In staging / production both handlers THROW so the job fails
+# loudly and operators notice.
 # RESEND_API_KEY = { provider = "age" }
+# LEWIS_MARKETING_FROM = { provider = "age" }
+# Absolute base URL the worker embeds in confirm/unsubscribe links (slice 4)
+# and patient/ETC reply links (slice 5). Defaults to http://localhost:13003
+# in dev if unset; resolveDirectoryBaseUrl throws in non-dev runtimes.
+# LEWIS_DIRECTORY_BASE_URL = { provider = "age" }
 # DEFERRED — Sentry (PRD § 18)
 # SENTRY_DSN = { provider = "age" }
 SUPABASE_URL= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBScnUxNllNUTFrdHplWmVWbGdNRVJFZmhNTjhENXBsenl4UDVEdmNtZ0dNCm90QVBLRjU0cGNzM0ZrVFpkR2RKcmNKb0lZWVcxTUxGUjd6NXpqbDlMaVEKLT4gWDI1NTE5IEtHQmRROE1jdjcyM2Nob1EyY0xjZUszR1p0SHpQd1I5dG9LcHhFbFlRQ00KempLaEtUNmNaNlNpREgwajRacXZwUjBISmpEQVBNMWM5UmVNSG40RUJsVQotPiBBLWdyZWFzZSAoeSA5Wk93aj9IUyB2ajBOKHUKNjl0MDlFb3k5SnRvc1BxcEc3R2xVcDAKLS0tIHJmV0habUJRbThEMU5yUndyZUwzWE9lUEJLbXVKa3hxODFYbVlFc3BtYW8KhB+kFdVOxPoPNBrHokeuwDTsU6/VTi1R+fGXZdq4VS+ZQkinbL0UEW1TSgEPIly//GV1TSm1zxhSbFOYhzqr4miqjyeXFEYD" }
@@ -95,6 +116,13 @@ VITE_API_BASE_URL = { provider = "age" }
 [profiles.frontend_directory_dev.secrets]
 VITE_API_BASE_URL = { provider = "age" }
 VITE_CLERK_PUBLISHABLE_KEY= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBuL0lYQlViSFpjRUIzKzhidFlvVE5IaW10QVdYVXZSRFJHMFVhVHdRbTNvCjFhbHYzZGkrTTNtcmI3Z2h1WSs1eVBVd3dvZk53alBEdnd6Rk05S1FCNW8KLT4gWDI1NTE5IFltYVRzZ1ZhV3B5YXdLWFBPM1NndHZHSFpjMjNRbVZrWlg5RkY3SE1zUkkKakxtaGZjRjc3MmFnK1o1Tjh1anc1NVhlUXBrK00xaTRkUkFWR0lRZkRhcwotPiBnO1UtZ3JlYXNlCk5NWmllZDgKLS0tIGNSc2RNR2lQOFdGaVhyeFkwRWx2S0ExOWJkSGJUWXpISUVPL0J2ZnRUeG8Kjg1StjO0NByGpKts6nbW3t0t09oaUwlEe0LFigf1rXCKn9muZT9d5wfPB6CqzT027zHZ9RE83BKsgj6VIvgioy5rTdd8LtnWPgFK6XAMvHxXi0xH" }
+# Mapbox public token for the slice-4 /etcs map (light theme, single Big Sky
+# pin at MVP-0). Token is publicly exposed (Vite-prefixed). Mapbox account
+# scopes restrict it to lewis.health origins + *.vercel.app + localhost:13003.
+# Provision: fnox set --profile frontend_directory_dev VITE_MAPBOX_PUBLIC_TOKEN pk.xxxx
+# Without it set, <EtcMap> renders nothing and the list view above stays
+# fully functional (graceful degradation per slice 4 plan § 5).
+# VITE_MAPBOX_PUBLIC_TOKEN = { provider = "age" }
 # DEFERRED — Sentry (PRD § 18)
 # VITE_SENTRY_DSN = { provider = "age" }
 # DEFERRED — PostHog (PRD § 18.4)

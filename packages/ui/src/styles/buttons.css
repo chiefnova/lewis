@@ -11,10 +11,17 @@
   justify-content: center;
   gap: 8px;
   border-radius: var(--radius-button);
-  padding: 12px 22px;
+  /* Inter Tight reserves extra ascent space above caps for diacritics, so
+   * even with line-height: 1 the visible glyphs sit ~1px above the geometric
+   * center of the line-box. Asymmetric padding (1px more top, 1px less
+   * bottom) pushes the visible text back to optical center. Works in every
+   * browser — text-box-trim would do this automatically but support is
+   * still patchy (Firefox + older Chromium/Safari skip it). */
+  padding: 13px 22px 11px;
   font-family: var(--sans);
   font-size: 14px;
   font-weight: 500;
+  line-height: 1;
   letter-spacing: 0.005em;
   white-space: nowrap;
   border: none;
@@ -72,13 +79,13 @@
 
 /* ---- Sizes -------------------------------------------------- */
 .pill-sm {
-  padding: 8px 16px;
+  padding: 9px 16px 7px;
   font-size: 13px;
   border-radius: var(--radius-button-sm);
 }
 
 .pill-lg {
-  padding: 14px 28px;
+  padding: 15px 28px 13px;
   font-size: 15px;
 }
 

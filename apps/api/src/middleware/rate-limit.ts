@@ -35,14 +35,31 @@ export type RateLimitOptions = {
 };
 
 function defaultKeyFn(c: Parameters<MiddlewareHandler>[0]): string {
+  // Prefer Cloudflare's cf-connecting-ip: behind CF it is the authoritative
+  // client IP and the client CANNOT forge it (CF overwrites any inbound
+  // value). x-real-ip is next (single-value, set by a trusted reverse
+  // proxy). Only then fall back to the FIRST x-forwarded-for hop.
+  //
+  // SECURITY: the first XFF hop is client-supplied and spoofable — CF/proxies
+  // APPEND the real IP, they don't replace the chain. Keying abuse limits off
+  // it alone lets an attacker rotate the header to land each request in a
+  // fresh bucket and bypass the per-IP limit (acute for /public/connect-*,
+  // which emails real ETC inboxes). cf-connecting-ip closes that in prod;
+  // the XFF fallback only applies in environments with no CF / x-real-ip.
+  const cfIp = c.req.header("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
+  const realIp = c.req.header("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
   const xff = c.req.header("x-forwarded-for");
   if (xff) {
     const first = xff.split(",")[0]?.trim();
     if (first) return first;
   }
   // Fall back to a coarse "anonymous" bucket. In real prod, your platform
-  // (Railway/Fly/Vercel) populates x-forwarded-for; if not, this still
-  // bounds total throughput safely.
+  // (Railway/Fly/Vercel/Cloudflare) populates one of the headers above; if
+  // not, this still bounds total throughput safely.
   return "anonymous";
 }
 
