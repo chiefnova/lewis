@@ -13,7 +13,8 @@ import { NavDropdown, type NavDropdownLink } from "./NavDropdown";
  * carries the same set. */
 const PARTNER_LINKS: ReadonlyArray<NavDropdownLink> = [
   { to: "/for-manufacturers", id: "directory.nav.for_manufacturers", default: "For Manufacturers" },
-  { to: "/for-etcs", id: "directory.nav.for_etcs", default: "For ETCs" },
+  // ETC access temporarily hidden from nav — uncomment to restore.
+  // { to: "/for-etcs", id: "directory.nav.for_etcs", default: "For ETCs" },
   { to: "/platform", id: "directory.nav.platform", default: "Operating platform" },
 ];
 
@@ -55,7 +56,8 @@ export function TopNav() {
 
   const isBrowse = location.pathname.startsWith("/browse");
   // /etcs (patient discovery) must not light up on /for-etcs (B2B).
-  const isEtcs = location.pathname === "/etcs" || location.pathname.startsWith("/etcs/");
+  // ETC access temporarily hidden from nav — uncomment with the /etcs link below.
+  // const isEtcs = location.pathname === "/etcs" || location.pathname.startsWith("/etcs/");
   const isConditions = location.pathname.startsWith("/conditions");
   const isForClinicians = location.pathname.startsWith("/for-clinicians");
 
@@ -97,6 +99,7 @@ export function TopNav() {
           >
             <FormattedMessage id="directory.nav.browse" defaultMessage="Browse Treatments" />
           </Link>
+          {/* ETC access temporarily hidden from nav — uncomment to restore.
           <Link
             to="/etcs"
             className="topnav__link"
@@ -105,6 +108,7 @@ export function TopNav() {
           >
             <FormattedMessage id="directory.nav.etcs" defaultMessage="ETCs" />
           </Link>
+          */}
           <Link
             to="/for-clinicians"
             className="topnav__link topnav__link--secondary"

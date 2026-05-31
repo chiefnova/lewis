@@ -27,13 +27,15 @@ interface SecondaryNavDrawerProps {
 const PRIMARY_LINKS = [
   { to: "/conditions", id: "directory.nav.conditions", default: "Conditions" },
   { to: "/browse", id: "directory.nav.browse", default: "Browse Treatments" },
-  { to: "/etcs", id: "directory.nav.etcs", default: "ETCs" },
+  // ETC access temporarily hidden from nav — uncomment to restore.
+  // { to: "/etcs", id: "directory.nav.etcs", default: "ETCs" },
 ] as const;
 
 const SECONDARY_LINKS = [
   { to: "/for-clinicians", id: "directory.nav.for_clinicians", default: "For Clinicians" },
   { to: "/for-manufacturers", id: "directory.nav.for_manufacturers", default: "For Manufacturers" },
-  { to: "/for-etcs", id: "directory.nav.for_etcs", default: "For ETCs" },
+  // ETC access temporarily hidden from nav — uncomment to restore.
+  // { to: "/for-etcs", id: "directory.nav.for_etcs", default: "For ETCs" },
   { to: "/platform", id: "directory.nav.platform", default: "Operating platform" },
   { to: "/how-it-works", id: "directory.nav.how_it_works", default: "How it works" },
   { to: "/faq", id: "directory.nav.faq", default: "Frequently asked" },
