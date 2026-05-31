@@ -20,7 +20,8 @@ const COLUMNS: ReadonlyArray<FooterColumn> = [
     links: [
       { to: "/browse", id: "directory.footer.patients.browse", default: "Browse treatments" },
       { to: "/conditions", id: "directory.footer.patients.conditions", default: "Conditions" },
-      { to: "/etcs", id: "directory.footer.patients.etcs", default: "ETCs" },
+      // ETC access temporarily hidden from nav — uncomment to restore.
+      // { to: "/etcs", id: "directory.footer.patients.etcs", default: "ETCs" },
     ],
   },
   {
@@ -46,7 +47,8 @@ const COLUMNS: ReadonlyArray<FooterColumn> = [
         id: "directory.footer.partners.manufacturers",
         default: "For manufacturers",
       },
-      { to: "/for-etcs", id: "directory.footer.partners.etcs", default: "For ETCs" },
+      // ETC access temporarily hidden from nav — uncomment to restore.
+      // { to: "/for-etcs", id: "directory.footer.partners.etcs", default: "For ETCs" },
       { to: "/platform", id: "directory.footer.partners.platform", default: "Operating platform" },
     ],
   },
